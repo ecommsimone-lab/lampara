@@ -1559,7 +1559,7 @@ function renderWelcome(){
         <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
         <button class="btn primary lg" type="button" data-act="do-signup">Continuar</button>
       </div>
-      <p class="note">Versión de prueba: la cuenta se guarda solo en este dispositivo. En la app final podrás entrar con Apple, Google o correo desde cualquier teléfono.</p>
+      <p class="note">Versión de prueba: la cuenta se guarda solo en este celular o navegador. Si luego abres la app en otro dispositivo, tendrás que crear la cuenta allí también. En la app final podrás entrar desde cualquier teléfono.</p>
       <button class="linkbtn" data-act="wel-login">Ya tengo una cuenta</button>`;
   } else if(st==="goal"){
     main = `
@@ -1575,6 +1575,7 @@ function renderWelcome(){
     main = `
       <div class="spread"><button class="btn ghost" data-act="wel-back" style="padding:8px 12px">← Atrás</button><span></span></div>
       <h1>Bienvenido <em>de nuevo</em></h1>
+      <p class="note">Entra con el correo y la contraseña que creaste en este mismo celular o navegador.</p>
       <div class="form" id="loginForm" data-enter="do-login">
         <div class="field"><label for="liEmail">Correo</label><input class="input" id="liEmail" type="email" autocomplete="email" inputmode="email" required></div>
         <div class="field"><label for="liPass">Contraseña</label>${pwField("liPass","Tu contraseña","current-password")}</div>
@@ -1586,7 +1587,7 @@ function renderWelcome(){
       <button class="linkbtn" data-act="wel-signup">Crear una cuenta nueva</button>`;
   }
   root.innerHTML = `<div class="wel"><div class="wel-card">${welArt()}<section class="wel-main">${main}</section></div></div>`;
-  const sf = $("#signupForm"); if(sf){ $("#suName").focus(); }
+  const sf = $("#signupForm"); if(sf){ if(WEL.prefillEmail){ $("#suEmail").value=WEL.prefillEmail; WEL.prefillEmail=null; } $("#suName").focus(); }
   const lf = $("#loginForm"); if(lf){ if(WEL.prefill){ $("#liEmail").value=WEL.prefill; $("#liPass").focus(); } }
   WEL.prefill = null;
 }
@@ -1610,8 +1611,14 @@ async function onSignup(){
 }
 async function onLogin(){
   const email=$("#liEmail").value.trim().toLowerCase(), pass=$("#liPass").value;
+  if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
   const acc = accounts().find(a=>a.email===email);
-  if(!acc || await hashPass(pass, acc.salt)!==acc.hash) return formErr("El correo o la contraseña no coinciden.");
+  if(!acc){
+    const box = $("#formErr");
+    box.innerHTML = `No hay una cuenta con ese correo en este navegador. En esta versión de prueba, cada cuenta se guarda solo en el celular o navegador donde se creó. <button class="linkbtn" data-act="signup-with" data-email="${esc(email)}" style="padding:4px 0;display:inline">Crear la cuenta aquí con ese correo</button>`;
+    return;
+  }
+  if(await hashPass(pass, acc.salt)!==acc.hash) return formErr("La contraseña no es correcta. Revisa mayúsculas y espacios.");
   signIn(acc, {});
 }
 function signIn(acc, {fresh}){
@@ -1692,6 +1699,7 @@ document.addEventListener("click", e=>{
     case "wel-back": WEL.step = WEL.step==="signup"||WEL.step==="login" ? SLIDES.length-1 : 0; render(); break;
     case "toggle-pw": { const inp=$("#"+t.dataset.for); const show=inp.type==="password"; inp.type=show?"text":"password"; t.textContent=show?"Ocultar":"Mostrar"; break; }
     case "pick-acc": WEL.prefill=t.dataset.email; render(); break;
+    case "signup-with": WEL.step="signup"; WEL.migrate=null; WEL.err=""; WEL.prefillEmail=t.dataset.email; render(); break;
     case "migrate": WEL.step="signup"; WEL.migrate=t.dataset.name; WEL.err=""; render(); break;
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
