@@ -468,6 +468,7 @@ const I = {
   logout:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
   x:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   lamp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z" opacity=".85"/></svg>',
+  book:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></svg>',
   user:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   cloud:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/></svg>'
 };
@@ -690,6 +691,7 @@ function render(){
   if(!ME){ renderWelcome(); return; }
   if(VIEW.name==="session" && SESSION){ renderSession(); return; }
   if(VIEW.name==="placement" && PLACE){ renderPlacement(); return; }
+  if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
   const navItem = (id,label,icon) => `<button data-go="${id}" aria-current="${VIEW.name===id}">${icon}<span>${label}</span></button>`;
   const lists = listDefs();
   root.innerHTML = `
@@ -699,6 +701,7 @@ function render(){
       <nav class="nav">
         ${navItem("home","Inicio",I.home)}
         <button data-act="start-due">${I.play}<span>Practicar</span></button>
+        ${navItem("books","Libros",I.book)}
         ${navItem("library","Biblioteca",I.lib)}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
@@ -717,6 +720,7 @@ function render(){
     <nav class="tabbar">
       ${navItem("home","Inicio",I.home)}
       <button data-act="start-due">${I.play}<span>Practicar</span></button>
+      ${navItem("books","Libros",I.book)}
       ${navItem("library","Biblioteca",I.lib)}
       ${navItem("profile","Perfil",I.user)}
     </nav>
@@ -728,6 +732,7 @@ function render(){
   else if(VIEW.name==="list") v.innerHTML = mtop + viewList(VIEW.list);
   else if(VIEW.name==="review") v.innerHTML = mtop + viewList("rev");
   else if(VIEW.name==="profile") v.innerHTML = mtop + viewProfile();
+  else if(VIEW.name==="books") v.innerHTML = mtop + viewBooks();
 }
 
 /* ---------- Inicio / Dashboard ---------- */
@@ -756,6 +761,13 @@ function activityChart(){
     g += `<text x="${bx+w/2}" y="${H-8}" text-anchor="middle" ${i===days-1?'fill="var(--ink)" font-weight="700"':''}>${i===days-1?'Hoy':dn[x.d.getDay()]}</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
+}
+function homeBooksCard(){
+  const m = BOOKS.filter(b=>bookMastered(b.name)).length;
+  return `<section class="panel spread" style="gap:16px">
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span class="eyebrow">Conoce la Biblia</span><h3>Libros de la Biblia: ${m} de 66 dominados</h3><p class="muted" style="font-size:14px">Aprende el orden y los grupos de los libros, y pon a prueba lo que sabes de personajes e historias.</p></div>
+    <div class="row"><button class="btn primary" data-act="bq-start" data-scope="all">${I.play} Practicar libros</button><button class="btn" data-act="bq-trivia">Cuestionario</button></div>
+  </section>`;
 }
 function viewHome(){
   const act = activeIds();
@@ -831,6 +843,7 @@ function viewHome(){
     </div>
   </section>
 
+  ${homeBooksCard()}
   <section class="split">
     <div class="panel" style="display:flex;flex-direction:column;gap:10px">
       <div class="spread"><h3>Próximos repasos</h3></div>
@@ -855,7 +868,8 @@ function viewLibrary(){
   </section>
   <section class="lists-grid">
     ${lists.map(l=>`<button class="lcard" data-list="${l.id}"><div class="cv ${l.cv}"><span>${esc(l.glyph)}</span></div><div><b>${esc(l.name)}</b><br><small>${l.ids.length} ${l.ids.length===1?"versículo":"versículos"}</small></div></button>`).join("")}
-  </section>`;
+  </section>
+  ${noticeHTML()}`;
 }
 
 function verseRow(id, i, list){
@@ -863,7 +877,6 @@ function verseRow(id, i, list){
   const s = status(id);
   const fav = S.favs.includes(id);
   const acts = [];
-  acts.push(`<button class="icon-btn" data-act="speak" data-id="${id}" title="Escuchar" aria-label="Escuchar ${esc(v.ref)}">${I.speaker}</button>`);
   if(v.sug) acts.push(`<button class="icon-btn" data-act="fav" data-id="${id}" title="${fav?"Quitar de Mis versículos":"Mover a Mis versículos"}" aria-label="Favorito" style="${fav?'color:var(--accent)':''}">${fav?I.heartF:I.heart}</button>`);
   acts.push(`<button class="icon-btn" data-act="to-list" data-id="${id}" title="Agregar a una lista" aria-label="Agregar a una lista">${I.listAdd}</button>`);
   if(list && !list.builtin) acts.push(`<button class="icon-btn" data-act="rm-from-list" data-id="${id}" data-list="${list.id}" title="Quitar de esta lista" aria-label="Quitar de esta lista">${I.x}</button>`);
@@ -982,7 +995,7 @@ function renderSession(){
         </div>
       </div>
       <div class="spread">
-        <div class="row"><button class="btn" data-act="speak" data-id="${v.id}">${I.speaker} Escuchar</button><button class="btn ghost" data-act="flip">Voltear</button></div>
+        <div class="row"><button class="btn ghost" data-act="flip">Voltear</button></div>
         <div class="row">${s.i>0?`<button class="btn ghost" data-act="card-prev">Anterior</button>`:""}<button class="btn primary" data-act="card-next">${s.i<total-1?"Siguiente":"Empezar preguntas"}</button></div>
       </div>`;
   }
@@ -1188,7 +1201,7 @@ function gradeText(score, extraHTML=""){
   $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
     <div class="result-bar ${cls}"><b>${pct}%</b><span>en el texto. Más adelante te preguntaremos la cita de este versículo.</span></div>${extraHTML}
     ${q.mode!=="recite"?`<p class="muted" style="font-size:13px">Texto correcto:</p><p class="verse-text" style="font-size:20px">${esc(v.text)}</p>`:""}
-    <div class="row"><button class="btn" data-act="speak" data-id="${q.id}">${I.speaker} Escuchar</button><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">Siguiente pregunta</button></div></div>`;
+    <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">Siguiente pregunta</button></div></div>`;
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   const n = $("#nextQ"); if(n) n.focus();
 }
@@ -1411,6 +1424,205 @@ function finishPlacement(){
   persist();
   P.result = { avg, level, memo:Math.floor(memo), refs, known };
   P.phase = "done"; render(); window.scrollTo({top:0});
+}
+
+/* =========================================================
+   LIBROS DE LA BIBLIA Y CUESTIONARIO BÍBLICO
+   No usan texto bíblico: nombres, orden, divisiones y datos.
+   ========================================================= */
+const DIVS = [
+  { id:"pent", name:"Pentateuco", t:"AT", books:[["Génesis",50],["Éxodo",40],["Levítico",27],["Números",36],["Deuteronomio",34]] },
+  { id:"hist", name:"Libros históricos", t:"AT", books:[["Josué",24],["Jueces",21],["Rut",4],["1 Samuel",31],["2 Samuel",24],["1 Reyes",22],["2 Reyes",25],["1 Crónicas",29],["2 Crónicas",36],["Esdras",10],["Nehemías",13],["Ester",10]] },
+  { id:"poet", name:"Libros poéticos", t:"AT", books:[["Job",42],["Salmos",150],["Proverbios",31],["Eclesiastés",12],["Cantares",8]] },
+  { id:"pmay", name:"Profetas mayores", t:"AT", books:[["Isaías",66],["Jeremías",52],["Lamentaciones",5],["Ezequiel",48],["Daniel",12]] },
+  { id:"pmen", name:"Profetas menores", t:"AT", books:[["Oseas",14],["Joel",3],["Amós",9],["Abdías",1],["Jonás",4],["Miqueas",7],["Nahúm",3],["Habacuc",3],["Sofonías",3],["Hageo",2],["Zacarías",14],["Malaquías",4]] },
+  { id:"evan", name:"Evangelios", t:"NT", books:[["Mateo",28],["Marcos",16],["Lucas",24],["Juan",21]] },
+  { id:"hech", name:"Libro histórico (Hechos)", t:"NT", books:[["Hechos",28]] },
+  { id:"paul", name:"Cartas de Pablo", t:"NT", books:[["Romanos",16],["1 Corintios",16],["2 Corintios",13],["Gálatas",6],["Efesios",6],["Filipenses",4],["Colosenses",4],["1 Tesalonicenses",5],["2 Tesalonicenses",3],["1 Timoteo",6],["2 Timoteo",4],["Tito",3],["Filemón",1]] },
+  { id:"gral", name:"Cartas generales", t:"NT", books:[["Hebreos",13],["Santiago",5],["1 Pedro",5],["2 Pedro",3],["1 Juan",5],["2 Juan",1],["3 Juan",1],["Judas",1]] },
+  { id:"prof", name:"Libro profético (Apocalipsis)", t:"NT", books:[["Apocalipsis",22]] }
+];
+const BOOKS = []; DIVS.forEach(d=>d.books.forEach(([name,ch])=>BOOKS.push({ i:BOOKS.length, name, ch, div:d.id, divName:d.name, t:d.t })));
+const DIV_MAP = Object.fromEntries(DIVS.map(d=>[d.id,d]));
+const T_NAME = { AT:"Antiguo Testamento", NT:"Nuevo Testamento" };
+
+/* Preguntas de personajes e historias: redactadas para la app, sin citar el texto bíblico */
+const TRIVIA = [
+  ["¿Quién construyó el arca para salvar a su familia del diluvio?","Noé",["Abraham","Moisés","Elías"],"Génesis 6–9"],
+  ["¿Qué dos personas vivían en el huerto del Edén?","Adán y Eva",["Caín y Abel","Abraham y Sara","Isaac y Rebeca"],"Génesis 2"],
+  ["¿Qué hermano mató a Abel?","Caín",["Set","Enoc","Lamec"],"Génesis 4"],
+  ["¿A quién llamó Dios a salir de su tierra hacia la tierra que le mostraría?","Abraham",["Isaac","Jacob","Lot"],"Génesis 12"],
+  ["¿Cómo se llamaba la esposa de Abraham?","Sara",["Rebeca","Raquel","Lea"],"Génesis 17"],
+  ["¿Qué hijo prometido tuvo Abraham en su vejez?","Isaac",["Ismael","Jacob","Esaú"],"Génesis 21"],
+  ["¿Quién vendió su primogenitura por un plato de guiso?","Esaú",["Jacob","Rubén","Ismael"],"Génesis 25"],
+  ["¿Qué hijo de Jacob fue vendido por sus hermanos y llegó a gobernar en Egipto?","José",["Benjamín","Judá","Rubén"],"Génesis 37–41"],
+  ["¿Quién guió al pueblo de Israel en la salida de Egipto?","Moisés",["Josué","Aarón","Samuel"],"Éxodo 3–14"],
+  ["¿Quién sucedió a Moisés y guió a Israel a entrar en Canaán?","Josué",["Caleb","Gedeón","Aarón"],"Josué 1"],
+  ["¿Qué ciudad cayó después de que Israel marchara alrededor de ella durante siete días?","Jericó",["Hai","Jerusalén","Betel"],"Josué 6"],
+  ["¿Qué juez derrotó a los madianitas con solo 300 hombres?","Gedeón",["Sansón","Débora","Jefté"],"Jueces 7"],
+  ["¿Qué mujer moabita decidió acompañar a su suegra Noemí a Belén?","Rut",["Orfa","Ester","Débora"],"Rut 1"],
+  ["¿Quién fue el primer rey de Israel?","Saúl",["David","Salomón","Samuel"],"1 Samuel 10"],
+  ["¿Qué joven pastor venció al gigante Goliat?","David",["Saúl","Jonatán","Salomón"],"1 Samuel 17"],
+  ["¿Qué rey pidió a Dios sabiduría y construyó el templo en Jerusalén?","Salomón",["David","Ezequías","Josías"],"1 Reyes 3–6"],
+  ["¿Qué profeta enfrentó a los profetas de Baal en el monte Carmelo?","Elías",["Eliseo","Isaías","Jeremías"],"1 Reyes 18"],
+  ["¿Qué profeta subió al cielo en un torbellino, con un carro de fuego?","Elías",["Eliseo","Moisés","Samuel"],"2 Reyes 2"],
+  ["¿Qué reina arriesgó su vida para salvar a su pueblo ante el rey Asuero?","Ester",["Vasti","Jezabel","Débora"],"Ester 4–7"],
+  ["¿Quién dirigió la reconstrucción de los muros de Jerusalén después del exilio?","Nehemías",["Esdras","Zorobabel","Hageo"],"Nehemías 2–6"],
+  ["¿Quién fue echado al foso de los leones por orar a Dios?","Daniel",["José","Jonás","Ezequiel"],"Daniel 6"],
+  ["¿Qué profeta fue tragado por un gran pez?","Jonás",["Elías","Amós","Miqueas"],"Jonás 1"],
+  ["¿Quién fue la madre de Jesús?","María",["Marta","Elisabet","Ana"],"Lucas 1"],
+  ["¿Quién era el padre de Juan el Bautista?","Zacarías",["José","Simeón","Elí"],"Lucas 1"],
+  ["¿En qué ciudad nació Jesús?","Belén",["Nazaret","Jerusalén","Capernaum"],"Lucas 2"],
+  ["¿Quién bautizó a Jesús en el río Jordán?","Juan el Bautista",["Pedro","Santiago","Andrés"],"Mateo 3"],
+  ["¿Cuántos días ayunó Jesús en el desierto?","40",["7","12","3"],"Mateo 4"],
+  ["¿Cuántos apóstoles escogió Jesús?","12",["7","10","70"],"Lucas 6"],
+  ["Según el Evangelio de Juan, ¿cuál fue la primera señal de Jesús?","Convertir el agua en vino",["Multiplicar los panes","Caminar sobre el agua","Sanar a un ciego"],"Juan 2"],
+  ["¿Qué fariseo visitó a Jesús de noche?","Nicodemo",["Gamaliel","José de Arimatea","Zaqueo"],"Juan 3"],
+  ["¿Qué cobrador de impuestos subió a un árbol para ver a Jesús?","Zaqueo",["Mateo","Nicodemo","Lázaro"],"Lucas 19"],
+  ["¿A quién resucitó Jesús en Betania después de cuatro días?","Lázaro",["Jairo","Bartimeo","Esteban"],"Juan 11"],
+  ["En la parábola, ¿quién ayudó al hombre herido en el camino?","Un samaritano",["Un sacerdote","Un levita","Un fariseo"],"Lucas 10"],
+  ["¿Qué parábola cuenta de un hijo que malgastó su herencia y volvió con su padre?","El hijo pródigo",["El buen samaritano","La oveja perdida","Los talentos"],"Lucas 15"],
+  ["¿Qué discípulo negó a Jesús tres veces?","Pedro",["Judas","Tomás","Juan"],"Lucas 22"],
+  ["¿Qué discípulo entregó a Jesús?","Judas Iscariote",["Pedro","Tomás","Felipe"],"Mateo 26"],
+  ["¿Quién era el gobernador romano que entregó a Jesús para ser crucificado?","Poncio Pilato",["Herodes","César Augusto","Félix"],"Mateo 27"],
+  ["¿Qué discípulo dudó de la resurrección hasta ver a Jesús?","Tomás",["Pedro","Andrés","Bartolomé"],"Juan 20"],
+  ["¿En qué fiesta descendió el Espíritu Santo sobre los discípulos?","Pentecostés",["La Pascua","Los Tabernáculos","Purim"],"Hechos 2"],
+  ["¿Quién fue el primer mártir cristiano que menciona el libro de Hechos?","Esteban",["Santiago","Pedro","Felipe"],"Hechos 7"],
+  ["¿Qué perseguidor de la iglesia se convirtió en el camino a Damasco?","Saulo (Pablo)",["Bernabé","Silas","Esteban"],"Hechos 9"],
+  ["¿Quién escribió la mayoría de las cartas del Nuevo Testamento?","Pablo",["Pedro","Juan","Santiago"],""],
+  ["¿En qué isla estaba Juan cuando recibió la revelación del Apocalipsis?","Patmos",["Creta","Malta","Chipre"],"Apocalipsis 1"]
+];
+
+let BQ = null;   // sesión de libros o cuestionario
+function bookStat(name){ return (S.books||{})[name] || { ok:0, n:0, streak:0 }; }
+function bookMastered(name){ return bookStat(name).streak >= 3; }
+function divMastery(d){ const b=DIV_MAP[d].books; return Math.round(b.filter(([n])=>bookMastered(n)).length / b.length * 100); }
+function scopeBooks(scope){
+  if(scope==="AT"||scope==="NT") return BOOKS.filter(b=>b.t===scope);
+  if(DIV_MAP[scope]) return BOOKS.filter(b=>b.div===scope);
+  return BOOKS;
+}
+function pickBook(pool){
+  const ws = pool.map(b=>{ const s=bookStat(b.name); return (s.streak>=3?1:6-Math.min(s.streak,3)*1.5) * (s.n? 1 : 1.4) * (0.6+Math.random()*0.8); });
+  let r = Math.random()*ws.reduce((a,c)=>a+c,0), k=0; while(k<ws.length-1 && (r-=ws[k])>0) k++;
+  return pool[k];
+}
+function nearbyNames(b, excl, n=3){
+  const cands = BOOKS.filter(x=>!excl.includes(x.name) && Math.abs(x.i-b.i)<=6).map(x=>x.name);
+  const pool = shuffle(cands).slice(0,n);
+  while(pool.length<n){ const x=BOOKS[Math.floor(Math.random()*BOOKS.length)].name; if(!excl.includes(x)&&!pool.includes(x)) pool.push(x); }
+  return pool;
+}
+function makeBookQuestion(scope){
+  const pool = scopeBooks(scope);
+  const b = pickBook(pool);
+  const types = ["next","prev","div","gap","chapters","order","next","div"];
+  let type = types[Math.floor(Math.random()*types.length)];
+  if(type==="next" && b.i===65) type="prev";
+  if(type==="prev" && b.i===0) type="next";
+  if(type==="gap" && (b.i<1||b.i>64)) type="div";
+  const d = DIV_MAP[b.div];
+  if(type==="next"){ const a=BOOKS[b.i+1]; return { type, books:[b.name], prompt:`¿Qué libro viene después de <b>${esc(b.name)}</b>?`, answer:a.name, opts:shuffle([a.name, ...nearbyNames(a,[a.name,b.name])]), explain:`Después de ${b.name} viene ${a.name}.` }; }
+  if(type==="prev"){ const a=BOOKS[b.i-1]; return { type, books:[b.name], prompt:`¿Qué libro va antes de <b>${esc(b.name)}</b>?`, answer:a.name, opts:shuffle([a.name, ...nearbyNames(a,[a.name,b.name])]), explain:`Antes de ${b.name} está ${a.name}.` }; }
+  if(type==="gap"){ const p=BOOKS[b.i-1], n=BOOKS[b.i+1]; return { type, books:[b.name], prompt:`Completa el orden: <b>${esc(p.name)}</b> → <b>___</b> → <b>${esc(n.name)}</b>`, answer:b.name, opts:shuffle([b.name, ...nearbyNames(b,[b.name,p.name,n.name])]), explain:`El orden es ${p.name}, ${b.name}, ${n.name}.` }; }
+  if(type==="chapters"){ const wrong=new Set(); while(wrong.size<3){ const delta=[-3,-2,-1,1,2,3,5,-5,10][Math.floor(Math.random()*9)]; const v=b.ch+delta; if(v>0&&v!==b.ch) wrong.add(String(v)); } return { type, books:[b.name], prompt:`¿Cuántos capítulos tiene <b>${esc(b.name)}</b>?`, answer:String(b.ch), opts:shuffle([String(b.ch), ...wrong]), explain:`${b.name} tiene ${b.ch} ${b.ch===1?"capítulo":"capítulos"}.` }; }
+  if(type==="order"){
+    const start = Math.max(0, Math.min(b.i - Math.floor(Math.random()*3), 61));
+    const seq = BOOKS.slice(start, start+5).map(x=>x.name);
+    let mixed = shuffle(seq); if(mixed.join()===seq.join()) mixed = shuffle(seq);
+    return { type, books:seq, prompt:`Toca los libros <b>en el orden</b> en que aparecen en la Biblia`, answer:seq, opts:mixed, picked:[], explain:`El orden es: ${seq.join(", ")}.` };
+  }
+  const sameT = DIVS.filter(x=>x.id!==d.id && x.t===d.t).map(x=>x.name);
+  const other = DIVS.filter(x=>x.id!==d.id && x.t!==d.t).map(x=>x.name);
+  const wrong = shuffle(sameT).slice(0,2).concat(shuffle(other).slice(0,1));
+  return { type:"div", books:[b.name], prompt:`¿A qué grupo pertenece <b>${esc(b.name)}</b>?`, answer:d.name, opts:shuffle([d.name, ...wrong]), explain:`${b.name} está en ${d.name} (${T_NAME[d.t]}).` };
+}
+function makeTriviaSession(n){
+  const order = shuffle(TRIVIA.map((_,i)=>i));
+  const recent = new Set(S.triviaRecent||[]);
+  const fresh = order.filter(i=>!recent.has(i)), old = order.filter(i=>recent.has(i));
+  return fresh.concat(old).slice(0,n).map(i=>{ const [q,a,w,ref]=TRIVIA[i]; return { type:"trivia", idx:i, books:[], prompt:esc(q), answer:a, opts:shuffle([a,...w]), explain:ref?`Lo encuentras en ${ref}.`:"" }; });
+}
+function startBooks(kind, scope){
+  const n = 10;
+  const qs = kind==="trivia" ? makeTriviaSession(n) : Array.from({length:n},()=>makeBookQuestion(scope||"all"));
+  BQ = { kind, scope:scope||"all", qs, i:0, answered:false, score:0, results:[] };
+  VIEW = { name:"bquiz" }; render(); window.scrollTo({top:0});
+}
+function recordBook(names, ok){
+  S.books = S.books || {};
+  names.forEach(n=>{ const s=Object.assign({ok:0,n:0,streak:0}, S.books[n]); s.n++; if(ok){ s.ok++; s.streak++; } else s.streak=0; S.books[n]=s; });
+}
+function answerBook(ok){
+  const q = BQ.qs[BQ.i]; if(BQ.answered) return;
+  BQ.answered = true; q.ok = ok; if(ok) BQ.score++;
+  if(BQ.kind==="books") recordBook(q.type==="order"?q.answer:q.books, ok);
+  const k = todayKey(); const L = S.log[k] || { n:0, sum:0 }; L.n++; L.sum += ok?1:0; S.log[k] = L;
+  persist();
+  render();
+}
+function renderBookQuiz(){
+  const B = BQ, total = B.qs.length;
+  let body = "";
+  if(B.i >= total){
+    const pct = Math.round(B.score/total*100);
+    const wrong = B.qs.filter(q=>!q.ok);
+    if(B.kind==="trivia"){ S.triviaRecent = B.qs.map(q=>q.idx).concat(S.triviaRecent||[]).slice(0,20); persist(); }
+    body = `
+      <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${B.kind==="trivia"?"Cuestionario bíblico":"Libros de la Biblia"}</span><h1 style="font-size:clamp(34px,6vw,52px)">${pct>=90?"¡Excelente!":pct>=60?"Buen avance":"Sigue practicando"}</h1></div>
+      <div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="stat"><div class="eyebrow">Aciertos</div><span class="big">${B.score}<small>/ ${total}</small></span></div>
+        <div class="stat"><div class="eyebrow">Porcentaje</div><span class="big">${pct}<small>%</small></span></div>
+      </div>
+      ${wrong.length?`<div class="panel" style="display:flex;flex-direction:column;gap:8px"><h3>Para repasar</h3>${wrong.map(q=>`<p class="muted" style="font-size:14px">${q.explain}</p>`).join("")}</div>`:""}
+      <div class="row"><button class="btn primary lg" data-act="bq-again">Otra ronda</button><button class="btn" data-act="bq-exit">Volver</button></div>`;
+  } else {
+    const q = B.qs[B.i];
+    let opts = "";
+    if(q.type==="order"){
+      const picked = q.picked;
+      opts = `<div style="display:flex;flex-direction:column;gap:10px">
+        <div class="row" style="gap:8px;min-height:44px">${picked.map((n,k)=>`<span class="chip ${B.answered?(n===q.answer[k]?"ok":"bad"):"acc"}" style="font-size:14px;padding:6px 12px">${k+1}. ${esc(n)}</span>`).join("")||`<span class="muted" style="font-size:13px">Tu orden aparecerá aquí</span>`}</div>
+        <div class="opts">${q.opts.map((n,k)=>`<button class="opt" data-act="bq-pick" data-k="${k}" ${picked.includes(n)||B.answered?"disabled":""} style="${picked.includes(n)?"opacity:.35":""}">${esc(n)}</button>`).join("")}</div>
+        ${!B.answered && picked.length?`<button class="linkbtn" data-act="bq-undo" style="align-self:flex-start;padding:4px 0">Deshacer el último</button>`:""}
+      </div>`;
+    } else {
+      opts = `<div class="opts">${q.opts.map((o,k)=>{ let cls=""; if(B.answered){ if(o===q.answer) cls="right"; else if(o===q.chosen) cls="wrong"; } return `<button class="opt ${cls}" data-act="bq-opt" data-k="${k}" ${B.answered?"disabled":""}>${esc(o)}</button>`; }).join("")}</div>`;
+    }
+    const fb = B.answered ? `<div class="result-bar ${q.ok?"ok":"bad"}" style="padding:12px 16px"><span><b style="font-size:inherit">${q.ok?"¡Correcto!":"No es correcto."}</b> ${esc(q.explain)}</span></div><div class="row"><span style="flex:1"></span><button class="btn primary" id="bqNext" data-act="bq-next">${B.i<total-1?"Siguiente":"Ver resultados"}</button></div>` : "";
+    body = `
+      <div class="progress"><i style="width:${B.i/total*100}%"></i></div>
+      <div class="spread"><div class="phase-tag"><span class="chip acc">${B.kind==="trivia"?"Cuestionario bíblico":"Libros de la Biblia"}</span><span class="chip none mono">${B.i+1} / ${total}</span></div></div>
+      <div class="q-card"><p style="font-size:clamp(20px,3vw,26px);line-height:1.35;font-weight:600">${q.prompt}</p>${opts}${fb}</div>`;
+  }
+  root.innerHTML = `<main style="min-height:100%"><div class="stage"><div class="spread"><button class="btn ghost" data-act="bq-exit">${I.x} Salir</button></div>${body}</div></main>`;
+  const n = $("#bqNext"); if(n) n.focus();
+}
+function viewBooks(){
+  const mastered = BOOKS.filter(b=>bookMastered(b.name)).length;
+  const divCard = d => { const m=divMastery(d.id); return `<button class="lcard" data-act="bq-start" data-scope="${d.id}" style="gap:8px">
+      <div class="spread" style="gap:8px"><b>${esc(d.name)}</b><span class="chip ${m>=100?"ok":m>0?"mid":"none"} mono">${m}%</span></div>
+      <small>${d.books.length} ${d.books.length===1?"libro":"libros"} · ${esc(d.books.map(x=>x[0]).join(", "))}</small>
+      <div class="stackbar" style="height:6px"><i style="width:${m}%;background:var(--ok)"></i></div></button>`; };
+  return `
+  <section class="spread">
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Conoce la Biblia</span><h1 style="font-size:clamp(30px,5vw,46px)">Libros de la Biblia</h1>
+      <p class="muted">66 libros en 10 grupos. Un libro queda dominado cuando respondes bien 3 veces seguidas sobre él.</p></div>
+  </section>
+  <section class="hero">
+    <div class="today" style="min-height:0">
+      <div class="eyebrow">Tu avance</div>
+      <h1><em>${mastered}</em> de 66 libros dominados</h1>
+      <div class="row"><button class="btn primary lg" data-act="bq-start" data-scope="all">${I.play} Practicar todos</button><button class="btn" data-act="bq-start" data-scope="AT">Antiguo T.</button><button class="btn" data-act="bq-start" data-scope="NT">Nuevo T.</button></div>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Personajes e historias</span><h3>Cuestionario bíblico</h3><p class="muted" style="font-size:14px">10 preguntas sobre personajes y acontecimientos de toda la Biblia.</p></div>
+      <button class="btn primary" data-act="bq-trivia">${I.play} Empezar cuestionario</button>
+    </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:10px"><h3>Antiguo Testamento · 39 libros</h3><div class="lists-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${DIVS.filter(d=>d.t==="AT").map(divCard).join("")}</div></section>
+  <section style="display:flex;flex-direction:column;gap:10px"><h3>Nuevo Testamento · 27 libros</h3><div class="lists-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${DIVS.filter(d=>d.t==="NT").map(divCard).join("")}</div></section>
+  <p class="muted" style="font-size:12px">Toca un grupo para practicar solo esos libros.</p>`;
 }
 
 /* ---------- Resumen ---------- */
@@ -1772,6 +1984,8 @@ function needsPlacement(){ return !S.placed && Object.keys(S.progress).length===
 function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
 
 /* ---------- Perfil y ajustes ---------- */
+const RVR_NOTICE = "Texto bíblico tomado de la versión Reina-Valera © 1960 Sociedades Bíblicas en América Latina; © renovado 1988 Sociedades Bíblicas Unidas. Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas.";
+function noticeHTML(){ return `<p class="muted" style="font-size:11.5px;line-height:1.5;max-width:80ch">${esc(RVR_NOTICE)}</p>`; }
 function viewProfile(){
   const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
   const act = activeIds(); const learned = act.filter(id=>status(id)==="ok").length;
@@ -1799,7 +2013,8 @@ function viewProfile(){
       <div class="set-row"><div class="lbl"><b>Cerrar sesión</b><small>Tu progreso queda guardado en esta cuenta</small></div><button class="btn" data-act="logout">${I.logout} Cerrar sesión</button></div>
       <div class="set-row"><div class="lbl"><b>Eliminar cuenta</b><small>Borra la cuenta y todo su progreso. No se puede deshacer.</small></div><button class="btn danger" data-act="delete-account">${I.trash} Eliminar cuenta</button></div>
     </div>
-  </section>`;
+  </section>
+  <section class="panel"><h3 style="margin-bottom:6px">Acerca de</h3>${noticeHTML()}</section>`;
 }
 
 /* =========================================================
@@ -1876,6 +2091,14 @@ document.addEventListener("click", e=>{
       startSession(pickFor("rev"),{title:"Repaso de memorizados", review:true, source:"rev"}); break;
     }
     case "quit": stopSpeech(); SESSION=null; go("home"); break;
+    case "bq-start": startBooks("books", t.dataset.scope); break;
+    case "bq-trivia": startBooks("trivia"); break;
+    case "bq-opt": { const q=BQ.qs[BQ.i]; if(BQ.answered) break; q.chosen=q.opts[+t.dataset.k]; answerBook(q.chosen===q.answer); break; }
+    case "bq-pick": { const q=BQ.qs[BQ.i]; if(BQ.answered) break; const nm=q.opts[+t.dataset.k]; if(!q.picked.includes(nm)) q.picked.push(nm); if(q.picked.length===q.answer.length) answerBook(q.picked.join("|")===q.answer.join("|")); else render(); break; }
+    case "bq-undo": { const q=BQ.qs[BQ.i]; q.picked.pop(); render(); break; }
+    case "bq-next": BQ.i++; BQ.answered=false; render(); window.scrollTo({top:0}); break;
+    case "bq-again": startBooks(BQ.kind, BQ.scope); break;
+    case "bq-exit": BQ=null; go("books"); break;
     case "pl-start": PLACE.phase="q"; PLACE.i=0; PLACE.answered=false; render(); break;
     case "pl-skip": S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); PLACE=null; go("home"); break;
     case "pl-check": placementCheck(); break;
