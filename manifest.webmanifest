@@ -1,0 +1,15 @@
+{
+  "name": "Lámpara Bíblica",
+  "short_name": "Lámpara",
+  "description": "Aprende y memoriza la Biblia (Reina-Valera 1960).",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F1F6",
+  "theme_color": "#16152B",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

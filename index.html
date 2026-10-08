@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#16152B">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lámpara">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Lámpara Bíblica</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -310,6 +316,17 @@ a.btn:not(.primary){color:var(--ink)}
 .input::placeholder{text-transform:none}
 .drow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px}
 .drow:hover{background:var(--surface-2)}
+.nrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:flex-start;padding:12px;border-radius:12px}
+.nrow.unread{background:var(--accent-soft)}
+.ndot{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:6px}
+.set-row:has(> .switch),.set-row:has(> .row > .switch){flex-wrap:nowrap}
+.switch{position:relative;display:inline-block;width:46px;height:28px;flex:none;cursor:pointer}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .15s;pointer-events:none}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked + span{background:var(--accent)}
+.switch input:checked + span::after{transform:translateX(18px)}
+.switch input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
 .nbadge{position:absolute;top:4px;left:26px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--bad);color:#fff;font:700 10px/17px var(--f-ui,inherit);font-style:normal;text-align:center}
 .tabbar .nbadge{top:2px;left:calc(50% + 4px)}
 .drow b{display:block}
@@ -476,6 +493,7 @@ const I = {
   plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   listAdd:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h12M4 12h12M4 18h7M18 15v6M15 18h6"/></svg>',
   trash:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  bell:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
   flame:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5 5 5.8 5 11a5 5 0 0 1-10 0c0-2.3 1-3.8 2-5 0 1.8.8 3 2 3.4C10.6 8.4 11 5 12 2z"/></svg>',
   lock:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   speaker:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a3.5 3.5 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11"/></svg>',
@@ -715,7 +733,8 @@ function render(){
   if(VIEW.name==="placement" && PLACE){ renderPlacement(); return; }
   if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
   const badge = commBadge();
-  const navItem = (id,label,icon) => `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && VIEW.name==="friend")}" style="position:relative">${icon}<span>${label}</span>${id==="community"&&badge?`<i class="nbadge" aria-label="${badge} pendientes">${badge>9?"9+":badge}</i>`:""}</button>`;
+  const unread = unreadCount();
+  const navItem = (id,label,icon) => { const n = id==="community" ? badge : id==="avisos" ? unread : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && VIEW.name==="friend")}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
   const lists = listDefs();
   root.innerHTML = `
   <div class="app">
@@ -727,6 +746,7 @@ function render(){
         ${navItem("books","Libros",I.book)}
         ${navItem("library","Biblioteca",I.lib)}
         ${navItem("community","Comunidad",I.users)}
+        ${cloudOn()?navItem("avisos","Avisos",I.bell):""}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
         <button data-act="feedback">${I.chat}<span>Enviar comentario</span></button>
@@ -751,7 +771,7 @@ function render(){
     </nav>
   </div>`;
   const v = $("#view");
-  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto">${myAvatar(32)}</button></div></div>`;
+  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto">${myAvatar(32)}</button></div></div>`;
   if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
   else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
   else if(VIEW.name==="list") v.innerHTML = mtop + viewList(VIEW.list);
@@ -761,6 +781,7 @@ function render(){
   else if(VIEW.name==="topic") v.innerHTML = mtop + viewTopic(VIEW.topic);
   else if(VIEW.name==="community") v.innerHTML = mtop + viewCommunity();
   else if(VIEW.name==="friend") v.innerHTML = mtop + viewFriend(VIEW.uid);
+  else if(VIEW.name==="avisos") v.innerHTML = mtop + viewAvisos();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
 }
@@ -1883,7 +1904,7 @@ async function loadCommunity(){
     COMM.loaded = true;
   }catch(e){ COMM.err = commError(e); }
   COMM.loading = false;
-  if(["community","friend","profile","home","library","books"].includes(VIEW.name)) render();
+  if(["community","friend","profile","home","library","books","avisos"].includes(VIEW.name)) render();
 }
 function reloadCommunity(){ COMM.loaded = false; COMM.counts = {}; return loadCommunity(); }
 function personLabel(uid){ const p = COMM.profiles[uid]; return p ? (p.display_name || "Alguien") : "Alguien"; }
@@ -1913,10 +1934,16 @@ function searchResultHTML(){
   else act = `<button class="btn primary" data-act="friend-add" data-id="${r.user_id}" style="padding:6px 14px">${I.plus} Agregar</button>`;
   return `<div class="drow" style="background:var(--surface-2)">${avatarHTML(r.display_name, colorFor(r.user_id), r.avatar_url, 36)}<div style="min-width:0">${personLine(r)}</div><div>${act}</div></div>`;
 }
+function streakChip(f){
+  if(f.streak==="accepted"){ const st = streakDays(f); return `<span class="chip ${st?"acc":"none"}">${I.flame} ${st} ${st===1?"día":"días"} juntos</span>`; }
+  if(f.streak==="pending" && !f.streak_mine) return `<button class="chip acc" data-act="streak-accept" data-id="${f.id}" style="border:0;cursor:pointer">${I.flame} Aceptar racha</button>`;
+  if(f.streak==="pending") return `<span class="chip none">Invitación de racha enviada</span>`;
+  return `<button class="chip none" data-act="streak-invite" data-id="${f.id}" style="border:0;cursor:pointer">${I.plus} Racha juntos</button>`;
+}
 function friendRow(f){
-  const t = todayKey(), theirs = COMM.days[f.user_id] || new Set(), st = sharedStreak(COMM.days[ME.id], theirs);
+  const theirs = COMM.days[f.user_id] || new Set();
   return `<div class="drow" data-act="friend-open" data-id="${f.user_id}" role="button" tabindex="0" style="cursor:pointer">${personAvatar(f.user_id,40)}
-    <div style="min-width:0">${personLine(f)}<div class="row" style="gap:6px;margin-top:4px"><span class="chip ${st?"acc":"none"}">${I.flame} ${st} ${st===1?"día":"días"} juntos</span>${theirs.has(t)?`<span class="chip ok">✓ Practicó hoy</span>`:""}</div></div>
+    <div style="min-width:0">${personLine(f)}<div class="row" style="gap:6px;margin-top:4px">${streakChip(f)}${theirs.has(todayKey())?`<span class="chip ok">✓ Practicó hoy</span>`:""}</div></div>
     <div><button class="btn" data-act="duel-friend" data-id="${f.user_id}" style="padding:6px 14px">Retar</button></div></div>`;
 }
 
@@ -1969,7 +1996,7 @@ function viewFriend(uid){
   if(!f) return `<div class="empty"><b>Esta persona ya no está en tus amigos</b><button class="btn" data-go="community">Volver a Comunidad</button></div>`;
   if(COMM.counts[uid]===undefined){ COMM.counts[uid] = null; API.friendCount(uid).then(n=>{ COMM.counts[uid] = n; if(VIEW.name==="friend") render(); }).catch(()=>{}); }
   const theirs = COMM.days[uid] || new Set(), n = COMM.counts[uid];
-  const st = sharedStreak(COMM.days[ME.id], theirs);
+  const st = streakDays(f);
   const stat = (label, val, unit) => `<div class="stat"><div class="eyebrow">${label}</div><span class="big">${val}${unit?`<small>${unit}</small>`:""}</span></div>`;
   return `
   <button class="linkbtn" data-go="community" style="align-self:flex-start;padding:0">← Comunidad</button>
@@ -1981,10 +2008,256 @@ function viewFriend(uid){
   <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
     ${stat("Su racha", soloStreak(theirs), soloStreak(theirs)===1?" día":" días")}
     ${stat("Practicó en 30 días", daysInLast(theirs,30), " / 30")}
-    ${stat("Racha juntos", st, st===1?" día":" días")}
+    ${f.streak==="accepted"?stat("Racha juntos", st, st===1?" día":" días"):`<div class="stat" style="justify-content:space-between"><div class="eyebrow">Racha juntos</div>${f.streak==="pending"&&!f.streak_mine?`<div class="row" style="gap:6px"><button class="btn primary" data-act="streak-accept" data-id="${f.id}" style="padding:6px 12px">Aceptar</button><button class="btn ghost" data-act="streak-reject" data-id="${f.id}" style="padding:6px 10px">Ahora no</button></div>`:f.streak==="pending"?`<small class="muted">Invitación enviada</small>`:`<button class="btn" data-act="streak-invite" data-id="${f.id}" style="padding:6px 12px">${I.flame} Invitar</button>`}</div>`}
   </div>
   ${HEART_NOTE}
-  <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn ghost" data-act="friend-remove" data-id="${f.id}">Eliminar amigo</button></div>`;
+  <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn" data-act="cheer-open" data-id="${uid}">${I.heart} Enviar ánimo</button></div>
+  <div class="row" style="gap:14px">${f.streak==="accepted"?`<button class="linkbtn" data-act="streak-end" data-id="${f.id}" style="padding:0">Terminar racha juntos</button>`:""}<button class="linkbtn" data-act="friend-remove" data-id="${f.id}" style="padding:0;color:var(--bad)">Eliminar amigo</button></div>`;
+}
+
+
+/* =========================================================
+   AVISOS: lista dentro de la app, avisos en el celular,
+   preferencias, racha por invitación y ánimos
+   ========================================================= */
+const NOTIF = { items:[], seen:new Set(), loaded:false, loading:false, err:"", prefs:null, push:"unknown", timer:null };
+let PENDING_GO = (()=>{ try{ return new URLSearchParams(location.search).get("ir"); }catch(e){ return null; } })();
+const CHEERS = ["¡Vamos a practicar hoy!", "Estoy orando por ti.", "«Esforzaos y cobrad ánimo… Jehová tu Dios es el que va contigo» (Deuteronomio 31:6).", "Gracias por animarme a seguir en la Palabra."];
+const PREF_ROWS = [
+  ["amistad", "Amistad", "Solicitudes de amistad y cuando te aceptan"],
+  ["retos", "Retos 1 a 1", "Cuando te retan y cuando tu rival ya jugó"],
+  ["rachas", "Rachas juntos", "Invitaciones a racha y cuando tu racha está en riesgo (8 p. m.)"],
+  ["animos", "Ánimos de amigos", "Mensajes de ánimo que te envían tus amigos"]
+];
+const NAPI = {
+  async list(){ const { data, error } = await SB.from("notifications").select("id,actor,type,data,read_at,created_at").eq("user_id", ME.id).order("created_at", { ascending:false }).limit(50); if(error) throw error; return data || []; },
+  markRead(){ return API.rpc("mark_notifications_read"); },
+  async clear(){ const { error } = await SB.from("notifications").delete().eq("user_id", ME.id); if(error) throw error; },
+  async prefs(){ const { data, error } = await SB.from("notif_prefs").select("*").eq("user_id", ME.id).maybeSingle(); if(error) throw error; return data; },
+  async savePrefs(p){ const { error } = await SB.from("notif_prefs").upsert(Object.assign({}, p, { user_id: ME.id, updated_at: new Date().toISOString() })); if(error) throw error; },
+  vapidKey(){ return API.rpc("vapid_public_key"); },
+  async initPush(){ const { data, error } = await SB.functions.invoke("push", { body:{ init:true } }); if(error) throw error; return data && data.publicKey; },
+  saveSub(j){ return API.rpc("save_push_sub", { p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth }); },
+  removeSub(endpoint){ return API.rpc("remove_push_sub", { p_endpoint:endpoint }); },
+  inviteStreak(id){ return API.rpc("invite_streak", { p_id:id }); },
+  respondStreak(id, ok){ return API.rpc("respond_streak", { p_id:id, p_accept:ok }); },
+  endStreak(id){ return API.rpc("end_streak", { p_id:id }); },
+  cheer(uid, k){ return API.rpc("send_cheer", { p_user:uid, p_msg:k }); }
+};
+function notifError(e){
+  const m = String((e && e.message) || e || "");
+  if(/notif|push_|send_cheer|invite_streak|vapid|Could not find the (table|function)|does not exist/i.test(m)) return "Falta activar Avisos en Supabase (código SQL de Avisos).";
+  if(/demasiados_animos/.test(m)) return "Ya le enviaste 3 ánimos hoy a esta persona. Mañana puedes enviar más.";
+  if(/no_son_amigos/.test(m)) return "Solo puedes hacer esto con tus amigos.";
+  return commError(e);
+}
+const unreadCount = () => NOTIF.items.filter(n=>!n.read_at).length;
+
+async function loadNotifs(){
+  if(!cloudOn() || NOTIF.loading) return;
+  NOTIF.loading = true;
+  const before = unreadCount(), beforeTop = NOTIF.items[0] && NOTIF.items[0].id;
+  try{ NOTIF.items = (await NAPI.list()).sort((a,b)=>a.created_at<b.created_at?1:-1); NOTIF.err = ""; NOTIF.loaded = true; }
+  catch(e){ NOTIF.err = notifError(e); NOTIF.loaded = true; }
+  NOTIF.loading = false;
+  const changed = unreadCount()!==before || (NOTIF.items[0] && NOTIF.items[0].id)!==beforeTop;
+  if(changed && NOTIF.items.some(n=>!n.read_at && ["friend_request","friend_accepted","streak_invite","streak_accepted","duel_challenge","duel_result"].includes(n.type))) COMM.loaded = false;
+  if(changed && ["home","library","books","community","friend","profile","avisos","list","review","topic"].includes(VIEW.name)){
+    if(VIEW.name==="avisos") openAvisos(true); else render();
+  }
+}
+function startNotifs(){
+  stopNotifs(); if(!cloudOn()) return;
+  loadNotifs(); loadPrefs(); refreshPushState();
+  NOTIF.timer = setInterval(()=>{ if(document.visibilityState==="visible") loadNotifs(); }, 60000);
+}
+function stopNotifs(){ if(NOTIF.timer) clearInterval(NOTIF.timer); NOTIF.timer = null; }
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && cloudOn()){ loadNotifs(); if(VIEW.name==="community") reloadCommunity(); } });
+async function loadPrefs(){ try{ NOTIF.prefs = await NAPI.prefs(); }catch(e){ NOTIF.prefs = null; } if(VIEW.name==="profile") render(); }
+function myTz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Bogota"; }catch(e){ return "America/Bogota"; } }
+function prefsNow(){ return Object.assign({ amistad:true, retos:true, rachas:true, animos:true, recordatorio:false, hora:19 }, NOTIF.prefs || {}); }
+async function savePref(k, v){
+  const p = prefsNow(); p[k] = v; p.tz = myTz();
+  NOTIF.prefs = p;
+  try{ await NAPI.savePrefs({ amistad:p.amistad, retos:p.retos, rachas:p.rachas, animos:p.animos, recordatorio:p.recordatorio, hora:p.hora, tz:p.tz }); toast("Preferencias guardadas."); }
+  catch(e){ toast(notifError(e)); }
+  if(VIEW.name==="profile") render();
+}
+
+/* ----- Avisos en el celular ----- */
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && window.isSecureContext;
+function b64ToU8(s){ s = s.replace(/-/g,"+").replace(/_/g,"/"); s += "===".slice((s.length+3)%4); const r = atob(s); return Uint8Array.from(r, c=>c.charCodeAt(0)); }
+async function swReg(){ return navigator.serviceWorker.register("sw.js"); }
+async function refreshPushState(){
+  let st;
+  if(!pushSupported()) st = isIOS() && !isStandalone() ? "ios-install" : "unsupported";
+  else if(Notification.permission==="denied") st = "denied";
+  else{
+    try{ const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription();
+      st = sub && Notification.permission==="granted" && LS.get("lampara.push."+ME.id, null)===sub.endpoint ? "on" : "off"; }catch(e){ st = "off"; }
+  }
+  if(st!==NOTIF.push){ NOTIF.push = st; if(VIEW.name==="profile" || VIEW.name==="avisos") render(); }
+}
+async function enablePush(btn){
+  if(!pushSupported()){ refreshPushState(); toast(isIOS() ? "En iPhone, primero agrega Lámpara a tu pantalla de inicio." : "Este navegador no permite avisos. Prueba con Chrome."); return; }
+  if(btn){ btn.disabled = true; btn.textContent = "Activando…"; }
+  try{
+    const perm = await Notification.requestPermission();
+    if(perm!=="granted"){ NOTIF.push = perm==="denied" ? "denied" : "off"; render(); toast("No diste permiso para los avisos."); return; }
+    const reg = await swReg(); await navigator.serviceWorker.ready;
+    let key = await NAPI.vapidKey();
+    if(!key){ try{ key = await NAPI.initPush(); }catch(e){ key = null; } }
+    if(!key) throw new Error("Falta instalar la función de avisos (push) en Supabase.");
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:b64ToU8(key) });
+    await NAPI.saveSub(sub.toJSON());
+    LS.set("lampara.push."+ME.id, sub.endpoint);
+    NOTIF.push = "on"; render(); toast("¡Listo! Te llegarán los avisos a este dispositivo.");
+  }catch(e){ if(btn){ btn.disabled = false; } NOTIF.push = "off"; render(); toast("No se pudieron activar: " + notifError(e)); }
+}
+async function disablePush(){
+  try{ const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription();
+    if(sub){ try{ await NAPI.removeSub(sub.endpoint); }catch(e){} await sub.unsubscribe(); } }catch(e){}
+  LS.set("lampara.push."+ME.id, null); NOTIF.push = "off"; render(); toast("Ya no te llegarán avisos a este dispositivo.");
+}
+/* Al cerrar sesión, este dispositivo deja de recibir los avisos de esa cuenta */
+async function detachPushOnSignOut(){
+  if(!ME || !pushSupported()) return;
+  try{ const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription();
+    if(sub && LS.get("lampara.push."+ME.id, null)===sub.endpoint){ await NAPI.removeSub(sub.endpoint); await sub.unsubscribe(); LS.set("lampara.push."+ME.id, null); } }catch(e){}
+}
+if(pushSupported()){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+  navigator.serviceWorker.addEventListener("message", e=>{ if(e.data && e.data.ir==="avisos" && cloudOn()){ loadNotifs(); go("avisos"); } });
+}
+function pushCardHTML(compact){
+  const st = NOTIF.push;
+  if(st==="on") return compact ? "" : `<div class="row" style="gap:10px"><span class="chip ok">✓ Activados en este dispositivo</span><button class="linkbtn" data-act="push-off" style="padding:0">Desactivar</button></div>`;
+  let body, btn = "";
+  if(st==="ios-install") body = `En iPhone los avisos solo funcionan si agregas Lámpara a tu pantalla de inicio: toca <b>Compartir</b> <span aria-hidden="true">⬆︎</span> → <b>Agregar a inicio</b>, abre Lámpara desde ese ícono y vuelve aquí.`;
+  else if(st==="unsupported") body = `Este navegador no permite avisos. En Android usa Chrome; en computador, Chrome, Edge o Firefox.`;
+  else if(st==="denied") body = `Bloqueaste los avisos para Lámpara. Para activarlos, permite las notificaciones en los ajustes del navegador para este sitio y recarga la página.`;
+  else { body = `Recibe en este dispositivo los avisos de tus amigos, retos y rachas, aunque la app esté cerrada.`; btn = `<button class="btn primary" data-act="push-on">${I.bell} Activar avisos en este dispositivo</button>`; }
+  return `<div class="panel" style="display:flex;flex-direction:column;gap:10px;${compact?"background:var(--accent-soft);border-color:transparent":""}"><b>Avisos en el celular</b><p style="font-size:14px;line-height:1.5;margin:0">${body}</p>${btn?`<div class="row">${btn}</div>`:""}</div>`;
+}
+function notifPrefsPanel(){
+  if(!cloudOn()) return "";
+  const p = prefsNow();
+  const sw = (k, on) => `<label class="switch"><input type="checkbox" data-pref="${k}" ${on?"checked":""}><span></span></label>`;
+  const hours = Array.from({length:24}, (_,h)=>`<option value="${h}" ${p.hora===h?"selected":""}>${(h%12||12)}:00 ${h<12?"a. m.":"p. m."}</option>`).join("");
+  return `
+  <section class="panel" id="avisos-ajustes">
+    <h3 style="margin-bottom:6px">Avisos</h3>
+    <div style="margin:6px 0 12px">${pushCardHTML(false)}</div>
+    <p class="muted" style="font-size:13px;margin:0 0 6px">Elige qué avisos quieres recibir (en la app y en el celular):</p>
+    <div class="set-group">
+      ${PREF_ROWS.map(([k,l,d])=>`<div class="set-row"><div class="lbl"><b>${l}</b><small>${d}</small></div>${sw(k,p[k])}</div>`).join("")}
+      <div class="set-row"><div class="lbl"><b>Recordatorio diario</b><small>Si ese día aún no has practicado</small></div>
+        <div class="row" style="gap:8px;flex-wrap:nowrap">${p.recordatorio?`<select class="input" data-pref="hora" style="width:auto;padding:8px 10px">${hours}</select>`:""}${sw("recordatorio",p.recordatorio)}</div></div>
+    </div>
+  </section>`;
+}
+
+/* ----- Lista de avisos ----- */
+const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell" };
+function timeAgo(iso){
+  const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime())/1000));
+  if(s < 60) return "ahora"; const m = Math.round(s/60); if(m < 60) return `hace ${m} min`;
+  const h = Math.round(m/60); if(h < 24) return `hace ${h} h`; const d = Math.round(h/24); if(d < 7) return d===1 ? "ayer" : `hace ${d} días`;
+  return new Date(iso).toLocaleDateString("es", { day:"numeric", month:"short" });
+}
+function notifActions(n){
+  const f = n.actor && COMM.friends.find(x=>x.user_id===n.actor);
+  const btn = (act, label, id, primary) => `<button class="btn ${primary?"primary":"ghost"}" data-act="${act}" data-id="${esc(id||"")}" style="padding:6px 14px">${label}</button>`;
+  const done = t => `<span class="chip none">${t}</span>`;
+  const duel = n.data && n.data.duel && COMM.duels.find(d=>d.id===n.data.duel);
+  switch(n.type){
+    case "friend_request":
+      if(f && f.status==="pending" && f.incoming) return btn("friend-accept","Aceptar",f.id,true) + btn("friend-reject","Rechazar",f.id);
+      return f && f.status==="accepted" ? done("Ya son amigos") : "";
+    case "friend_accepted":
+      return f && f.status==="accepted" && !f.streak ? btn("streak-invite","Invitar a racha",f.id,true) : "";
+    case "streak_invite":
+      if(!f || f.status!=="accepted") return "";
+      if(f.streak==="pending" && !f.streak_mine) return btn("streak-accept","Aceptar racha",f.id,true) + btn("streak-reject","Ahora no",f.id);
+      if(f.streak==="accepted") return done("🔥 Racha activa");
+      if(f.streak==="pending") return done("Invitación enviada");
+      return btn("streak-invite","Invitar a racha",f.id,true);
+    case "streak_accepted": case "streak_risk": case "reminder":
+      return btn("start-due","Practicar ahora","",true);
+    case "duel_challenge": case "duel_result":
+      if(duel && myDuelTurn(duel)) return btn("duel-play","Jugar",duel.id,true);
+      return duel ? btn("duel-view","Ver resultado",duel.id) : "";
+    case "cheer":
+      return f && f.status==="accepted" ? btn("cheer-open","Responder con ánimo",n.actor) : "";
+  }
+  return "";
+}
+function notifRow(n){
+  const unread = NOTIF.seen.has(n.id);
+  const who = n.actor ? personAvatar(n.actor, 40) : `<span class="avatar" style="width:40px;height:40px;background:var(--accent-soft);color:var(--accent)">${I[NOTIF_ICON[n.type]]||I.bell}</span>`;
+  const acts = notifActions(n);
+  return `<div class="nrow${unread?" unread":""}">${who}<div style="min-width:0;display:flex;flex-direction:column;gap:3px">
+    <b style="font-size:15px">${esc((n.data&&n.data.title)||"Aviso")}</b>
+    ${n.data&&n.data.body?`<span style="font-size:14px;line-height:1.45${n.type==="cheer"?";font-family:var(--f-verse);font-size:16px":""}">${esc(n.data.body)}</span>`:""}
+    <small class="muted">${timeAgo(n.created_at)}</small>
+    ${acts?`<div class="row" style="gap:6px;margin-top:6px">${acts}</div>`:""}</div>
+    ${unread?`<i class="ndot" aria-label="Nuevo"></i>`:""}</div>`;
+}
+function openAvisos(keepSeen){
+  if(!keepSeen) NOTIF.seen = new Set(NOTIF.items.filter(n=>!n.read_at).map(n=>n.id));
+  else NOTIF.items.filter(n=>!n.read_at).forEach(n=>NOTIF.seen.add(n.id));
+  if(unreadCount()){ NOTIF.items.forEach(n=>{ if(!n.read_at) n.read_at = new Date().toISOString(); }); NAPI.markRead().catch(()=>{}); }
+  if(VIEW.name!=="avisos") go("avisos"); else render();
+}
+function viewAvisos(){
+  if(!cloudOn()) return `<div class="empty"><b>Los avisos necesitan conexión con la nube</b><span>Entra con tu cuenta para recibir avisos.</span></div>`;
+  if(!COMM.loaded && !COMM.loading) setTimeout(loadCommunity, 0);
+  const ids = NOTIF.items.map(n=>n.actor).filter(x=>x && !COMM.profiles[x]);
+  if(ids.length && !NOTIF._fetching){ NOTIF._fetching = true; API.profiles(ids).then(ps=>{ ps.forEach(p=>COMM.profiles[p.user_id]=p); NOTIF._fetching=false; if(VIEW.name==="avisos") render(); }).catch(()=>{ NOTIF._fetching=false; }); }
+  return `
+  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Avisos</span><h1 style="font-size:clamp(30px,5vw,46px)">Avisos</h1></div>
+    <div class="row" style="gap:6px">${NOTIF.items.length?`<button class="btn ghost" data-act="notif-clear" style="padding:6px 12px">Borrar todo</button>`:""}<button class="btn ghost" data-act="notif-settings" style="padding:6px 12px">Ajustes</button></div></section>
+  ${NOTIF.err?`<div class="result-bar bad"><span>${esc(NOTIF.err)}</span></div>`:""}
+  ${NOTIF.push!=="on" && NOTIF.push!=="unknown" ? pushCardHTML(true) : ""}
+  <div class="panel" style="padding:8px">${!NOTIF.loaded?`<div class="empty"><b>Cargando…</b></div>`:NOTIF.items.length?`<div class="vlist">${NOTIF.items.map(notifRow).join("")}</div>`:`<div class="empty"><b>No tienes avisos</b><span>Aquí verás solicitudes de amistad, retos, invitaciones a racha y ánimos de tus amigos.</span></div>`}</div>`;
+}
+
+/* ----- Ánimos ----- */
+function cheerModal(uid){
+  const name = personLabel(uid);
+  modal(`
+    <div class="spread"><h2 style="font-size:24px">Enviar ánimo a ${esc(name)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="font-size:14px">Le llegará como aviso. Puedes enviar hasta 3 al día a cada amigo.</p>
+    <div style="display:flex;flex-direction:column;gap:8px">${CHEERS.map((c,i)=>`<button type="button" class="goal" data-k="${i+1}" style="padding:14px;text-align:left"><span style="font-size:15px;line-height:1.45">${esc(c)}</span></button>`).join("")}</div>
+    <p id="chErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em"></p>`, sc=>{
+      sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+      sc.querySelectorAll(".goal").forEach(b=>b.onclick=async ()=>{
+        sc.querySelectorAll(".goal").forEach(x=>x.disabled=true);
+        try{ await NAPI.cheer(uid, Number(b.dataset.k)); closeModal(); toast(`Le enviaste ánimo a ${name}.`); }
+        catch(e){ sc.querySelector("#chErr").textContent = notifError(e); sc.querySelectorAll(".goal").forEach(x=>x.disabled=false); }
+      });
+    });
+}
+
+/* ----- Racha juntos por invitación ----- */
+async function streakAction(act, id, btn){
+  if(btn) btn.disabled = true;
+  try{
+    if(act==="invite"){ const r = await NAPI.inviteStreak(id); toast(r==="accepted" ? "¡Empezaron una racha juntos!" : "Invitación a racha enviada."); }
+    else if(act==="accept"){ await NAPI.respondStreak(id, true); toast("¡Empezaron una racha juntos!"); }
+    else if(act==="reject"){ await NAPI.respondStreak(id, false); }
+    else if(act==="end"){ await NAPI.endStreak(id); toast("Terminaron la racha juntos."); }
+    await reloadCommunity(); render();
+  }catch(e){ if(btn) btn.disabled = false; toast(notifError(e)); }
+}
+function streakDays(f){
+  if(!f || f.streak!=="accepted") return 0;
+  const since = f.streak_since || "0000-00-00";
+  const a = COMM.days[ME.id] || new Set(), b = COMM.days[f.user_id] || new Set();
+  return runOfDays(x => { const k = dayKey(x); return k >= since && a.has(k) && b.has(k); });
 }
 
 /* Preguntas del esgrima: libros, citas de versículos e historias */
@@ -2051,6 +2324,13 @@ async function handlePendingLink(){
       COMM.loaded = false; go("community"); toast(msg);
     }
   }catch(e){ toast(commError(e)); }
+}
+
+/* ?ir=avisos (al tocar un aviso del celular) */
+function handlePendingGo(){
+  if(PENDING_GO!=="avisos" || !cloudOn()) return;
+  PENDING_GO = null; try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  loadNotifs().then(()=>openAvisos());
 }
 
 /* Botón de amigos: agregar, aceptar, retar */
@@ -2511,8 +2791,9 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   persist(); cloudFlush(); flushFeedback();
   if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
   COMM.profile = null; COMM.loaded = false; ensureProfile();
+  NOTIF.items = []; NOTIF.loaded = false; NOTIF.prefs = null; startNotifs();
   if(fresh && !seeded){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
-  else { enterApp(); if(!PLACE) handlePendingLink(); }
+  else { enterApp(); if(!PLACE){ handlePendingLink(); handlePendingGo(); } }
 }
 async function localSignup(){
   const name=$("#suName").value.trim(), email=$("#suEmail").value.trim().toLowerCase(), pass=$("#suPass").value;
@@ -2556,10 +2837,10 @@ function signIn(acc, {fresh}){
 function renderWelcomeGoal(){ const keep=ME; ME=null; renderWelcome(); ME=keep; }
 async function signOut(){
   stopSpeech();
-  if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} try{ await SB.auth.signOut(); }catch(e){} }
+  if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} await detachPushOnSignOut(); try{ await SB.auth.signOut(); }catch(e){} }
   localSignOut();
 }
-function localSignOut(){ Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function localSignOut(){ stopNotifs(); Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
 async function deleteAccount(){
   if(ME.mode==="cloud" && SB){
     await API.removeAvatar();
@@ -2598,6 +2879,7 @@ function viewProfile(){
       <div class="row" style="gap:6px">${cloudOn()&&COMM.loaded?`<button class="chip acc" data-go="community" style="border:0;cursor:pointer">${friendsAccepted().length} ${friendsAccepted().length===1?"amigo":"amigos"}</button>`:""}${S.placed&&S.placed.level?`<span class="chip acc">Nivel inicial: ${esc(S.placed.level)}</span>`:""}<span class="chip ok">${learned} aprendidos</span><span class="chip none">racha ${streak()} ${streak()===1?"día":"días"}</span></div></div>
   </section>
   ${profileCommunityPanel()}
+  ${notifPrefsPanel()}
   <section class="panel">
     <h3 style="margin-bottom:6px">Práctica</h3>
     <div class="set-group">
@@ -2631,7 +2913,7 @@ document.addEventListener("click", e=>{
 
   if(t.dataset.mode){ SESSION.mode = t.dataset.mode; S.prefs.mode = t.dataset.mode; persist(); render(); return; }
   if(t.dataset.grade){ gradeText(parseFloat(t.dataset.grade)); return; }
-  if(t.dataset.go){ go(t.dataset.go); return; }
+  if(t.dataset.go){ if(t.dataset.go==="avisos") openAvisos(); else go(t.dataset.go); return; }
   const a = t.dataset.act;
   if(!a && t.dataset.list){ go(t.dataset.list==="rev"?"review":"list",{list:t.dataset.list}); return; }
   const id = t.dataset.id;
@@ -2643,6 +2925,15 @@ document.addEventListener("click", e=>{
     case "save-topic": { const tp=TOPIC_MAP[t.dataset.id]; let l=S.lists.find(x=>x.topic===tp.id); if(!l){ l={ id:"l-"+uid(), name:tp.name, ids:tp.ids.slice(), topic:tp.id }; S.lists.push(l); persist(); toast(`“${tp.name}” se guardó en tus listas.`); } else toast("Ya tienes este tema en tus listas."); go("list",{list:l.id}); break; }
     case "copy-link": { const link=t.dataset.link; (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>toast("Enlace copiado.")).catch(()=>{ toast("Copia este enlace: "+link); }); break; }
     case "friend-search": searchFriend(); break;
+    case "push-on": enablePush(t); break;
+    case "push-off": disablePush(); break;
+    case "notif-clear": confirmBox("¿Borrar todos los avisos?", "Se borran de la lista. No afecta a tus amigos ni a tus retos.", "Borrar", ()=>NAPI.clear().then(()=>{ NOTIF.items=[]; render(); }).catch(e=>toast(notifError(e)))); break;
+    case "notif-settings": go("profile"); setTimeout(()=>{ const el=$("#avisos-ajustes"); if(el) el.scrollIntoView({behavior:"smooth"}); }, 50); break;
+    case "streak-invite": streakAction("invite", t.dataset.id, t); break;
+    case "streak-accept": streakAction("accept", t.dataset.id, t); break;
+    case "streak-reject": streakAction("reject", t.dataset.id, t); break;
+    case "streak-end": confirmBox("¿Terminar la racha juntos?", "La racha vuelve a cero. Siguen siendo amigos y pueden empezar otra cuando quieran.", "Terminar", ()=>streakAction("end", t.dataset.id)); break;
+    case "cheer-open": cheerModal(t.dataset.id); break;
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "friend-accept": friendAction("accept", t.dataset.id, t); break;
     case "friend-reject": friendAction("reject", t.dataset.id, t); break;
@@ -2778,7 +3069,7 @@ document.addEventListener("click", e=>{
     }
   }
 });
-document.addEventListener("change", e=>{ if(e.target && e.target.id==="avatarInput") onAvatarPicked(e.target); });
+document.addEventListener("change", e=>{ if(e.target && e.target.id==="avatarInput") onAvatarPicked(e.target); if(e.target && e.target.dataset && e.target.dataset.pref){ const k=e.target.dataset.pref; savePref(k, k==="hora" ? Number(e.target.value) : e.target.checked); } });
 document.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target && e.target.tagName==="INPUT"){ const f=e.target.closest("[data-enter]"); if(f){ e.preventDefault(); const b=f.querySelector(`[data-act="${f.dataset.enter}"]`); if(b) b.click(); return; } }
   if((e.key==="Enter"||e.key===" ") && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("side-foot")){ e.preventDefault(); go("profile"); return; }
