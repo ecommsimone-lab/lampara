@@ -304,6 +304,13 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
   .wel-art{display:none}
   .wel-main{padding:28px 20px calc(24px + env(safe-area-inset-bottom,0px));min-height:100%}
 }
+/* ---------- Comunidad y temas ---------- */
+a.btn{text-decoration:none}
+.input::placeholder{text-transform:none}
+.drow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px}
+.drow:hover{background:var(--surface-2)}
+.drow b{display:block}
+@media (max-width:560px){ .lists-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px} .lcard .cv span{font-size:34px} }
 /* ---------- Política ---------- */
 .policy{display:flex;flex-direction:column;gap:12px;max-width:68ch;line-height:1.6}
 .policy h1{font-size:clamp(28px,5vw,40px)}
@@ -475,6 +482,7 @@ const I = {
   lamp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z" opacity=".85"/></svg>',
   book:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></svg>',
   chat:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4"/></svg>',
+  users:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 5.5 5.8"/></svg>',
   user:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   cloud:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/></svg>'
 };
@@ -587,6 +595,7 @@ const getList = id => listDefs().find(l=>l.id===id);
    ========================================================= */
 function applyResult(id, score){
   const now = Date.now();
+  setTimeout(markToday, 0);
   const p = S.progress[id] || { box:0, due:now, reps:0, lapses:0, last:0, introduced:now, hist:[] };
   const wasDue = p.reps===0 || p.due<=now;
   let outcome;
@@ -713,6 +722,7 @@ function render(){
         <button data-act="start-due">${I.play}<span>Practicar</span></button>
         ${navItem("books","Libros",I.book)}
         ${navItem("library","Biblioteca",I.lib)}
+        ${navItem("community","Comunidad",I.users)}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
         <button data-act="feedback">${I.chat}<span>Enviar comentario</span></button>
@@ -723,27 +733,30 @@ function render(){
         <button data-act="new-list"><span class="cover" style="background:var(--surface-2);color:var(--muted)">${I.plus}</span><span class="muted">Nueva lista</span></button>
       </div>
       <div class="side-foot" data-go="profile" role="button" tabindex="0" aria-label="Abrir perfil">
-        <div class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</div>
-        <div class="who"><b>${esc(ME.name)}</b><small>${esc(ME.email||"Cuenta en este dispositivo")}</small></div>
+        ${myAvatar(32)}
+        <div class="who"><b>${esc(displayName())}</b><small>${esc(ME.email||"Cuenta en este dispositivo")}</small></div>
       </div>
     </aside>
     <main><div class="wrap" id="view"></div></main>
     <nav class="tabbar">
       ${navItem("home","Inicio",I.home)}
-      <button data-act="start-due">${I.play}<span>Practicar</span></button>
-      ${navItem("books","Libros",I.book)}
       ${navItem("library","Biblioteca",I.lib)}
+      ${navItem("books","Libros",I.book)}
+      ${navItem("community","Comunidad",I.users)}
       ${navItem("profile","Perfil",I.user)}
     </nav>
   </div>`;
   const v = $("#view");
-  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto"><span class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</span></button></div></div>`;
+  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto">${myAvatar(32)}</button></div></div>`;
   if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
   else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
   else if(VIEW.name==="list") v.innerHTML = mtop + viewList(VIEW.list);
   else if(VIEW.name==="review") v.innerHTML = mtop + viewList("rev");
   else if(VIEW.name==="profile") v.innerHTML = mtop + viewProfile();
   else if(VIEW.name==="books") v.innerHTML = mtop + viewBooks();
+  else if(VIEW.name==="topic") v.innerHTML = mtop + viewTopic(VIEW.topic);
+  else if(VIEW.name==="community") v.innerHTML = mtop + viewCommunity();
+  const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
 }
 
@@ -875,9 +888,11 @@ function viewLibrary(){
   const lists = listDefs();
   return `
   <section class="spread">
-    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Biblioteca</span><h1 style="font-size:clamp(30px,5vw,46px)">Tus listas de práctica</h1></div>
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Explora y practica</span><h1 style="font-size:clamp(30px,5vw,46px)">Biblioteca</h1></div>
     <div class="row"><button class="btn" data-act="new-list">${I.plus} Nueva lista</button><button class="btn primary" data-act="add-verse">${I.plus} Agregar versículo</button></div>
   </section>
+  ${topicsSection()}
+  <section style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Tus colecciones</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Tus listas</h2></section>
   <section class="lists-grid">
     ${lists.map(l=>`<button class="lcard" data-list="${l.id}"><div class="cv ${l.cv}"><span>${esc(l.glyph)}</span></div><div><b>${esc(l.name)}</b><br><small>${l.ids.length} ${l.ids.length===1?"versículo":"versículos"}</small></div></button>`).join("")}
   </section>
@@ -949,6 +964,7 @@ function pickFor(source, listId){
   }
   if(source==="active") return buildQueue(activeIds(),{grow:true,size});
   if(source==="sug") return buildQueue(activeIds().filter(id=>!S.favs.includes(id)),{grow:true,size});
+  if(String(source).startsWith("topic:")){ const t = TOPIC_MAP[String(source).slice(6)]; return t ? buildQueue(t.ids, { size }) : []; }
   const l = getList(listId||source);
   return l ? buildQueue(l.ids,{size}) : [];
 }
@@ -1569,6 +1585,7 @@ function answerBook(ok){
   const q = BQ.qs[BQ.i]; if(BQ.answered) return;
   BQ.answered = true; q.ok = ok; if(ok) BQ.score++;
   if(BQ.kind==="books") recordBook(q.type==="order"?q.answer:q.books, ok);
+  markToday();
   const k = todayKey(); const L = S.log[k] || { n:0, sum:0 }; L.n++; L.sum += ok?1:0; S.log[k] = L;
   persist();
   render();
@@ -1576,7 +1593,9 @@ function answerBook(ok){
 function renderBookQuiz(){
   const B = BQ, total = B.qs.length;
   let body = "";
-  if(B.i >= total){
+  if(B.kind==="duel" && B.i >= total){
+    body = B.saving ? `<div class="empty"><b>Guardando tu resultado…</b></div>` : `${B.err?`<div class="result-bar bad"><span>${esc(B.err)}</span></div>`:""}${duelResultHTML(B.duel)}<div class="row"><button class="btn primary lg" data-act="bq-exit">Volver a Comunidad</button></div>`;
+  } else if(B.i >= total){
     const pct = Math.round(B.score/total*100);
     const wrong = B.qs.filter(q=>!q.ok);
     if(B.kind==="trivia"){ S.triviaRecent = B.qs.map(q=>q.idx).concat(S.triviaRecent||[]).slice(0,20); persist(); }
@@ -1604,7 +1623,7 @@ function renderBookQuiz(){
     const fb = B.answered ? `<div class="result-bar ${q.ok?"ok":"bad"}" style="padding:12px 16px"><span><b style="font-size:inherit">${q.ok?"¡Correcto!":"No es correcto."}</b> ${esc(q.explain)}</span></div><div class="row"><span style="flex:1"></span><button class="btn primary" id="bqNext" data-act="bq-next">${B.i<total-1?"Siguiente":"Ver resultados"}</button></div>` : "";
     body = `
       <div class="progress"><i style="width:${B.i/total*100}%"></i></div>
-      <div class="spread"><div class="phase-tag"><span class="chip acc">${B.kind==="trivia"?"Cuestionario bíblico":"Libros de la Biblia"}</span><span class="chip none mono">${B.i+1} / ${total}</span></div></div>
+      <div class="spread"><div class="phase-tag"><span class="chip acc">${B.kind==="duel"?"Esgrima bíblico":B.kind==="trivia"?"Cuestionario bíblico":"Libros de la Biblia"}</span><span class="chip none mono">${B.i+1} / ${total}</span></div></div>
       <div class="q-card"><p style="font-size:clamp(20px,3vw,26px);line-height:1.35;font-weight:600">${q.prompt}</p>${opts}${fb}</div>`;
   }
   root.innerHTML = `<main style="min-height:100%"><div class="stage"><div class="spread"><button class="btn ghost" data-act="bq-exit">${I.x} Salir</button></div>${body}</div></main>`;
@@ -1635,6 +1654,386 @@ function viewBooks(){
   <section style="display:flex;flex-direction:column;gap:10px"><h3>Antiguo Testamento · 39 libros</h3><div class="lists-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${DIVS.filter(d=>d.t==="AT").map(divCard).join("")}</div></section>
   <section style="display:flex;flex-direction:column;gap:10px"><h3>Nuevo Testamento · 27 libros</h3><div class="lists-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${DIVS.filter(d=>d.t==="NT").map(divCard).join("")}</div></section>
   <p class="muted" style="font-size:12px">Toca un grupo para practicar solo esos libros.</p>`;
+}
+
+/* =========================================================
+   TEMAS (colecciones tipo playlist)
+   Versículos adicionales: transcritos de memoria, pendientes de
+   verificar con la base oficial de la RVR1960.
+   ========================================================= */
+const EXTRA_VERSES = [
+  ["2co-13-14","2 Corintios 13:14","La gracia del Señor Jesucristo, el amor de Dios, y la comunión del Espíritu Santo sean con todos vosotros. Amén.","Trinidad"],
+  ["jn-1-14","Juan 1:14","Y aquel Verbo fue hecho carne, y habitó entre nosotros (y vimos su gloria, gloria como del unigénito del Padre), lleno de gracia y de verdad.","Trinidad"],
+  ["dt-6-4","Deuteronomio 6:4","Oye, Israel: Jehová nuestro Dios, Jehová uno es.","Trinidad"],
+  ["col-2-9","Colosenses 2:9","Porque en él habita corporalmente toda la plenitud de la Deidad,","Trinidad"],
+  ["jn-10-30","Juan 10:30","Yo y el Padre uno somos.","Trinidad"],
+  ["mt-3-16-17","Mateo 3:16-17","Y Jesús, después que fue bautizado, subió luego del agua; y he aquí los cielos le fueron abiertos, y vio al Espíritu de Dios que descendía como paloma, y venía sobre él. Y hubo una voz de los cielos, que decía: Este es mi Hijo amado, en quien tengo complacencia.","Trinidad"],
+  ["hch-4-12","Hechos 4:12","Y en ningún otro hay salvación; porque no hay otro nombre bajo el cielo, dado a los hombres, en que podamos ser salvos.","Salvación"],
+  ["1co-15-3-4","1 Corintios 15:3-4","Porque primeramente os he enseñado lo que asimismo recibí: Que Cristo murió por nuestros pecados, conforme a las Escrituras; y que fue sepultado, y que resucitó al tercer día, conforme a las Escrituras;","Salvación"],
+  ["tit-3-5","Tito 3:5","nos salvó, no por obras de justicia que nosotros hubiéramos hecho, sino por su misericordia, por el lavamiento de la regeneración y por la renovación en el Espíritu Santo,","Salvación"],
+  ["jn-1-12","Juan 1:12","Mas a todos los que le recibieron, a los que creen en su nombre, les dio potestad de ser hechos hijos de Dios;","Salvación"],
+  ["hb-11-6","Hebreos 11:6","Pero sin fe es imposible agradar a Dios; porque es necesario que el que se acerca a Dios crea que le hay, y que es galardonador de los que le buscan.","Fe"],
+  ["rom-5-1","Romanos 5:1","Justificados, pues, por la fe, tenemos paz para con Dios por medio de nuestro Señor Jesucristo;","Fe"],
+  ["rom-10-17","Romanos 10:17","Así que la fe es por el oír, y el oír, por la palabra de Dios.","Fe"],
+  ["1p-2-9","1 Pedro 2:9","Mas vosotros sois linaje escogido, real sacerdocio, nación santa, pueblo adquirido por Dios, para que anunciéis las virtudes de aquel que os llamó de las tinieblas a su luz admirable;","Identidad"],
+  ["rom-8-1","Romanos 8:1","Ahora, pues, ninguna condenación hay para los que están en Cristo Jesús, los que no andan conforme a la carne, sino conforme al Espíritu.","Identidad"],
+  ["ef-2-10","Efesios 2:10","Porque somos hechura suya, creados en Cristo Jesús para buenas obras, las cuales Dios preparó de antemano para que anduviésemos en ellas.","Identidad"],
+  ["jn-14-27","Juan 14:27","La paz os dejo, mi paz os doy; yo no os la doy como el mundo la da. No se turbe vuestro corazón, ni tenga miedo.","Paz"],
+  ["is-26-3","Isaías 26:3","Tú guardarás en completa paz a aquel cuyo pensamiento en ti persevera; porque en ti ha confiado.","Paz"],
+  ["mt-6-34","Mateo 6:34","Así que, no os afanéis por el día de mañana, porque el día de mañana traerá su afán. Basta a cada día su propio mal.","Paz"],
+  ["jer-33-3","Jeremías 33:3","Clama a mí, y yo te responderé, y te enseñaré cosas grandes y ocultas que tú no conoces.","Oración"],
+  ["1jn-5-14","1 Juan 5:14","Y esta es la confianza que tenemos en él, que si pedimos alguna cosa conforme a su voluntad, él nos oye.","Oración"],
+  ["mt-6-6","Mateo 6:6","Mas tú, cuando ores, entra en tu aposento, y cerrada la puerta, ora a tu Padre que está en secreto; y tu Padre que ve en lo secreto te recompensará en público.","Oración"],
+  ["stg-5-16","Santiago 5:16","Confesaos vuestras ofensas unos a otros, y orad unos por otros, para que seáis sanados. La oración eficaz del justo puede mucho.","Oración"],
+  ["ef-4-32","Efesios 4:32","Antes sed benignos unos con otros, misericordiosos, perdonándoos unos a otros, como Dios también os perdonó a vosotros en Cristo.","Perdón"],
+  ["col-3-13","Colosenses 3:13","soportándoos unos a otros, y perdonándoos unos a otros si alguno tuviere queja contra otro. De la manera que Cristo os perdonó, así también hacedlo vosotros.","Perdón"],
+  ["sal-103-12","Salmos 103:12","Cuanto está lejos el oriente del occidente, hizo alejar de nosotros nuestras rebeliones.","Perdón"],
+  ["mt-6-14","Mateo 6:14","Porque si perdonáis a los hombres sus ofensas, os perdonará también a vosotros vuestro Padre celestial;","Perdón"],
+  ["is-1-18","Isaías 1:18","Venid luego, dice Jehová, y estemos a cuenta: si vuestros pecados fueren como la grana, como la nieve serán emblanquecidos; si fueren rojos como el carmesí, vendrán a ser como blanca lana.","Perdón"],
+  ["rom-8-38-39","Romanos 8:38-39","Por lo cual estoy seguro de que ni la muerte, ni la vida, ni ángeles, ni principados, ni potestades, ni lo presente, ni lo por venir, ni lo alto, ni lo profundo, ni ninguna otra cosa creada nos podrá separar del amor de Dios, que es en Cristo Jesús Señor nuestro.","Amor"],
+  ["1jn-4-19","1 Juan 4:19","Nosotros le amamos a él, porque él nos amó primero.","Amor"],
+  ["jer-31-3","Jeremías 31:3","Jehová se manifestó a mí hace ya mucho tiempo, diciendo: Con amor eterno te he amado; por tanto, te prolongué mi misericordia.","Amor"],
+  ["2tim-1-7","2 Timoteo 1:7","Porque no nos ha dado Dios espíritu de cobardía, sino de poder, de amor y de dominio propio.","Valentía"],
+  ["prov-1-7","Proverbios 1:7","El principio de la sabiduría es el temor de Jehová; los insensatos desprecian la sabiduría y la enseñanza.","Sabiduría"],
+  ["prov-9-10","Proverbios 9:10","El temor de Jehová es el principio de la sabiduría, y el conocimiento del Santísimo es la inteligencia.","Sabiduría"],
+  ["rom-15-13","Romanos 15:13","Y el Dios de esperanza os llene de todo gozo y paz en el creer, para que abundéis en esperanza por el poder del Espíritu Santo.","Esperanza"],
+  ["ap-21-4","Apocalipsis 21:4","Enjugará Dios toda lágrima de los ojos de ellos; y ya no habrá muerte, ni habrá más llanto, ni clamor, ni dolor; porque las primeras cosas pasaron.","Esperanza"],
+  ["jn-14-26","Juan 14:26","Mas el Consolador, el Espíritu Santo, a quien el Padre enviará en mi nombre, él os enseñará todas las cosas, y os recordará todo lo que yo os he dicho.","Espíritu Santo"],
+  ["rom-8-26","Romanos 8:26","Y de igual manera el Espíritu nos ayuda en nuestra debilidad; pues qué hemos de pedir como conviene, no lo sabemos, pero el Espíritu mismo intercede por nosotros con gemidos indecibles.","Espíritu Santo"],
+  ["1co-6-19","1 Corintios 6:19","¿O ignoráis que vuestro cuerpo es templo del Espíritu Santo, el cual está en vosotros, el cual tenéis de Dios, y que no sois vuestros?","Espíritu Santo"],
+  ["1p-3-15","1 Pedro 3:15","sino santificad a Dios el Señor en vuestros corazones, y estad siempre preparados para presentar defensa con mansedumbre y reverencia ante todo el que os demande razón de la esperanza que hay en vosotros;","Misión"],
+  ["mr-16-15","Marcos 16:15","Y les dijo: Id por todo el mundo y predicad el evangelio a toda criatura.","Misión"],
+  ["jos-24-15","Josué 24:15","Y si mal os parece servir a Jehová, escogeos hoy a quién sirváis; si a los dioses a quienes sirvieron vuestros padres, cuando estuvieron al otro lado del río, o a los dioses de los amorreos en cuya tierra habitáis; pero yo y mi casa serviremos a Jehová.","Familia"],
+  ["ef-6-1","Efesios 6:1","Hijos, obedeced en el Señor a vuestros padres, porque esto es justo.","Familia"],
+  ["ef-5-25","Efesios 5:25","Maridos, amad a vuestras mujeres, así como Cristo amó a la iglesia, y se entregó a sí mismo por ella,","Familia"],
+  ["sal-127-1","Salmos 127:1","Si Jehová no edificare la casa, en vano trabajan los que la edifican; si Jehová no guardare la ciudad, en vano vela la guardia.","Familia"],
+  ["ex-20-12","Éxodo 20:12","Honra a tu padre y a tu madre, para que tus días se alarguen en la tierra que Jehová tu Dios te da.","Familia"]
+];
+EXTRA_VERSES.forEach(([id,ref,text,theme],i)=>{ SUG_MAP[id] = { id, ref, text, theme, order: 1000+i, sug:true, extra:true }; });
+
+const TOPICS = [
+  { id:"trinidad", name:"La Trinidad", desc:"Un solo Dios en tres personas: Padre, Hijo y Espíritu Santo.", cv:"cv-c3", glyph:"△", ids:["dt-6-4","mt-28-19-20","2co-13-14","mt-3-16-17","jn-1-1","jn-1-14","jn-10-30","col-2-9"] },
+  { id:"salvacion", name:"Salvación y evangelio", desc:"Qué hizo Cristo y cómo somos salvos: por gracia, por medio de la fe.", cv:"cv-sug", glyph:"✝", ids:["rom-3-23","rom-6-23","jn-3-16","rom-5-8","1co-15-3-4","ef-2-8-9","tit-3-5","rom-10-9","jn-1-12","hch-4-12","jn-14-6"] },
+  { id:"fe", name:"Fe y gracia", desc:"Confiar en Dios y descansar en su gracia.", cv:"cv-c4", glyph:"F", ids:["hb-11-1","hb-11-6","rom-10-17","rom-5-1","ef-2-8-9","2co-12-9","gal-2-20"] },
+  { id:"identidad", name:"Identidad en Cristo", desc:"Quién eres ahora que estás en Cristo.", cv:"cv-fav", glyph:"♡", ids:["2co-5-17","gal-2-20","jn-1-12","1p-2-9","rom-8-1","ef-2-10","sal-139-14"] },
+  { id:"paz", name:"Paz y ansiedad", desc:"Promesas para los días de preocupación.", cv:"cv-c2", glyph:"~", ids:["flp-4-6-7","1p-5-7","mt-11-28","jn-14-27","is-26-3","mt-6-34","jn-16-33","sal-46-1"] },
+  { id:"oracion", name:"Oración", desc:"Hablar con Dios con confianza.", cv:"cv-rev", glyph:"O", ids:["mt-7-7","jer-33-3","mt-6-6","1jn-5-14","flp-4-6-7","1ts-5-16-18","stg-5-16"] },
+  { id:"perdon", name:"Perdón", desc:"El perdón que recibimos y el que damos.", cv:"cv-c1", glyph:"P", ids:["1jn-1-9","sal-103-12","is-1-18","ef-4-32","col-3-13","mt-6-14"] },
+  { id:"amor", name:"El amor de Dios", desc:"Nada nos puede separar de su amor.", cv:"cv-c1", glyph:"A", ids:["jn-3-16","rom-5-8","1jn-4-8","1jn-4-19","jer-31-3","rom-8-38-39","lm-3-22-23","1co-13-4"] },
+  { id:"valentia", name:"Fortaleza y valentía", desc:"Para cuando necesitas ánimo.", cv:"cv-sug", glyph:"V", ids:["jos-1-9","is-41-10","dt-31-6","2tim-1-7","flp-4-13","ef-6-10","is-40-31","sal-27-1"] },
+  { id:"palabra", name:"La Palabra y la sabiduría", desc:"El valor de la Escritura y del temor de Dios.", cv:"cv-c4", glyph:"S", ids:["sal-119-105","sal-119-11","2tim-3-16","hb-4-12","prov-1-7","prov-9-10","prov-3-5-6","stg-1-5"] },
+  { id:"esperanza", name:"Esperanza", desc:"Lo que Dios ha prometido para el futuro.", cv:"cv-c2", glyph:"E", ids:["jer-29-11","rom-8-28","rom-15-13","jn-11-25","ap-21-4","lm-3-22-23","is-40-31"] },
+  { id:"espiritu", name:"El Espíritu Santo", desc:"Quién es y qué hace en el creyente.", cv:"cv-c3", glyph:"✦", ids:["jn-14-26","hch-1-8","rom-8-26","1co-6-19","gal-5-22-23"] },
+  { id:"mision", name:"Misión y testimonio", desc:"Compartir el evangelio con otros.", cv:"cv-rev", glyph:"M", ids:["mt-28-19-20","mr-16-15","hch-1-8","rom-1-16","mt-5-16","1p-3-15"] },
+  { id:"familia", name:"Familia", desc:"Dios en el hogar y en las relaciones familiares.", cv:"cv-fav", glyph:"H", ids:["jos-24-15","sal-127-1","ex-20-12","ef-6-1","ef-5-25","prov-22-6"] }
+];
+const TOPIC_MAP = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
+let TOPIC_QUERY = "";
+function topicMatches(t, q){
+  if(!q) return true;
+  const n = norm(q);
+  if(norm(t.name+" "+t.desc).includes(n)) return true;
+  return t.ids.some(id=>{ const v=verse(id); return v && (norm(v.ref).includes(n) || norm(v.text).includes(n)); });
+}
+function topicCards(q){
+  const list = TOPICS.filter(t=>topicMatches(t,q));
+  if(!list.length) return `<div class="empty"><b>No encontramos temas con “${esc(q)}”</b><span>Prueba con otra palabra, como paz, perdón o salvación.</span></div>`;
+  return `<div class="lists-grid">${list.map(t=>{ const done=t.ids.filter(id=>status(id)==="ok").length; return `<button class="lcard" data-act="open-topic" data-id="${t.id}"><div class="cv ${t.cv}"><span>${esc(t.glyph)}</span></div><div><b>${esc(t.name)}</b><br><small>${t.ids.length} versículos${done?` · ${done} aprendidos`:""}</small></div></button>`; }).join("")}</div>`;
+}
+function topicsSection(){
+  return `
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Explorar</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Temas</h2></div></div>
+    <input class="input" id="topicSearch" type="search" placeholder="Buscar un tema o versículo: paz, Trinidad, Juan 3…" value="${esc(TOPIC_QUERY)}" autocomplete="off" style="max-width:520px">
+    <div id="topicResults">${topicCards(TOPIC_QUERY)}</div>
+  </section>`;
+}
+function viewTopic(id){
+  const t = TOPIC_MAP[id];
+  if(!t) return `<div class="empty"><b>Este tema no existe</b><button class="btn" data-go="library">Volver a la biblioteca</button></div>`;
+  const done = t.ids.filter(x=>status(x)==="ok").length;
+  return `
+  <section class="lib-head">
+    <div class="cover-xl ${t.cv}"><span class="glyph">${esc(t.glyph)}</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <span class="eyebrow">Tema</span><h1>${esc(t.name)}</h1>
+      <p class="muted" style="max-width:60ch">${esc(t.desc)}</p>
+      <div class="mono muted" style="font-size:12px">${t.ids.length} versículos · ${done} aprendidos</div>
+    </div>
+  </section>
+  <section class="row">
+    <button class="play" data-act="play-topic" data-id="${t.id}" aria-label="Practicar este tema">${I.play}</button>
+    <div style="display:flex;flex-direction:column"><b>Practicar este tema</b><small class="muted">Se suman a tu plan de repaso</small></div>
+    <span style="flex:1"></span>
+    <button class="btn" data-act="save-topic" data-id="${t.id}">${I.listAdd} Guardar como lista</button>
+  </section>
+  <section class="panel" style="padding:10px"><div class="vlist">${t.ids.map((vid,i)=>verseRow(vid,i,null)).join("")}</div></section>
+  <p class="muted" style="font-size:12px">Algunos textos de este tema se verificarán con la base oficial de la Reina-Valera 1960.</p>
+  ${noticeHTML()}`;
+}
+
+/* =========================================================
+   COMUNIDAD: perfil visible, compañero de racha y esgrima
+   ========================================================= */
+const COMM = { profile:null, partners:[], partnerProfile:null, days:{}, duels:[], profiles:{}, loaded:false, loading:false, err:"" };
+let PENDING_LINK = (()=>{ try{ const q=new URLSearchParams(location.search); const d=q.get("duelo"), c=q.get("companero"); return d?{type:"duel",code:d}:c?{type:"partner",code:c}:null; }catch(e){ return null; } })();
+function cloudOn(){ return !!(SB && ME && ME.mode==="cloud"); }
+function shortCode(n=6){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; const r=crypto.getRandomValues(new Uint32Array(n)); let s=""; for(const x of r) s+=a[x%a.length]; return s; }
+function appLink(param, code){ return location.origin + location.pathname + "?" + param + "=" + encodeURIComponent(code); }
+function dayKey(d){ return todayKey(d); }
+function displayName(){ return (COMM.profile && COMM.profile.display_name) || ME.name; }
+function avatarHTML(name, color, url, size=32){
+  const s = `width:${size}px;height:${size}px;font-size:${Math.round(size*0.42)}px`;
+  if(url) return `<span class="avatar" style="${s};background:${color||"#888"};overflow:hidden;position:relative">${esc((name||"?").charAt(0).toUpperCase())}<img src="${esc(url)}" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></span>`;
+  return `<span class="avatar" style="${s};background:${color||"#888"}">${esc((name||"?").charAt(0).toUpperCase())}</span>`;
+}
+function myAvatar(size){ return avatarHTML(displayName(), ME.color, COMM.profile && COMM.profile.avatar_url, size); }
+
+const API = {
+  async myProfile(){ const { data, error } = await SB.from("profiles").select("user_id,display_name,avatar_url").eq("user_id", ME.id).maybeSingle(); if(error) throw error; return data; },
+  async saveProfile(p){ const { error } = await SB.from("profiles").upsert({ user_id: ME.id, display_name: p.display_name, avatar_url: p.avatar_url || null, updated_at: new Date().toISOString() }); if(error) throw error; },
+  async profiles(ids){ ids = [...new Set(ids.filter(Boolean))]; if(!ids.length) return []; const { data, error } = await SB.from("profiles").select("user_id,display_name,avatar_url").in("user_id", ids); if(error) throw error; return data || []; },
+  async uploadAvatar(blob){ const path = ME.id + "/avatar.jpg"; const { error } = await SB.storage.from("avatars").upload(path, blob, { upsert:true, contentType:"image/jpeg", cacheControl:"3600" }); if(error) throw error; const { data } = SB.storage.from("avatars").getPublicUrl(path); return data.publicUrl + "?v=" + Date.now(); },
+  async removeAvatar(){ try{ await SB.storage.from("avatars").remove([ME.id + "/avatar.jpg"]); }catch(e){} },
+  async markDay(day){ const { error } = await SB.from("activity").upsert({ user_id: ME.id, day }, { onConflict:"user_id,day", ignoreDuplicates:true }); if(error) throw error; },
+  async days(uids, since){ const { data, error } = await SB.from("activity").select("user_id,day").in("user_id", uids).gte("day", since); if(error) throw error; return data || []; },
+  async myPartners(){ const { data, error } = await SB.from("partners").select("id,code,user_a,user_b,created_at").or(`user_a.eq.${ME.id},user_b.eq.${ME.id}`).order("created_at", { ascending:false }); if(error) throw error; return data || []; },
+  async createInvite(){ const { data, error } = await SB.from("partners").insert({ code: shortCode(), user_a: ME.id }).select("id,code,user_a,user_b,created_at").single(); if(error) throw error; return data; },
+  async joinPartner(code){ const { data, error } = await SB.rpc("join_partner", { p_code: code }); if(error) throw error; return data; },
+  async leavePartner(id){ const { error } = await SB.from("partners").delete().eq("id", id); if(error) throw error; },
+  async createDuel(questions){ const { data, error } = await SB.from("duels").insert({ code: shortCode(), creator: ME.id, questions }).select("*").single(); if(error) throw error; return data; },
+  async joinDuel(code){ const { data, error } = await SB.rpc("join_duel", { p_code: code }); if(error) throw error; return data; },
+  async getDuel(id){ const { data, error } = await SB.from("duels").select("*").eq("id", id).maybeSingle(); if(error) throw error; return data; },
+  async submitDuel(id, score, ms){ const { error } = await SB.rpc("submit_duel", { p_id: id, p_score: score, p_ms: ms }); if(error) throw error; },
+  async myDuels(){ const { data, error } = await SB.from("duels").select("*").or(`creator.eq.${ME.id},opponent.eq.${ME.id}`).order("created_at", { ascending:false }).limit(20); if(error) throw error; return data || []; }
+};
+function commError(e){
+  const m = String((e && e.message) || e || "");
+  if(/relation .* does not exist|schema cache|Could not find the (table|function)/i.test(m)) return "Falta activar Comunidad en Supabase (código SQL de Comunidad).";
+  if(/ya_tienes_companero/.test(m)) return "Ya tienes un compañero de racha. Termina esa racha compartida para unirte a otra.";
+  return authError(e);
+}
+
+/* Perfil público: se crea al entrar con el nombre de la cuenta */
+async function ensureProfile(){
+  if(!cloudOn()) return;
+  try{
+    let p = await API.myProfile();
+    if(!p){ p = { user_id: ME.id, display_name: ME.name, avatar_url: null }; await API.saveProfile(p); }
+    COMM.profile = p; if(VIEW.name!=="welcome-goal" && VIEW.name!=="placement") render();
+  }catch(e){ /* tabla aún no creada o sin conexión: se usa el nombre de la cuenta */ }
+}
+
+/* Registra que hoy practicaste (para la racha compartida) */
+function markToday(){
+  if(!cloudOn()) return;
+  const k = todayKey();
+  if(S._marked === k) return;
+  API.markDay(k).then(()=>{ S._marked = k; LS.set("lampara.state."+ME.key, S); }).catch(()=>{});
+}
+
+/* Racha compartida: días seguidos en que ambos practicaron */
+function sharedStreak(daysA, daysB){
+  let d = new Date(), n = 0;
+  const both = x => daysA.has(dayKey(x)) && daysB.has(dayKey(x));
+  if(!both(d)) d = new Date(Date.now() - DAY);
+  while(both(d)){ n++; d = new Date(d.getTime() - DAY); }
+  return n;
+}
+function activePartner(){ return COMM.partners.find(p=>p.user_b); }
+function pendingInvite(){ return COMM.partners.find(p=>!p.user_b && p.user_a===ME.id); }
+
+async function loadCommunity(){
+  if(!cloudOn() || COMM.loading) return;
+  COMM.loading = true; COMM.err = "";
+  try{
+    COMM.partners = await API.myPartners();
+    COMM.duels = await API.myDuels();
+    const ap = activePartner();
+    const other = ap ? (ap.user_a===ME.id ? ap.user_b : ap.user_a) : null;
+    const ids = COMM.duels.flatMap(d=>[d.creator, d.opponent]).concat(other ? [other] : []).filter(x=>x && x!==ME.id);
+    (await API.profiles(ids)).forEach(p=>COMM.profiles[p.user_id] = p);
+    if(other){
+      const since = dayKey(new Date(Date.now() - 60*DAY));
+      const rows = await API.days([ME.id, other], since);
+      COMM.days = { [ME.id]: new Set(rows.filter(r=>r.user_id===ME.id).map(r=>r.day)), [other]: new Set(rows.filter(r=>r.user_id===other).map(r=>r.day)) };
+      COMM.partnerId = other;
+    } else { COMM.partnerId = null; }
+    COMM.loaded = true;
+  }catch(e){ COMM.err = commError(e); }
+  COMM.loading = false;
+  if(VIEW.name==="community") render();
+}
+function personLabel(uid){ const p = COMM.profiles[uid]; return p ? (p.display_name || "Alguien") : "Alguien"; }
+function personAvatar(uid, size){ const p = COMM.profiles[uid] || {}; return avatarHTML(p.display_name || "?", colorFor(uid), p.avatar_url, size); }
+
+function shareButtons(kind, code){
+  const link = appLink(kind==="duel" ? "duelo" : "companero", code);
+  const msg = kind==="duel" ? `Te reto a un esgrima bíblico en Lámpara. Entra aquí y responde las mismas 10 preguntas: ${link}` : `¿Quieres ser mi compañero de racha en Lámpara? Practiquemos la Biblia cada día juntos: ${link}`;
+  return `<div class="row" style="gap:8px">
+    <span class="chip acc mono" style="font-size:16px;padding:8px 14px;letter-spacing:.12em">${esc(code)}</span>
+    <a class="btn primary" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+    <button class="btn" data-act="copy-link" data-link="${esc(link)}">Copiar enlace</button>
+  </div>`;
+}
+const HEART_NOTE = `<div class="result-bar mid" style="align-items:flex-start;gap:10px"><span style="font-size:20px;line-height:1">♡</span><span style="font-size:14px;line-height:1.5"><b style="font-size:inherit">Ni la racha ni los puntos miden tu fe.</b> Si conozco las Escrituras pero no tengo amor, de nada sirve (1 Corintios 13:1–3). Lo que importa es que la Palabra transforme tu corazón y tu manera de vivir (Santiago 1:22).</span></div>`;
+
+function viewCommunity(){
+  if(!cloudOn()) return `<div class="empty"><b>Comunidad necesita conexión con la nube</b><span>Entra con tu cuenta para retar a otros y tener un compañero de racha.</span></div>`;
+  if(!COMM.loaded && !COMM.err){ setTimeout(loadCommunity, 0); return `<section><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Comunidad</h1></section><div class="empty"><b>Cargando…</b></div>`; }
+  const ap = activePartner(), inv = pendingInvite();
+  let partnerCard;
+  if(ap){
+    const other = COMM.partnerId, mine = COMM.days[ME.id] || new Set(), theirs = COMM.days[other] || new Set();
+    const st = sharedStreak(mine, theirs), t = todayKey();
+    const status = (uid, set) => `<div class="row" style="gap:10px;flex-wrap:nowrap">${uid===ME.id?myAvatar(36):personAvatar(uid,36)}<div style="display:flex;flex-direction:column;min-width:0"><b>${esc(uid===ME.id?"Tú":personLabel(uid))}</b><small class="${set.has(t)?"":"muted"}" style="${set.has(t)?"color:var(--ok)":""}">${set.has(t)?"✓ Practicó hoy":"Aún no practica hoy"}</small></div></div>`;
+    partnerCard = `
+      <div class="spread"><h3>Racha compartida</h3><button class="btn ghost" data-act="partner-leave" data-id="${ap.id}" style="padding:6px 12px">Terminar</button></div>
+      <div class="row" style="gap:16px"><span class="flame" style="transform:scale(1.4)">${I.flame}</span><span class="big" style="font-size:44px;font-weight:800;letter-spacing:-.04em">${st}<small style="font-size:18px;color:var(--muted);font-weight:600"> ${st===1?"día":"días"} juntos</small></span></div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">${status(ME.id, mine)}${status(other, theirs)}</div>
+      <p class="muted" style="font-size:13px">La racha sube cuando los dos practican el mismo día. Anímense mutuamente.</p>`;
+  } else if(inv){
+    partnerCard = `
+      <h3>Racha compartida</h3>
+      <p class="muted" style="font-size:14px">Comparte este código con la persona que quieres que sea tu compañero. Cuando lo use, empiezan su racha juntos.</p>
+      ${shareButtons("partner", inv.code)}
+      <button class="linkbtn" data-act="partner-leave" data-id="${inv.id}" style="align-self:flex-start;padding:0">Cancelar invitación</button>`;
+  } else {
+    partnerCard = `
+      <h3>Racha compartida</h3>
+      <p class="muted" style="font-size:14px">Escoge a alguien para practicar cada día. Si los dos practican el mismo día, su racha juntos sube.</p>
+      <div class="row"><button class="btn primary" data-act="partner-invite">Invitar a alguien</button></div>
+      <div class="row" style="flex-wrap:nowrap" data-enter="partner-join"><input class="input" id="partnerCode" placeholder="¿Tienes un código? Ej. K7M2QX" maxlength="8" autocapitalize="characters" style="max-width:220px;text-transform:uppercase"><button class="btn" data-act="partner-join">Unirme</button></div>`;
+  }
+  const duelRow = d => {
+    const iAmCreator = d.creator===ME.id, other = iAmCreator ? d.opponent : d.creator;
+    const my = iAmCreator ? d.creator_score : d.opponent_score, their = iAmCreator ? d.opponent_score : d.creator_score;
+    const myMs = iAmCreator ? d.creator_ms : d.opponent_ms, theirMs = iAmCreator ? d.opponent_ms : d.creator_ms;
+    let state, act = "";
+    if(my==null){ state = `<span class="chip acc">Te toca jugar</span>`; act = `<button class="btn primary" data-act="duel-play" data-id="${d.id}" style="padding:6px 14px">Jugar</button>`; }
+    else if(!other){ state = `<span class="chip none">Esperando rival</span>`; act = `<button class="btn" data-act="duel-share" data-id="${d.id}" style="padding:6px 14px">Compartir</button>`; }
+    else if(their==null){ state = `<span class="chip none">Esperando a ${esc(personLabel(other))}</span>`; }
+    else { const win = my>their || (my===their && myMs<theirMs), tie = my===their && myMs===theirMs; state = `<span class="chip ${tie?"none":win?"ok":"bad"}">${tie?"Empate":win?"Ganaste":"Perdiste"} · ${my}–${their}</span>`; act = `<button class="btn ghost" data-act="duel-view" data-id="${d.id}" style="padding:6px 14px">Ver</button>`; }
+    return `<div class="drow"><span>${other?personAvatar(other,32):`<span class="avatar" style="width:32px;height:32px;background:var(--surface-2);color:var(--muted)">?</span>`}</span><div style="min-width:0"><b>${other?esc(personLabel(other)):"Reto abierto"}</b><div style="margin-top:4px">${state}</div></div><div>${act}</div></div>`;
+  };
+  return `
+  <section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1><p class="muted">Practica con otros, anímense y aprendan la Palabra en comunidad.</p></section>
+  ${COMM.err?`<div class="result-bar bad"><span>${esc(COMM.err)}</span></div>`:""}
+  ${HEART_NOTE}
+  <section class="split">
+    <div class="panel" style="display:flex;flex-direction:column;gap:14px">${partnerCard}</div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+      <h3>Esgrima bíblico</h3>
+      <p class="muted" style="font-size:14px">Reta a alguien: los dos responden las mismas 10 preguntas sobre libros, citas e historias. Gana quien acierte más; si empatan, quien lo haga más rápido.</p>
+      <div class="row"><button class="btn primary" data-act="duel-new">${I.play} Crear un reto</button></div>
+      <div class="row" style="flex-wrap:nowrap" data-enter="duel-join"><input class="input" id="duelCode" placeholder="¿Te retaron? Escribe el código" maxlength="8" autocapitalize="characters" style="max-width:240px;text-transform:uppercase"><button class="btn" data-act="duel-join">Aceptar</button></div>
+    </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:10px"><h3>Mis retos</h3>
+    <div class="panel" style="padding:10px">${COMM.duels.length?`<div class="vlist">${COMM.duels.map(duelRow).join("")}</div>`:`<div class="empty"><b>Aún no tienes retos</b><span>Crea uno y compártelo por WhatsApp.</span></div>`}</div>
+  </section>`;
+}
+
+/* Preguntas del esgrima: libros, citas de versículos e historias */
+function makeDuelQuestions(){
+  const qs = [];
+  for(let k=0;k<4;k++){ let q; do{ q = makeBookQuestion("all"); }while(q.type==="order"); qs.push({ prompt:q.prompt, opts:q.opts, answer:q.answer, explain:q.explain }); }
+  shuffle(SUGGESTED).slice(0,3).forEach(([id,ref,text])=>{
+    const others = shuffle(SUGGESTED.filter(r=>r[0]!==id)).slice(0,3).map(r=>r[1]);
+    qs.push({ prompt:`¿De qué cita es este versículo?<br><span style="font-family:var(--f-verse);font-weight:400;font-size:.95em">“${esc(text)}”</span>`, opts:shuffle([ref, ...others]), answer:ref, explain:`Es ${ref}.` });
+  });
+  makeTriviaSession(3).forEach(q=>qs.push({ prompt:q.prompt, opts:q.opts, answer:q.answer, explain:q.explain }));
+  return shuffle(qs);
+}
+function startDuelPlay(duel){
+  BQ = { kind:"duel", duel, qs: duel.questions.map(q=>Object.assign({}, q)), i:0, answered:false, score:0, started: Date.now() };
+  VIEW = { name:"bquiz" }; render(); window.scrollTo({top:0});
+}
+async function finishDuel(){
+  const ms = Date.now() - BQ.started;
+  BQ.done = true; BQ.saving = true; render();
+  try{ await API.submitDuel(BQ.duel.id, BQ.score, ms); BQ.duel = await API.getDuel(BQ.duel.id) || BQ.duel; }
+  catch(e){ BQ.err = commError(e); }
+  BQ.saving = false; COMM.loaded = false;
+  const ids = [BQ.duel.creator, BQ.duel.opponent].filter(x=>x && x!==ME.id);
+  try{ (await API.profiles(ids)).forEach(p=>COMM.profiles[p.user_id]=p); }catch(e){}
+  render();
+}
+function duelResultHTML(d){
+  const iAmCreator = d.creator===ME.id, other = iAmCreator ? d.opponent : d.creator;
+  const my = iAmCreator ? d.creator_score : d.opponent_score, their = iAmCreator ? d.opponent_score : d.creator_score;
+  const myMs = iAmCreator ? d.creator_ms : d.opponent_ms, theirMs = iAmCreator ? d.opponent_ms : d.creator_ms;
+  const secs = ms => ms==null ? "—" : Math.round(ms/1000) + " s";
+  const col = (who, name, av, sc, ms) => `<div class="stat" style="align-items:center;text-align:center">${av}<b>${esc(name)}</b><span class="big">${sc==null?"—":sc}<small>/ 10</small></span><small class="muted mono">${secs(ms)}</small></div>`;
+  let headline = "Esperando a tu rival";
+  if(their!=null && my!=null){ const tie = my===their && myMs===theirMs, win = my>their || (my===their && myMs<theirMs); headline = tie ? "¡Empate!" : win ? "¡Ganaste el esgrima!" : `Ganó ${personLabel(other)}`; }
+  return `
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Esgrima bíblico</span><h1 style="font-size:clamp(32px,6vw,50px)">${esc(headline)}</h1></div>
+    ${HEART_NOTE}
+    <div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+      ${col("me", "Tú", myAvatar(48), my, myMs)}
+      ${other ? col("them", personLabel(other), personAvatar(other,48), their, theirMs) : `<div class="stat" style="align-items:center;text-align:center;justify-content:center"><span class="avatar" style="width:48px;height:48px;background:var(--surface-2);color:var(--muted)">?</span><b>Tu rival</b><small class="muted">Aún no acepta</small></div>`}
+    </div>
+    ${!other ? `<div class="panel" style="display:flex;flex-direction:column;gap:10px"><b>Comparte el reto</b><p class="muted" style="font-size:14px">Tu rival responde las mismas preguntas. El reto vence en 7 días.</p>${shareButtons("duel", d.code)}</div>` : ""}`;
+}
+
+/* Deep links: ?duelo=CODIGO y ?companero=CODIGO */
+async function handlePendingLink(){
+  if(!PENDING_LINK || !cloudOn()) return;
+  const { type, code } = PENDING_LINK; PENDING_LINK = null;
+  try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  try{
+    if(type==="duel"){
+      const id = await API.joinDuel(code);
+      if(!id){ toast("Ese reto ya no está disponible."); return; }
+      const d = await API.getDuel(id);
+      const mine = d.creator===ME.id ? d.creator_score : d.opponent_score;
+      if(mine==null) startDuelPlay(d); else { BQ = { kind:"duel", duel:d, qs:d.questions, i:d.questions.length, done:true, score:mine }; VIEW={name:"bquiz"}; render(); }
+    } else {
+      const id = await API.joinPartner(code);
+      if(!id){ toast("Ese código de compañero no es válido o ya se usó."); return; }
+      COMM.loaded = false; go("community"); toast("¡Ahora tienen una racha compartida!");
+    }
+  }catch(e){ toast(commError(e)); }
+}
+
+/* Foto de perfil: se recorta cuadrada y se reduce a 256 px */
+function resizeImage(file){
+  return new Promise((resolve, reject)=>{
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = ()=>{ const s = Math.min(img.width, img.height), c = document.createElement("canvas"); c.width = c.height = 256;
+      c.getContext("2d").drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, 256, 256);
+      URL.revokeObjectURL(url); c.toBlob(b=> b ? resolve(b) : reject(new Error("No se pudo procesar la imagen")), "image/jpeg", 0.85); };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error("Ese archivo no es una imagen válida")); };
+    img.src = url;
+  });
+}
+async function onAvatarPicked(input){
+  const f = input.files && input.files[0]; if(!f) return;
+  if(!/^image\//.test(f.type)){ toast("Elige una imagen (JPG o PNG)."); return; }
+  try{
+    toast("Subiendo foto…");
+    const blob = await resizeImage(f);
+    const url = await API.uploadAvatar(blob);
+    COMM.profile = Object.assign({}, COMM.profile || { display_name: ME.name }, { avatar_url: url });
+    await API.saveProfile(COMM.profile);
+    render(); toast("Foto actualizada.");
+  }catch(e){ toast("No se pudo subir la foto: " + commError(e)); }
+}
+function profileCommunityPanel(){
+  if(!cloudOn()) return "";
+  const name = displayName(), hasPhoto = COMM.profile && COMM.profile.avatar_url;
+  return `
+  <section class="panel">
+    <h3 style="margin-bottom:6px">Cómo te ven los demás</h3>
+    <div class="set-group">
+      <div class="set-row"><div class="row" style="gap:14px;flex-wrap:nowrap">${myAvatar(56)}<div class="lbl"><b>Foto de perfil</b><small>Se ve en Comunidad: esgrima y racha compartida</small></div></div>
+        <div class="row" style="gap:6px"><label class="btn" for="avatarInput" style="cursor:pointer">${hasPhoto?"Cambiar foto":"Agregar foto"}</label>${hasPhoto?`<button class="btn ghost" data-act="avatar-remove">Quitar</button>`:""}<input type="file" id="avatarInput" accept="image/*" hidden></div></div>
+      <div class="set-row"><div class="lbl"><b>Nombre visible</b><small>Por defecto es tu nombre; puedes usar un apodo</small></div>
+        <div class="row" style="flex-wrap:nowrap" data-enter="save-display"><input class="input" id="displayName" value="${esc(name)}" maxlength="40" style="max-width:220px"><button class="btn" data-act="save-display">Guardar</button></div></div>
+    </div>
+    <p class="muted" style="font-size:12px;margin-top:8px">Usa una foto apropiada: la verán otras personas de la comunidad.</p>
+  </section>`;
 }
 
 /* ---------- Resumen ---------- */
@@ -2030,8 +2429,9 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
   persist(); cloudFlush(); flushFeedback();
   if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
+  COMM.profile = null; COMM.loaded = false; ensureProfile();
   if(fresh && !seeded){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
-  else enterApp();
+  else { enterApp(); if(!PLACE) handlePendingLink(); }
 }
 async function localSignup(){
   const name=$("#suName").value.trim(), email=$("#suEmail").value.trim().toLowerCase(), pass=$("#suPass").value;
@@ -2078,9 +2478,10 @@ async function signOut(){
   if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} try{ await SB.auth.signOut(); }catch(e){} }
   localSignOut();
 }
-function localSignOut(){ LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function localSignOut(){ Object.assign(COMM, { profile:null, partners:[], days:{}, duels:[], profiles:{}, loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
 async function deleteAccount(){
   if(ME.mode==="cloud" && SB){
+    await API.removeAvatar();
     const { error } = await SB.rpc("delete_my_account");
     if(error){ toast("No se pudo eliminar la cuenta: " + authError(error)); return; }
     const key = ME.key; delete MEM["lampara.state."+key]; try{ localStorage.removeItem("lampara.state."+key); }catch(e){}
@@ -2111,10 +2512,11 @@ function viewProfile(){
   const act = activeIds(); const learned = act.filter(id=>status(id)==="ok").length;
   return `
   <section class="prof-head">
-    <div class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</div>
-    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(ME.name)}</h1><span class="muted">${esc(ME.email||"")}</span>
+    ${myAvatar(64)}
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${esc(ME.email||"")}</span>
       <div class="row" style="gap:6px">${S.placed&&S.placed.level?`<span class="chip acc">Nivel inicial: ${esc(S.placed.level)}</span>`:""}<span class="chip ok">${learned} aprendidos</span><span class="chip none">racha ${streak()} ${streak()===1?"día":"días"}</span></div></div>
   </section>
+  ${profileCommunityPanel()}
   <section class="panel">
     <h3 style="margin-bottom:6px">Práctica</h3>
     <div class="set-group">
@@ -2155,6 +2557,19 @@ document.addEventListener("click", e=>{
   switch(a){
     case "logout": signOut(); break;
     case "feedback": feedbackModal(); break;
+    case "open-topic": go("topic", { topic: t.dataset.id }); break;
+    case "play-topic": { const tp=TOPIC_MAP[t.dataset.id]; S.extraActive=[...new Set((S.extraActive||[]).concat(tp.ids.filter(x=>!activeIds().includes(x))))]; persist(); startSession(pickFor("topic:"+tp.id),{title:tp.name, source:"topic:"+tp.id}); break; }
+    case "save-topic": { const tp=TOPIC_MAP[t.dataset.id]; let l=S.lists.find(x=>x.topic===tp.id); if(!l){ l={ id:"l-"+uid(), name:tp.name, ids:tp.ids.slice(), topic:tp.id }; S.lists.push(l); persist(); toast(`“${tp.name}” se guardó en tus listas.`); } else toast("Ya tienes este tema en tus listas."); go("list",{list:l.id}); break; }
+    case "copy-link": { const link=t.dataset.link; (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>toast("Enlace copiado.")).catch(()=>{ toast("Copia este enlace: "+link); }); break; }
+    case "partner-invite": API.createInvite().then(()=>{ COMM.loaded=false; render(); }).catch(e=>toast(commError(e))); break;
+    case "partner-join": { const c=($("#partnerCode").value||"").trim().toUpperCase(); if(c.length<4){ toast("Escribe el código que te compartieron."); break; } API.joinPartner(c).then(id=>{ if(!id){ toast("Ese código no es válido o ya se usó."); return; } COMM.loaded=false; render(); toast("¡Ahora tienen una racha compartida!"); }).catch(e=>toast(commError(e))); break; }
+    case "partner-leave": confirmBox("¿Terminar la racha compartida?", "Dejarán de ver su racha juntos. Cada uno conserva su propio progreso.", "Terminar", ()=>API.leavePartner(t.dataset.id).then(()=>{ COMM.loaded=false; render(); }).catch(e=>toast(commError(e)))); break;
+    case "duel-new": { t.disabled=true; API.createDuel(makeDuelQuestions()).then(d=>{ COMM.loaded=false; startDuelPlay(d); }).catch(e=>{ t.disabled=false; toast(commError(e)); }); break; }
+    case "duel-join": { const c=($("#duelCode").value||"").trim().toUpperCase(); if(c.length<4){ toast("Escribe el código del reto."); break; } PENDING_LINK={type:"duel",code:c}; handlePendingLink(); break; }
+    case "duel-play": { const d=COMM.duels.find(x=>x.id===t.dataset.id); if(d) startDuelPlay(d); break; }
+    case "duel-share": case "duel-view": { const d=COMM.duels.find(x=>x.id===t.dataset.id); if(d){ BQ={ kind:"duel", duel:d, qs:d.questions, i:d.questions.length, done:true, score:0 }; VIEW={name:"bquiz"}; render(); } break; }
+    case "avatar-remove": API.removeAvatar().then(()=>{ COMM.profile=Object.assign({},COMM.profile,{avatar_url:null}); return API.saveProfile(COMM.profile); }).then(()=>{ render(); toast("Foto eliminada."); }).catch(e=>toast(commError(e))); break;
+    case "save-display": { const v=($("#displayName").value||"").trim(); if(!v){ toast("Escribe un nombre."); break; } COMM.profile=Object.assign({ avatar_url:null }, COMM.profile, { display_name:v }); API.saveProfile(COMM.profile).then(()=>{ render(); toast("Nombre visible actualizado."); }).catch(e=>toast(commError(e))); break; }
     case "do-signup": onSignup().catch(()=>formErr("No se pudo crear la cuenta. Inténtalo de nuevo.")); break;
     case "do-forgot": busy("do-forgot","Enviando…", cloudForgot).catch(()=>formErr("No se pudo enviar el enlace. Inténtalo de nuevo.")); break;
     case "do-reset": busy("do-reset","Guardando…", cloudReset).catch(()=>formErr("No se pudo guardar la contraseña. Inténtalo de nuevo.")); break;
@@ -2178,7 +2593,7 @@ document.addEventListener("click", e=>{
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
       S.prefs.minutes=WEL.goal; S.prefs.size=versesFor(WEL.goal); persist();
-      if(a==="wel-finish") startPlacement(); else { S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); }
+      if(a==="wel-finish") startPlacement(); else { S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); handlePendingLink(); }
       break;
     }
     case "new-list": newListModal(); break;
@@ -2224,11 +2639,11 @@ document.addEventListener("click", e=>{
     case "bq-opt": { const q=BQ.qs[BQ.i]; if(BQ.answered) break; q.chosen=q.opts[+t.dataset.k]; answerBook(q.chosen===q.answer); break; }
     case "bq-pick": { const q=BQ.qs[BQ.i]; if(BQ.answered) break; const nm=q.opts[+t.dataset.k]; if(!q.picked.includes(nm)) q.picked.push(nm); if(q.picked.length===q.answer.length) answerBook(q.picked.join("|")===q.answer.join("|")); else render(); break; }
     case "bq-undo": { const q=BQ.qs[BQ.i]; q.picked.pop(); render(); break; }
-    case "bq-next": BQ.i++; BQ.answered=false; render(); window.scrollTo({top:0}); break;
+    case "bq-next": BQ.i++; BQ.answered=false; if(BQ.kind==="duel" && BQ.i>=BQ.qs.length){ finishDuel(); break; } render(); window.scrollTo({top:0}); break;
     case "bq-again": startBooks(BQ.kind, BQ.scope); break;
-    case "bq-exit": BQ=null; go("books"); break;
+    case "bq-exit": { const k=BQ&&BQ.kind; BQ=null; if(k==="duel"){ COMM.loaded=false; go("community"); } else go("books"); break; }
     case "pl-start": PLACE.phase="q"; PLACE.i=0; PLACE.answered=false; render(); break;
-    case "pl-skip": S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); PLACE=null; go("home"); break;
+    case "pl-skip": S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); PLACE=null; go("home"); handlePendingLink(); break;
     case "pl-check": placementCheck(); break;
     case "pl-unknown": { const it=PLACE.items[PLACE.i]; placementAnswer(0, `<p class="muted" style="font-size:13px">${esc(verse(it.id).ref)}</p><p class="verse-text" style="font-size:19px">${esc(verse(it.id).text)}</p>`); break; }
     case "pl-opt": {
@@ -2239,7 +2654,7 @@ document.addEventListener("click", e=>{
       break;
     }
     case "pl-next": if(PLACE.i<PLACE.items.length-1){ PLACE.i++; PLACE.answered=false; render(); window.scrollTo({top:0}); } else finishPlacement(); break;
-    case "pl-finish": PLACE=null; go("home"); break;
+    case "pl-finish": PLACE=null; go("home"); handlePendingLink(); break;
     case "begin-cards": rememberSession(SESSION.ids); SESSION.started=Date.now(); SESSION.cardIds=cardIdsFor(SESSION.ids); SESSION.phase="cards"; SESSION.i=0; SESSION.flipped=false; render(); break;
     case "dur": { const m=+t.dataset.m; S.prefs.minutes=m; S.prefs.size=versesFor(m); const ids=pickFor(SESSION.source, SESSION.listId); if(ids.length) SESSION.ids=ids; if(GROWN){ toast(`Agregamos ${GROWN} versículos nuevos para completar el tiempo.`); GROWN=0; } persist(); render(); break; }
     case "skip-cards": rememberSession(SESSION.ids); SESSION.started=Date.now(); startQuiz(); render(); break;
@@ -2276,6 +2691,7 @@ document.addEventListener("click", e=>{
     }
   }
 });
+document.addEventListener("change", e=>{ if(e.target && e.target.id==="avatarInput") onAvatarPicked(e.target); });
 document.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target && e.target.tagName==="INPUT"){ const f=e.target.closest("[data-enter]"); if(f){ e.preventDefault(); const b=f.querySelector(`[data-act="${f.dataset.enter}"]`); if(b) b.click(); return; } }
   if((e.key==="Enter"||e.key===" ") && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("side-foot")){ e.preventDefault(); go("profile"); return; }

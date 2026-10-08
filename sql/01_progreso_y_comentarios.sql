@@ -1,0 +1,3 @@
+-- Lámpara Bíblica · ya ejecutado en Supabase (referencia)
+-- Tabla progress (progreso por usuario), función delete_my_account() y tabla feedback.
+-- Ver historial del chat del 8 de octubre de 2026.
