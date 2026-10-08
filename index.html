@@ -351,6 +351,7 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 
 <div id="root"></div>
 
+<script src="supabase.js"></script>
 <script>
 /* =========================================================
    DATOS — Versículos sugeridos (Reina-Valera 1960)
@@ -485,8 +486,54 @@ function freshState(){
 }
 function persist(){
   if(!ME) return;
+  S._savedAt = Date.now();
   LS.set("lampara.state."+ME.key, S);
+  cloudSave();
 }
+
+/* =========================================================
+   NUBE (Supabase): cuentas y progreso de cada usuario
+   La clave pública es segura en la app: las reglas de la base
+   de datos solo dejan a cada persona leer y escribir lo suyo.
+   ========================================================= */
+const SB_URL = "https://vapcakmrzyjazjhfjeqa.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhcGNha21yenlqYXpqaGZqZXFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0ODA2MzksImV4cCI6MjEwNzA1NjYzOX0.neh231Jbi_NxP9_JpypPo24Xv3ygWPupGG3iK-JO9Mg";
+let SB = null;
+try{ if(window.supabase && SB_KEY) SB = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true, storageKey:"lampara.auth" } }); }catch(e){ SB = null; }
+let cloudTimer = null, cloudDirty = false, cloudWarned = false, cloudLoaded = false, cloudLastSync = null;
+function colorFor(id){ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))|0; return COLORS[Math.abs(h)%COLORS.length]; }
+function cloudSave(){
+  if(!SB || !ME || ME.mode!=="cloud") return;
+  cloudDirty = true; clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudFlush, 1200);
+}
+async function cloudRead(uid){
+  const { data, error } = await SB.from("progress").select("name,state,updated_at").eq("user_id", uid).maybeSingle();
+  if(error) throw error;
+  return data;
+}
+async function cloudFlush(){
+  if(!SB || !ME || ME.mode!=="cloud" || !cloudDirty) return;
+  clearTimeout(cloudTimer);
+  try{
+    if(!cloudLoaded){
+      // No se pudo leer la nube al entrar: primero comparar, para no borrar progreso de otro dispositivo
+      const row = await cloudRead(ME.id);
+      const remote = row && row.state;
+      if(remote && (remote._savedAt||0) > (S._savedAt||0)){ S = Object.assign(freshState(), remote); LS.set("lampara.state."+ME.key, S); cloudLoaded = true; cloudDirty = false; render(); return; }
+      cloudLoaded = true;
+    }
+    cloudDirty = false;
+    const { error } = await SB.from("progress").upsert({ user_id: ME.id, name: ME.name, state: S, updated_at: new Date().toISOString() });
+    if(error) throw error;
+    cloudWarned = false; cloudLastSync = new Date();
+  }catch(e){
+    cloudDirty = true;
+    if(!cloudWarned){ cloudWarned = true; toast("Sin conexión: tu progreso se guardará en la nube cuando vuelva internet."); }
+  }
+}
+window.addEventListener("online", ()=>cloudFlush());
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") cloudFlush(); });
+
 
 /* ---------- Acceso a versículos ---------- */
 function verse(id){
@@ -1551,15 +1598,16 @@ function renderWelcome(){
     main = `
       <div class="spread"><button class="btn ghost" data-act="wel-back" style="padding:8px 12px">← Atrás</button><span class="eyebrow">Paso 1 de 2</span></div>
       <h1>Crea tu <em>cuenta</em></h1>
-      <p class="lead">${WEL.migrate?`Tu progreso de “${esc(WEL.migrate)}” pasa a esta cuenta.`:"Cada persona tiene su propio progreso, racha y listas."}</p>
+      <p class="lead">${WEL.migrate||WEL.seedFrom?`El progreso guardado en este dispositivo${WEL.migrate?` de “${esc(WEL.migrate)}”`:""} pasa a esta cuenta.`:"Cada persona tiene su propio progreso, racha y listas."}</p>
       <div class="form" id="signupForm" data-enter="do-signup">
         <div class="field"><label for="suName">Nombre</label><input class="input" id="suName" autocomplete="given-name" maxlength="30" required value="${esc(WEL.migrate||"")}"></div>
         <div class="field"><label for="suEmail">Correo</label><input class="input" id="suEmail" type="email" autocomplete="email" inputmode="email" maxlength="80" required></div>
         <div class="field"><label for="suPass">Contraseña</label>${pwField("suPass","Mínimo 6 caracteres","new-password")}</div>
+        ${SB?`<label class="check" style="align-items:flex-start;font-size:13px;line-height:1.4"><input type="checkbox" id="suConsent" style="margin-top:2px;flex:none"><span>Autorizo que Lámpara guarde mi nombre, correo y progreso de práctica para usar la app. Puedo eliminar mi cuenta y mis datos cuando quiera desde Perfil.</span></label>`:""}
         <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
         <button class="btn primary lg" type="button" data-act="do-signup">Continuar</button>
       </div>
-      <p class="note">Versión de prueba: la cuenta se guarda solo en este celular o navegador. Si luego abres la app en otro dispositivo, tendrás que crear la cuenta allí también. En la app final podrás entrar desde cualquier teléfono.</p>
+      <p class="note">${SB?"Tu progreso se guarda en la nube: entra con tu correo desde cualquier celular o computador.":"Sin conexión con la nube: la cuenta se guarda solo en este celular o navegador."}</p>
       <button class="linkbtn" data-act="wel-login">Ya tengo una cuenta</button>`;
   } else if(st==="goal"){
     main = `
@@ -1575,24 +1623,92 @@ function renderWelcome(){
     main = `
       <div class="spread"><button class="btn ghost" data-act="wel-back" style="padding:8px 12px">← Atrás</button><span></span></div>
       <h1>Bienvenido <em>de nuevo</em></h1>
-      <p class="note">Entra con el correo y la contraseña que creaste en este mismo celular o navegador.</p>
+      <p class="note">${SB?"Entra con tu correo y contraseña desde cualquier celular o computador.":"Entra con el correo y la contraseña que creaste en este mismo celular o navegador."}</p>
       <div class="form" id="loginForm" data-enter="do-login">
         <div class="field"><label for="liEmail">Correo</label><input class="input" id="liEmail" type="email" autocomplete="email" inputmode="email" required></div>
         <div class="field"><label for="liPass">Contraseña</label>${pwField("liPass","Tu contraseña","current-password")}</div>
         <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
         <button class="btn primary lg" type="button" data-act="do-login">Entrar</button>
       </div>
-      ${accs.length?`<div class="prev-acc"><span class="eyebrow">Cuentas en este dispositivo</span>${accs.map(a=>`<button class="profile" data-act="pick-acc" data-email="${esc(a.email)}"><div class="avatar" style="background:${a.color}">${esc(a.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(a.name)}</b><small>${esc(a.email)}</small></div></button>`).join("")}</div>`:""}
+      ${accs.length&&SB?`<div class="prev-acc"><span class="eyebrow">Cuentas guardadas solo en este dispositivo</span>${accs.map(a=>`<button class="profile" data-act="migrate-acc" data-id="${esc(a.id)}"><div class="avatar" style="background:${a.color}">${esc(a.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(a.name)}</b><small>Pasar a la nube y conservar el progreso</small></div></button>`).join("")}</div>`:""}
+      ${accs.length&&!SB?`<div class="prev-acc"><span class="eyebrow">Cuentas en este dispositivo</span>${accs.map(a=>`<button class="profile" data-act="pick-acc" data-email="${esc(a.email)}"><div class="avatar" style="background:${a.color}">${esc(a.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(a.name)}</b><small>${esc(a.email)}</small></div></button>`).join("")}</div>`:""}
       ${legacy.length?`<div class="prev-acc"><span class="eyebrow">Perfiles de la versión anterior</span>${legacy.map(p=>`<button class="profile" data-act="migrate" data-name="${esc(p.name)}"><div class="avatar" style="background:${p.color}">${esc(p.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(p.name)}</b><small>Crear cuenta y conservar el progreso</small></div></button>`).join("")}</div>`:""}
       <button class="linkbtn" data-act="wel-signup">Crear una cuenta nueva</button>`;
   }
   root.innerHTML = `<div class="wel"><div class="wel-card">${welArt()}<section class="wel-main">${main}</section></div></div>`;
-  const sf = $("#signupForm"); if(sf){ if(WEL.prefillEmail){ $("#suEmail").value=WEL.prefillEmail; WEL.prefillEmail=null; } $("#suName").focus(); }
+  const sf = $("#signupForm"); if(sf){ if(WEL.prefillEmail){ $("#suEmail").value=WEL.prefillEmail; WEL.prefillEmail=null; } if(WEL.prefillName){ $("#suName").value=WEL.prefillName; WEL.prefillName=null; } $("#suName").focus(); }
   const lf = $("#loginForm"); if(lf){ if(WEL.prefill){ $("#liEmail").value=WEL.prefill; $("#liPass").focus(); } }
   WEL.prefill = null;
 }
 function formErr(msg){ WEL.err=""; const e=$("#formErr"); if(e) e.textContent = msg; }
-async function onSignup(){
+async function busy(act, label, fn){
+  const b = root.querySelector(`[data-act="${act}"]`); const old = b ? b.textContent : "";
+  if(b){ if(b.disabled) return; b.disabled = true; b.textContent = label; }
+  try{ await fn(); } finally { if(b && document.body.contains(b)){ b.disabled = false; b.textContent = old; } }
+}
+function onSignup(){ return busy("do-signup","Creando cuenta…", SB ? cloudSignup : localSignup); }
+function onLogin(){ return busy("do-login","Entrando…", SB ? cloudLogin : localLogin); }
+function authError(e){
+  const m = String((e && (e.message||e.error_description)) || e || "");
+  if(/invalid login/i.test(m)) return "El correo o la contraseña no coinciden.";
+  if(/already registered|already exists/i.test(m)) return "Ya existe una cuenta con ese correo. Toca “Ya tengo una cuenta”.";
+  if(/not confirmed/i.test(m)) return "Falta confirmar tu correo: abre el enlace que te enviamos y vuelve a intentar.";
+  if(/password/i.test(m) && /(weak|short|least|characters)/i.test(m)) return "La contraseña es muy débil. Usa al menos 6 caracteres.";
+  if(/rate|too many/i.test(m)) return "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.";
+  if(/fetch|network|failed to fetch|load failed/i.test(m)) return "No hay conexión a internet. Revisa tu conexión e inténtalo de nuevo.";
+  return "No se pudo completar: " + m;
+}
+function localSeed(email){
+  if(WEL.migrate) return LS.get("lampara.state.local:"+WEL.migrate, null);
+  const acc = accounts().find(a=>a.email===email);
+  return acc ? LS.get("lampara.state.acct:"+acc.id, null) : null;
+}
+async function cloudSignup(){
+  const name=$("#suName").value.trim(), email=$("#suEmail").value.trim().toLowerCase(), pass=$("#suPass").value;
+  if(!name) return formErr("Escribe tu nombre.");
+  if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
+  if(pass.length<6) return formErr("La contraseña debe tener al menos 6 caracteres.");
+  if(!$("#suConsent").checked) return formErr("Para crear la cuenta, marca la casilla de autorización de datos.");
+  formErr("");
+  const { data, error } = await SB.auth.signUp({ email, password: pass, options: { data: { name } } });
+  if(error) return formErr(authError(error));
+  if(!data.session){ return formErr("Te enviamos un correo para confirmar la cuenta. Ábrelo y luego entra con tu correo y contraseña."); }
+  const seed = localSeed(email);
+  await cloudEnter(data.user, { name, seed, fresh: !seed });
+}
+async function cloudLogin(){
+  const email=$("#liEmail").value.trim().toLowerCase(), pass=$("#liPass").value;
+  if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
+  if(!pass) return formErr("Escribe tu contraseña.");
+  formErr("");
+  const { data, error } = await SB.auth.signInWithPassword({ email, password: pass });
+  if(error){
+    let msg = authError(error);
+    if(/no coinciden/.test(msg) && accounts().some(a=>a.email===email)) msg += " Si la creaste antes en este dispositivo, toca tu cuenta abajo para pasarla a la nube.";
+    return formErr(msg);
+  }
+  await cloudEnter(data.user, { seed: localSeed(email) });
+}
+async function cloudEnter(user, { name, seed, fresh } = {}){
+  const meta = user.user_metadata || {};
+  let row = null; cloudLoaded = false;
+  try{ row = await cloudRead(user.id); cloudLoaded = true; }catch(e){}
+  const key = "cloud:"+user.id;
+  const cached = LS.get("lampara.state."+key, null);
+  let state = row && row.state && Object.keys(row.state).length ? row.state : null;
+  if(cached && (!state || (cached._savedAt||0) > (state._savedAt||0))) state = cached;
+  const seeded = !state && seed;
+  if(seeded) state = seed;
+  ME = { mode:"cloud", id:user.id, name:(row&&row.name) || name || meta.name || user.email.split("@")[0], email:user.email, color:colorFor(user.id), key };
+  S = Object.assign(freshState(), state || {});
+  applyTheme(S.prefs.theme);
+  WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
+  persist(); cloudFlush();
+  if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
+  if(fresh && !seeded){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
+  else enterApp();
+}
+async function localSignup(){
   const name=$("#suName").value.trim(), email=$("#suEmail").value.trim().toLowerCase(), pass=$("#suPass").value;
   if(!name) return formErr("Escribe tu nombre.");
   if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
@@ -1609,7 +1725,7 @@ async function onSignup(){
   accs.push(acc); saveAccounts(accs);
   signIn(acc, { fresh: !WEL.migrate });
 }
-async function onLogin(){
+async function localLogin(){
   const email=$("#liEmail").value.trim().toLowerCase(), pass=$("#liPass").value;
   if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
   const acc = accounts().find(a=>a.email===email);
@@ -1632,12 +1748,25 @@ function signIn(acc, {fresh}){
   else enterApp();
 }
 function renderWelcomeGoal(){ const keep=ME; ME=null; renderWelcome(); ME=keep; }
-function signOut(){ stopSpeech(); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
-function deleteAccount(){
+async function signOut(){
+  stopSpeech();
+  if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} try{ await SB.auth.signOut(); }catch(e){} }
+  localSignOut();
+}
+function localSignOut(){ LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+async function deleteAccount(){
+  if(ME.mode==="cloud" && SB){
+    const { error } = await SB.rpc("delete_my_account");
+    if(error){ toast("No se pudo eliminar la cuenta: " + authError(error)); return; }
+    const key = ME.key; delete MEM["lampara.state."+key]; try{ localStorage.removeItem("lampara.state."+key); }catch(e){}
+    try{ await SB.auth.signOut(); }catch(e){}
+    localSignOut(); WEL.step=0; render(); toast("Tu cuenta y todo su progreso se eliminaron.");
+    return;
+  }
   const id = ME.id;
   saveAccounts(accounts().filter(a=>a.id!==id));
   delete MEM["lampara.state.acct:"+id]; try{ localStorage.removeItem("lampara.state.acct:"+id); }catch(e){}
-  signOut(); WEL.step=0; render(); toast("Tu cuenta y su progreso se eliminaron de este dispositivo.");
+  localSignOut(); WEL.step=0; render(); toast("Tu cuenta y su progreso se eliminaron de este dispositivo.");
 }
 function needsPlacement(){ return !S.placed && Object.keys(S.progress).length===0; }
 function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
@@ -1666,6 +1795,7 @@ function viewProfile(){
   <section class="panel">
     <h3 style="margin-bottom:6px">Cuenta</h3>
     <div class="set-group">
+      <div class="set-row"><div class="lbl"><b>Dónde se guarda tu progreso</b><small>${ME.mode==="cloud"?`En la nube${cloudLastSync?` · última copia ${cloudLastSync.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}`:""}. Puedes entrar desde cualquier dispositivo.`:"Solo en este dispositivo."}</small></div><span class="chip ${ME.mode==="cloud"?"ok":"none"}">${ME.mode==="cloud"?"Nube":"Local"}</span></div>
       <div class="set-row"><div class="lbl"><b>Cerrar sesión</b><small>Tu progreso queda guardado en esta cuenta</small></div><button class="btn" data-act="logout">${I.logout} Cerrar sesión</button></div>
       <div class="set-row"><div class="lbl"><b>Eliminar cuenta</b><small>Borra la cuenta y todo su progreso. No se puede deshacer.</small></div><button class="btn danger" data-act="delete-account">${I.trash} Eliminar cuenta</button></div>
     </div>
@@ -1690,16 +1820,17 @@ document.addEventListener("click", e=>{
     case "logout": signOut(); break;
     case "do-signup": onSignup().catch(()=>formErr("No se pudo crear la cuenta. Inténtalo de nuevo.")); break;
     case "do-login": onLogin().catch(()=>formErr("No se pudo iniciar sesión. Inténtalo de nuevo.")); break;
-    case "delete-account": confirmBox("¿Eliminar tu cuenta?", `Se borrarán la cuenta de ${ME.email} y todo su progreso, racha y listas. No se puede deshacer.`, "Eliminar definitivamente", deleteAccount); break;
+    case "delete-account": confirmBox("¿Eliminar tu cuenta?", `Se borrarán la cuenta de ${ME.email} y todo su progreso, racha y listas${ME.mode==="cloud"?", también en la nube":""}. No se puede deshacer.`, "Eliminar definitivamente", deleteAccount); break;
     case "pref": { const k=t.dataset.k; let v=t.dataset.v; if(k==="minutes"){ v=+v; S.prefs.size=versesFor(v); } S.prefs[k]=v; if(k==="theme") applyTheme(v); persist(); render(); break; }
     case "wel-next": WEL.step++; render(); break;
     case "wel-skip": WEL.step=SLIDES.length-1; render(); break;
-    case "wel-signup": WEL.step="signup"; WEL.migrate=null; WEL.err=""; render(); break;
+    case "wel-signup": WEL.step="signup"; WEL.migrate=null; WEL.seedFrom=null; WEL.err=""; render(); break;
     case "wel-login": WEL.step="login"; WEL.err=""; render(); break;
     case "wel-back": WEL.step = WEL.step==="signup"||WEL.step==="login" ? SLIDES.length-1 : 0; render(); break;
     case "toggle-pw": { const inp=$("#"+t.dataset.for); const show=inp.type==="password"; inp.type=show?"text":"password"; t.textContent=show?"Ocultar":"Mostrar"; break; }
     case "pick-acc": WEL.prefill=t.dataset.email; render(); break;
     case "signup-with": WEL.step="signup"; WEL.migrate=null; WEL.err=""; WEL.prefillEmail=t.dataset.email; render(); break;
+    case "migrate-acc": { const acc=accounts().find(a=>a.id===t.dataset.id); if(acc){ WEL.step="signup"; WEL.migrate=null; WEL.err=""; WEL.seedFrom=acc.id; WEL.prefillEmail=acc.email; WEL.prefillName=acc.name; render(); } break; }
     case "migrate": WEL.step="signup"; WEL.migrate=t.dataset.name; WEL.err=""; render(); break;
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
@@ -1805,7 +1936,16 @@ document.addEventListener("keydown", e=>{
 /* =========================================================
    ARRANQUE
    ========================================================= */
-(function boot(){
+function renderSplash(){ root.innerHTML = `<div class="wel"><div class="empty" style="margin:auto"><div class="brand-mark" style="width:48px;height:48px">${I.lamp}</div><b>Lámpara</b><span>Cargando tu progreso…</span></div></div>`; }
+(async function boot(){
+  if(SB){
+    renderSplash();
+    let user = null;
+    try{ const { data } = await SB.auth.getSession(); user = data && data.session && data.session.user; }catch(e){}
+    if(user){ await cloudEnter(user); return; }
+    if(accounts().length || localProfiles().length) WEL.step = "login";
+    render(); return;
+  }
   const sid = LS.get("lampara.session", null);
   const acc = sid && accounts().find(a=>a.id===sid);
   if(acc){ ME = { mode:"account", id:acc.id, name:acc.name, email:acc.email, color:acc.color, key:"acct:"+acc.id }; S = Object.assign(freshState(), LS.get("lampara.state."+ME.key, {})); applyTheme(S.prefs.theme); }
