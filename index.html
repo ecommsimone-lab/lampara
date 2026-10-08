@@ -474,6 +474,7 @@ const I = {
   x:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   lamp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z" opacity=".85"/></svg>',
   book:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></svg>',
+  chat:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4"/></svg>',
   user:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   cloud:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/></svg>'
 };
@@ -714,6 +715,7 @@ function render(){
         ${navItem("library","Biblioteca",I.lib)}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
+        <button data-act="feedback">${I.chat}<span>Enviar comentario</span></button>
       </nav>
       <div class="eyebrow" style="padding:0 10px">Tus listas</div>
       <div class="side-lists">
@@ -735,7 +737,7 @@ function render(){
     </nav>
   </div>`;
   const v = $("#view");
-  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto"><span class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</span></button></div>`;
+  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto"><span class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</span></button></div></div>`;
   if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
   else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
   else if(VIEW.name==="list") v.innerHTML = mtop + viewList(VIEW.list);
@@ -1653,7 +1655,7 @@ function summaryBody(){
     ${fell.length?`<div class="result-bar bad"><span>Regresan a tu práctica: <b style="font-size:inherit">${fell.map(x=>esc(verse(x.id).ref)).join(", ")}</b></span></div>`:""}
     ${s.unlocked?`<div class="result-bar mid"><span>Vas muy bien. Agregamos <b style="font-size:inherit">${s.unlocked}</b> versículos nuevos a tu plan.</span></div>`:""}
     <div class="panel" style="padding:10px"><div class="vlist">${r.map((x,i)=>{ const v=verse(x.id); const cls=x.outcome==="ok"?"ok":x.outcome==="mid"?"mid":"bad"; return `<div class="vrow" style="grid-template-columns:28px minmax(0,1fr) auto auto"><span class="idx">${i+1}</span><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip ${cls} mono">${Math.round(x.score*100)}%</span><span class="chip ${x.after}">${STATUS_LABEL[x.after]}</span></div>`; }).join("")}</div></div>
-    <div class="row"><button class="btn primary lg" data-act="end-home">Ver mi progreso</button><button class="btn" data-act="again">Practicar otra vez</button></div>`;
+    <div class="row"><button class="btn primary lg" data-act="end-home">Ver mi progreso</button><button class="btn" data-act="again">Practicar otra vez</button><button class="btn ghost" data-act="feedback">${I.chat} ¿Algo que mejorar?</button></div>`;
 }
 
 /* ---------- Voz (lectura en voz alta) ---------- */
@@ -1679,6 +1681,55 @@ function toast(msg){
   const t = document.createElement("div"); t.className="toast"; t.textContent = msg; t.setAttribute("role","status");
   document.body.appendChild(t); setTimeout(()=>t.remove(), 3200);
 }
+/* ---------- Comentarios de los usuarios ---------- */
+const FB_KINDS = [["idea","Una idea"],["problema","Algo no funciona"],["contenido","Error en un texto o pregunta"],["otro","Otro comentario"]];
+function fbContext(){
+  if(VIEW.name==="session" && SESSION){ const id = SESSION.q ? SESSION.q.id : (SESSION.ids||[])[SESSION.i]; return "Práctica" + (id && verse(id) ? " · " + verse(id).ref : ""); }
+  if(VIEW.name==="bquiz" && BQ){ const q = BQ.qs[Math.min(BQ.i, BQ.qs.length-1)]; return (BQ.kind==="trivia"?"Cuestionario":"Libros") + " · " + String(q.prompt).replace(/<[^>]+>/g,""); }
+  return ({home:"Inicio",library:"Biblioteca",list:"Lista",review:"Repaso",profile:"Perfil",books:"Libros",privacy:"Privacidad"})[VIEW.name] || VIEW.name;
+}
+function feedbackModal(){
+  const ctx = fbContext();
+  modal(`
+    <div class="spread"><h2 style="font-size:24px">Enviar comentario</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="font-size:14px">Tu opinión nos ayuda a mejorar Lámpara. Leemos todos los comentarios.</p>
+    <div class="field"><label>¿Qué nos quieres contar?</label>
+      <div class="goal-grid" id="fbKinds">${FB_KINDS.map(([k,l],i)=>`<button type="button" class="goal" data-k="${k}" aria-pressed="${i===0}" style="padding:12px"><b style="font-size:14.5px;letter-spacing:0">${l}</b></button>`).join("")}</div>
+    </div>
+    <div class="field"><label for="fbMsg">Mensaje</label><textarea class="textarea" id="fbMsg" maxlength="2000" placeholder="Escribe aquí con el detalle que quieras…" style="font-family:var(--f-display);font-size:15px;min-height:130px"></textarea></div>
+    <p class="muted" style="font-size:12.5px">Se envía con tu nombre y correo, para poder responderte, y con la parte de la app donde estabas: <b>${esc(ctx)}</b>.</p>
+    <p id="fbErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="fbSend">Enviar</button></div>`, sc=>{
+      let kind = "idea";
+      sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+      sc.querySelectorAll("#fbKinds .goal").forEach(b=>b.onclick=()=>{ kind=b.dataset.k; sc.querySelectorAll("#fbKinds .goal").forEach(x=>x.setAttribute("aria-pressed", x===b)); });
+      sc.querySelector("#fbSend").onclick = async ()=>{
+        const msg = sc.querySelector("#fbMsg").value.trim(), err = sc.querySelector("#fbErr"), btn = sc.querySelector("#fbSend");
+        if(msg.length < 3){ err.textContent = "Escribe tu comentario antes de enviarlo."; return; }
+        btn.disabled = true; btn.textContent = "Enviando…";
+        const item = { kind, message: msg, context: ctx, name: ME.name, email: ME.email || null, user_agent: navigator.userAgent.slice(0,200) };
+        const ok = await sendFeedback(item);
+        closeModal();
+        toast(ok ? "¡Gracias! Recibimos tu comentario." : "Sin conexión: enviaremos tu comentario cuando vuelva internet.");
+      };
+      sc.querySelector("#fbMsg").addEventListener("input", ()=>{ sc.querySelector("#fbErr").textContent=""; });
+      setTimeout(()=>{ const t=sc.querySelector("#fbMsg"); if(t) t.focus(); }, 50);
+  });
+}
+function queueFeedback(item){ const q = LS.get("lampara.fbQueue", []); q.push(Object.assign({ at: Date.now() }, item)); LS.set("lampara.fbQueue", q.slice(-20)); }
+async function sendFeedback(item){
+  if(!SB || !ME || ME.mode!=="cloud"){ queueFeedback(item); return false; }
+  try{ const { error } = await SB.from("feedback").insert(item); if(error) throw error; return true; }
+  catch(e){ queueFeedback(item); return false; }
+}
+async function flushFeedback(){
+  if(!SB || !ME || ME.mode!=="cloud") return;
+  const q = LS.get("lampara.fbQueue", []); if(!q.length) return;
+  const rest = [];
+  for(const it of q){ const { at, ...item } = it; try{ const { error } = await SB.from("feedback").insert(item); if(error) throw error; }catch(e){ rest.push(it); } }
+  LS.set("lampara.fbQueue", rest);
+}
+window.addEventListener("online", ()=>flushFeedback());
 function modal(html, onMount){
   closeModal();
   const sc = document.createElement("div"); sc.className="scrim"; sc.id="scrim";
@@ -1977,7 +2028,7 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   S = Object.assign(freshState(), state || {});
   applyTheme(S.prefs.theme);
   WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
-  persist(); cloudFlush();
+  persist(); cloudFlush(); flushFeedback();
   if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
   if(fresh && !seeded){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
   else enterApp();
@@ -2049,7 +2100,7 @@ function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
 /* ---------- Política de privacidad ---------- */
 const PRIV = { responsable:"", ciudad:"", correo:"" };   // datos del responsable (Ley 1581)
 const PRIV_READY = !!(PRIV.responsable && PRIV.correo);
-const PRIVACY_TEMPLATE = "<article class=\"policy\">\n  <span class=\"eyebrow\">\u00daltima actualizaci\u00f3n: 8 de octubre de 2026</span>\n  <h1>Pol\u00edtica de privacidad</h1>\n  <p>Esta pol\u00edtica explica qu\u00e9 datos personales recoge <b>L\u00e1mpara B\u00edblica</b>, para qu\u00e9 los usa y c\u00f3mo puedes ejercer tus derechos, seg\u00fan la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.</p>\n\n  <h2>1. Responsable del tratamiento</h2>\n  <p><b>{{RESPONSABLE}}</b>, persona natural responsable del proyecto L\u00e1mpara B\u00edblica, en {{CIUDAD}}, Colombia.<br>Correo de contacto: <b>{{CORREO}}</b></p>\n\n  <h2>2. Datos que recogemos</h2>\n  <ul>\n    <li><b>Datos de tu cuenta:</b> nombre y correo electr\u00f3nico. Tu contrase\u00f1a se guarda cifrada; nadie del equipo puede verla.</li>\n    <li><b>Tu progreso:</b> vers\u00edculos que practicas, resultados de tus respuestas, racha, listas, vers\u00edculos que agregas, avance en libros de la Biblia y tus preferencias (duraci\u00f3n de la sesi\u00f3n, tema, tipo de pr\u00e1ctica).</li>\n    <li><b>Recitaci\u00f3n con micr\u00f3fono:</b> cuando usas esta opci\u00f3n, el reconocimiento de voz lo hace el servicio de tu navegador o tel\u00e9fono (por ejemplo, Google en Chrome). L\u00e1mpara B\u00edblica recibe solo el texto reconocido para calificar tu respuesta y no guarda grabaciones de tu voz.</li>\n  </ul>\n  <p>No recogemos tu ubicaci\u00f3n, tus contactos ni datos de pago, y no mostramos publicidad.</p>\n\n  <h2>3. Para qu\u00e9 usamos tus datos</h2>\n  <ul>\n    <li>Crear tu cuenta y permitirte entrar desde cualquier dispositivo.</li>\n    <li>Guardar y sincronizar tu progreso.</li>\n    <li>Enviarte correos necesarios para tu cuenta, como el enlace para restablecer tu contrase\u00f1a.</li>\n    <li>Mejorar la app con estad\u00edsticas generales de uso que no te identifican.</li>\n  </ul>\n  <p>No vendemos, alquilamos ni compartimos tus datos con terceros para fines comerciales o publicitarios.</p>\n\n  <h2>4. D\u00f3nde se guardan</h2>\n  <p>Tus datos se guardan en <b>Supabase</b>, el servicio que usamos para las cuentas y la base de datos. Sus servidores pueden estar fuera de Colombia; al aceptar esta pol\u00edtica autorizas esa transferencia, con las medidas de seguridad descritas abajo. La app se publica a trav\u00e9s de <b>GitHub Pages</b>, que no recibe tus datos de cuenta.</p>\n\n  <h2>5. C\u00f3mo protegemos tus datos</h2>\n  <ul>\n    <li>Toda la informaci\u00f3n viaja cifrada (https).</li>\n    <li>Reglas en la base de datos permiten que cada persona vea y modifique solo sus propios datos.</li>\n    <li>Las contrase\u00f1as se guardan cifradas.</li>\n  </ul>\n\n  <h2>6. Tus derechos</h2>\n  <p>Como titular de tus datos tienes derecho a:</p>\n  <ul>\n    <li>Conocer, actualizar y rectificar tus datos.</li>\n    <li>Solicitar prueba de la autorizaci\u00f3n que nos diste.</li>\n    <li>Ser informado sobre el uso que damos a tus datos.</li>\n    <li>Revocar la autorizaci\u00f3n y pedir que eliminemos tus datos.</li>\n    <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</li>\n  </ul>\n  <p><b>Eliminar tu cuenta:</b> puedes hacerlo en cualquier momento desde <b>Perfil \u2192 Eliminar cuenta</b>. Se borran tu cuenta y todo tu progreso de forma definitiva.</p>\n  <p><b>Consultas y reclamos:</b> escr\u00edbenos a <b>{{CORREO}}</b>. Respondemos las consultas en m\u00e1ximo 10 d\u00edas h\u00e1biles y los reclamos en m\u00e1ximo 15 d\u00edas h\u00e1biles, como lo indica la ley.</p>\n\n  <h2>7. Menores de edad</h2>\n  <p>La app est\u00e1 pensada para j\u00f3venes y adultos. Si eres menor de 18 a\u00f1os, \u00fasala con autorizaci\u00f3n de tu padre, madre o acudiente.</p>\n\n  <h2>8. Cambios a esta pol\u00edtica</h2>\n  <p>Si cambiamos esta pol\u00edtica, actualizaremos la fecha de arriba y te avisaremos dentro de la app cuando el cambio sea importante.</p>\n</article>\n";
+const PRIVACY_TEMPLATE = "<article class=\"policy\">\n  <span class=\"eyebrow\">\u00daltima actualizaci\u00f3n: 8 de octubre de 2026</span>\n  <h1>Pol\u00edtica de privacidad</h1>\n  <p>Esta pol\u00edtica explica qu\u00e9 datos personales recoge <b>L\u00e1mpara B\u00edblica</b>, para qu\u00e9 los usa y c\u00f3mo puedes ejercer tus derechos, seg\u00fan la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.</p>\n\n  <h2>1. Responsable del tratamiento</h2>\n  <p><b>{{RESPONSABLE}}</b>, persona natural responsable del proyecto L\u00e1mpara B\u00edblica, en {{CIUDAD}}, Colombia.<br>Correo de contacto: <b>{{CORREO}}</b></p>\n\n  <h2>2. Datos que recogemos</h2>\n  <ul>\n    <li><b>Datos de tu cuenta:</b> nombre y correo electr\u00f3nico. Tu contrase\u00f1a se guarda cifrada; nadie del equipo puede verla.</li>\n    <li><b>Tu progreso:</b> vers\u00edculos que practicas, resultados de tus respuestas, racha, listas, vers\u00edculos que agregas, avance en libros de la Biblia y tus preferencias (duraci\u00f3n de la sesi\u00f3n, tema, tipo de pr\u00e1ctica).</li>\n    <li><b>Comentarios que nos env\u00edas:</b> el mensaje, el tipo de comentario, la parte de la app donde estabas y tu nombre y correo, para poder responderte.</li>\n    <li><b>Recitaci\u00f3n con micr\u00f3fono:</b> cuando usas esta opci\u00f3n, el reconocimiento de voz lo hace el servicio de tu navegador o tel\u00e9fono (por ejemplo, Google en Chrome). L\u00e1mpara B\u00edblica recibe solo el texto reconocido para calificar tu respuesta y no guarda grabaciones de tu voz.</li>\n  </ul>\n  <p>No recogemos tu ubicaci\u00f3n, tus contactos ni datos de pago, y no mostramos publicidad.</p>\n\n  <h2>3. Para qu\u00e9 usamos tus datos</h2>\n  <ul>\n    <li>Crear tu cuenta y permitirte entrar desde cualquier dispositivo.</li>\n    <li>Guardar y sincronizar tu progreso.</li>\n    <li>Enviarte correos necesarios para tu cuenta, como el enlace para restablecer tu contrase\u00f1a.</li>\n    <li>Mejorar la app con estad\u00edsticas generales de uso que no te identifican.</li>\n  </ul>\n  <p>No vendemos, alquilamos ni compartimos tus datos con terceros para fines comerciales o publicitarios.</p>\n\n  <h2>4. D\u00f3nde se guardan</h2>\n  <p>Tus datos se guardan en <b>Supabase</b>, el servicio que usamos para las cuentas y la base de datos. Sus servidores pueden estar fuera de Colombia; al aceptar esta pol\u00edtica autorizas esa transferencia, con las medidas de seguridad descritas abajo. La app se publica a trav\u00e9s de <b>GitHub Pages</b>, que no recibe tus datos de cuenta.</p>\n\n  <h2>5. C\u00f3mo protegemos tus datos</h2>\n  <ul>\n    <li>Toda la informaci\u00f3n viaja cifrada (https).</li>\n    <li>Reglas en la base de datos permiten que cada persona vea y modifique solo sus propios datos.</li>\n    <li>Las contrase\u00f1as se guardan cifradas.</li>\n  </ul>\n\n  <h2>6. Tus derechos</h2>\n  <p>Como titular de tus datos tienes derecho a:</p>\n  <ul>\n    <li>Conocer, actualizar y rectificar tus datos.</li>\n    <li>Solicitar prueba de la autorizaci\u00f3n que nos diste.</li>\n    <li>Ser informado sobre el uso que damos a tus datos.</li>\n    <li>Revocar la autorizaci\u00f3n y pedir que eliminemos tus datos.</li>\n    <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</li>\n  </ul>\n  <p><b>Eliminar tu cuenta:</b> puedes hacerlo en cualquier momento desde <b>Perfil \u2192 Eliminar cuenta</b>. Se borran tu cuenta y todo tu progreso de forma definitiva.</p>\n  <p><b>Consultas y reclamos:</b> escr\u00edbenos a <b>{{CORREO}}</b>. Respondemos las consultas en m\u00e1ximo 10 d\u00edas h\u00e1biles y los reclamos en m\u00e1ximo 15 d\u00edas h\u00e1biles, como lo indica la ley.</p>\n\n  <h2>7. Menores de edad</h2>\n  <p>La app est\u00e1 pensada para j\u00f3venes y adultos. Si eres menor de 18 a\u00f1os, \u00fasala con autorizaci\u00f3n de tu padre, madre o acudiente.</p>\n\n  <h2>8. Cambios a esta pol\u00edtica</h2>\n  <p>Si cambiamos esta pol\u00edtica, actualizaremos la fecha de arriba y te avisaremos dentro de la app cuando el cambio sea importante.</p>\n</article>\n";
 function privacyHTML(){
   return PRIVACY_TEMPLATE.replace(/{{RESPONSABLE}}/g, esc(PRIV.responsable||"[pendiente]")).replace(/{{CIUDAD}}/g, esc(PRIV.ciudad||"[pendiente]")).replace(/{{CORREO}}/g, esc(PRIV.correo||"[pendiente]"));
 }
@@ -2079,6 +2130,7 @@ function viewProfile(){
     <h3 style="margin-bottom:6px">Cuenta</h3>
     <div class="set-group">
       <div class="set-row"><div class="lbl"><b>Dónde se guarda tu progreso</b><small>${ME.mode==="cloud"?`En la nube${cloudLastSync?` · última copia ${cloudLastSync.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}`:""}. Puedes entrar desde cualquier dispositivo.`:"Solo en este dispositivo."}</small></div><span class="chip ${ME.mode==="cloud"?"ok":"none"}">${ME.mode==="cloud"?"Nube":"Local"}</span></div>
+      <div class="set-row"><div class="lbl"><b>Enviar comentario</b><small>Cuéntanos una idea, un error o algo que te gustaría ver</small></div><button class="btn" data-act="feedback">${I.chat} Escribir</button></div>
       <div class="set-row"><div class="lbl"><b>Cerrar sesión</b><small>Tu progreso queda guardado en esta cuenta</small></div><button class="btn" data-act="logout">${I.logout} Cerrar sesión</button></div>
       <div class="set-row"><div class="lbl"><b>Eliminar cuenta</b><small>Borra la cuenta y todo su progreso. No se puede deshacer.</small></div><button class="btn danger" data-act="delete-account">${I.trash} Eliminar cuenta</button></div>
     </div>
@@ -2102,6 +2154,7 @@ document.addEventListener("click", e=>{
   const id = t.dataset.id;
   switch(a){
     case "logout": signOut(); break;
+    case "feedback": feedbackModal(); break;
     case "do-signup": onSignup().catch(()=>formErr("No se pudo crear la cuenta. Inténtalo de nuevo.")); break;
     case "do-forgot": busy("do-forgot","Enviando…", cloudForgot).catch(()=>formErr("No se pudo enviar el enlace. Inténtalo de nuevo.")); break;
     case "do-reset": busy("do-reset","Guardando…", cloudReset).catch(()=>formErr("No se pudo guardar la contraseña. Inténtalo de nuevo.")); break;
