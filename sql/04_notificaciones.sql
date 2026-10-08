@@ -349,3 +349,8 @@ grant execute on function public.respond_streak(uuid, boolean) to authenticated;
 grant execute on function public.end_streak(uuid) to authenticated;
 grant execute on function public.my_friends() to authenticated;
 grant execute on function public.send_cheer(uuid, int) to authenticated;
+
+-- 11) La función "push" usa el rol service_role: necesita leer la configuración y los celulares
+grant select, update on public.push_config to service_role;
+grant select, update on public.notifications to service_role;
+grant select, delete on public.push_subs to service_role;
