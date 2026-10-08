@@ -1344,7 +1344,9 @@ function scoreStrict(text, attempt){
     if(o.t==="extra") return `<span class="extra">${esc(aRaw[o.a])}</span>`;
     if(o.t==="miss") return `<span class="miss">${esc(tRaw[o.w])}</span>`;
     const tw = tRaw[o.w], aw = aRaw[o.a];
-    if(strictTok(tw)===strictTok(aw)){ credit += 1; return `<span class="ok">${esc(tw)}</span>`; }
+    // El versículo puede terminar en coma o punto y coma porque la frase sigue en el siguiente; terminarlo con punto (o sin signo) también vale
+    const lastT = o.w===tRaw.length-1 && /[,;:]$/.test(tw) && o.a===aRaw.length-1 && strictTok(tw.replace(/[,;:]$/,""))===strictTok(aw.replace(/[.,;:]$/,""));
+    if(strictTok(tw)===strictTok(aw) || lastT){ credit += 1; return `<span class="ok">${esc(tw)}</span>`; }
     credit += 0.5; errs++;
     return `<span class="near" title="Error de ${errKind(tw,aw)}">${esc(tw)}<small>${esc(aw)}</small></span>`;
   }).join(" ");
@@ -1362,6 +1364,7 @@ function gradeText(score, extraHTML=""){
   const s = SESSION, q = s.q;
   if(q.textDone) return;
   q.textDone = true; q.textScore = score; s.pending[q.id] = score;
+  s.textInfo = s.textInfo || {}; s.textInfo[q.id] = { mode:q.mode, detail: q.detailHTML || "" };
   const v = verse(q.id);
   const pct = Math.round(score*100);
   const cls = score>=.9?"ok":score>=.6?"mid":"bad";
@@ -1394,7 +1397,16 @@ function finalize(score, extraHTML=""){
   s.results.push({ id:q.id, score, outcome, before, after:status(q.id), xp });
   persist();
   const tsPct = Math.round((s.pending[q.id] ?? 0)*100);
-  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${feedbackHTML(score)}<p class="muted" style="font-size:13px">Resultado final de ${esc(verse(q.id).ref)}: texto ${tsPct}% + cita.</p>${extraHTML}
+  const info = (s.textInfo||{})[q.id] || {};
+  const textPart = q.type==="ref" || s.tasks[s.t].type==="ref" ? `
+    <details class="panel" style="padding:12px 16px;box-shadow:none;background:var(--surface-2)" ${tsPct<90?"open":""}>
+      <summary style="cursor:pointer;font-weight:700">Texto del versículo: ${tsPct}%${tsPct>=100?" ✓":tsPct>=90?" · casi perfecto":" · toca para ver qué faltó"}</summary>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        ${info.detail?`<span class="muted" style="font-size:13px">${info.mode==="write"?"Lo que escribiste comparado con el texto:":"Palabras que no coincidieron:"}</span>${info.detail}`:""}
+        <span class="muted" style="font-size:13px">Texto correcto:</span><p style="font-size:17px;font-weight:600;line-height:1.5;margin:0">${esc(verse(q.id).text)}</p>
+      </div>
+    </details>` : "";
+  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML}${feedbackHTML(score)}<p class="muted" style="font-size:13px;margin:0">El resultado de ${esc(verse(q.id).ref)} une lo que escribiste del texto (${tsPct}%) y la cita.</p>${textPart}
     <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${s.t<s.tasks.length-1?"Siguiente pregunta":"Ver resultados"}</button></div></div>`;
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   const n = $("#nextQ"); if(n) n.focus();
@@ -1411,14 +1423,16 @@ function checkAnswer(){
       const right = exact;
       ok += exact ? 1 : near ? 0.5 : 0;
       el.classList.add(exact?"right":near?"near":"wrong"); el.disabled = true;
-      if(!right){ const fix=document.createElement("span"); fix.className="fix"; fix.textContent=q.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(fix); }
+      if(!right){ const fix=document.createElement("span"); fix.className="fix"; fix.textContent=q.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(fix); q.misses=(q.misses||[]).concat({ want:q.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""), got:el.value.trim() }); }
     });
+    if(q.misses && q.misses.length) q.detailHTML = `<p style="font-size:14px">${q.misses.map(m=>`<span class="chip bad" style="margin:2px">${m.got?`<s>${esc(m.got)}</s> → `:""}${esc(m.want)}</span>`).join(" ")}</p>`;
     gradeText(ok/q.blanks.length);
   } else if(q.mode==="write"){
     const val = $("#writeBox").value;
     if(!val.trim()){ toast("Escribe el versículo o toca “No lo sé”."); return; }
     const r = scoreStrict(v.text, val);
     $("#writeBox").disabled = true;
+    q.detailHTML = `<p class="diff" style="font-size:17px">${r.html}</p>`;
     gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Tu respuesta comparada: <span style="color:var(--ok)">correcto</span> · <span style="color:var(--accent)">tilde, signo u ortografía</span> (tu versión tachada al lado) · <span style="color:var(--bad)">faltó</span> · <span style="text-decoration:line-through">sobró</span></p><p class="diff">${r.html}</p>${r.errs?`<p class="muted" style="font-size:13px;margin-top:6px">${r.errs} ${r.errs===1?"palabra tiene":"palabras tienen"} errores de tilde o puntuación (cuentan medio punto).</p>`:""}</div>`);
   }
 }
@@ -1463,8 +1477,8 @@ function reveal(){
 
 /* =========================================================
    PRUEBA DE NIVEL (solo al crear un usuario nuevo)
-   12 versículos de tres franjas de dificultad:
-   llenar espacios (¿lo sabes de memoria?) + elegir la cita (¿conoces la Biblia?)
+   10 preguntas de tres franjas de dificultad, todas escritas (sin opción múltiple,
+   para que no se pueda adivinar): completar palabras, terminar el versículo y escribir la cita
    ========================================================= */
 let PLACE = null;
 const LEVELS = [
@@ -1473,12 +1487,12 @@ const LEVELS = [
   { key:"Avanzado",     min:.7,  unlock:30, desc:"Tienes buena base; vas directo a pasajes más largos." }
 ];
 function startPlacement(){
-  const bands = [[0,20],[20,40],[40,SUGGESTED.length]];
+  // 3 básicos + 3 intermedios + 4 avanzados; en cada franja hay de los tres tipos
+  const bands = [[0,20,["blanks","finish","ref"]],[20,40,["blanks","finish","ref"]],[40,SUGGESTED.length,["blanks","finish","ref","finish"]]];
   const items = [];
-  bands.forEach(([a,b])=>{
-    const ids = shuffle(SUGGESTED.slice(a,b).map(r=>r[0])).slice(0,4);
-    const types = shuffle(["blanks","blanks","mc","mc"]);
-    shuffle(ids.map((id,k)=>({ id, type:types[k] }))).forEach(x=>items.push(x));
+  bands.forEach(([a,b,types])=>{
+    const ids = shuffle(SUGGESTED.slice(a,b).map(r=>r[0])).slice(0,types.length);
+    shuffle(types).forEach((type,k)=>items.push({ id:ids[k], type }));
   });
   items.forEach(it=>{
     const v = verse(it.id);
@@ -1486,9 +1500,9 @@ function startPlacement(){
       const toks = v.text.split(/(\s+)/); const cand = [];
       toks.forEach((t,i)=>{ if(norm(t).length>=3) cand.push(i); });
       it.toks = toks; it.blanks = shuffle(cand).slice(0, Math.max(2, Math.round(cand.length*.4))).sort((a,b)=>a-b);
-    } else {
-      const others = shuffle(SUGGESTED.filter(r=>r[0]!==it.id)).slice(0,3).map(r=>r[1]);
-      it.opts = shuffle([v.ref, ...others]);
+    } else if(it.type==="finish"){
+      const w = v.text.split(/\s+/); const cut = Math.max(2, Math.min(w.length-3, Math.round(w.length*.4)));
+      it.start = w.slice(0,cut).join(" "); it.rest = w.slice(cut).join(" ");
     }
   });
   PLACE = { phase:"intro", i:0, items, scores:[], answered:false };
@@ -1500,9 +1514,9 @@ function renderPlacement(){
     body = `
       <div style="display:flex;flex-direction:column;gap:10px"><span class="eyebrow">Bienvenido, ${esc(ME.name)}</span>
         <h1 style="font-size:clamp(32px,6vw,52px)">Prueba de nivel</h1>
-        <p class="muted" style="max-width:58ch;font-size:16px">Son 12 preguntas cortas, de las más conocidas a las más difíciles. Sirven para saber qué versículos ya dominas y desde dónde empezar. Si no conoces uno, toca “No lo conozco” sin problema.</p></div>
+        <p class="muted" style="max-width:58ch;font-size:16px">Son 10 preguntas, de las más conocidas a las más difíciles. No hay opciones para escoger: escribes tú, así sabemos qué conoces de verdad. Si no conoces uno, toca “No lo conozco” sin problema.</p></div>
       <div class="panel" style="display:flex;flex-direction:column;gap:12px">
-        <div class="row" style="gap:10px"><span class="chip acc">6 × completar el versículo</span><span class="chip mid">6 × identificar la cita</span><span class="chip none">≈ 4 minutos</span></div>
+        <div class="row" style="gap:8px"><span class="chip acc">3 × completar palabras</span><span class="chip mid">4 × terminar el versículo</span><span class="chip gold">3 × escribir la cita</span><span class="chip none">≈ 5 minutos</span></div>
         <div class="levels">${LEVELS.map(l=>`<div class="lvl"><b>${l.key}</b><small>${l.desc}</small></div>`).join("")}</div>
       </div>
       <div class="row"><button class="btn primary lg" data-act="pl-start">${I.play} Empezar la prueba</button><button class="btn ghost" data-act="pl-skip">Saltar y empezar desde cero</button></div>`;
@@ -1520,15 +1534,20 @@ function renderPlacement(){
           return `${esc(m[1])}<input data-pblank="${i}" aria-label="Palabra faltante" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
         }).join("")}</div>`;
       actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo conozco</button><span style="flex:1"></span><button class="btn primary" data-act="pl-check">Comprobar</button></div>`;
+    } else if(it.type==="finish"){
+      inner = `<div><span class="eyebrow">Termina el versículo</span><div class="ref" style="margin-top:4px">${esc(v.ref)}</div></div>
+        <p class="verse-text">“${esc(it.start)}…”</p>
+        <textarea class="textarea" id="plText" rows="3" placeholder="Escribe cómo sigue…" autocapitalize="sentences" spellcheck="false"></textarea>`;
+      actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo conozco</button><span style="flex:1"></span><button class="btn primary" data-act="pl-check">Comprobar</button></div>`;
     } else {
-      inner = `<div><span class="eyebrow">¿De qué cita es este versículo?</span></div>
+      inner = `<div><span class="eyebrow">¿Qué cita es?</span></div>
         <p class="verse-text">“${esc(v.text)}”</p>
-        <div class="opts">${it.opts.map((o,k)=>`<button class="opt" data-act="pl-opt" data-k="${k}">${esc(o)}</button>`).join("")}</div>`;
-      actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo sé</button></div>`;
+        <div class="field"><label for="plRef">Escribe libro, capítulo y versículo</label><input class="input" id="plRef" placeholder="Ej. Juan 3:16" autocomplete="off" spellcheck="false"></div>`;
+      actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="pl-check">Comprobar</button></div>`;
     }
     body = `
       <div class="progress"><i style="width:${P.i/P.items.length*100}%"></i></div>
-      <div class="spread"><div class="phase-tag"><span class="chip acc">Prueba de nivel</span><span class="chip none mono">${P.i+1} / ${P.items.length}</span></div><span class="chip none">${P.i<4?"Básico":P.i<8?"Intermedio":"Avanzado"}</span></div>
+      <div class="spread"><div class="phase-tag"><span class="chip acc">Prueba de nivel</span><span class="chip none mono">${P.i+1} / ${P.items.length}</span></div><span class="chip none">${P.i<3?"Básico":P.i<6?"Intermedio":"Avanzado"}</span></div>
       <div class="q-card">${inner}<div id="plFeedback"></div>${actions}</div>`;
   }
   else {
@@ -1537,8 +1556,8 @@ function renderPlacement(){
       <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Resultado de tu prueba</span><h1 style="font-size:clamp(34px,6vw,56px)">Nivel ${esc(L.key)}</h1><p class="muted" style="font-size:16px;max-width:58ch">${esc(L.desc)}</p></div>
       <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
         <div class="stat"><div class="eyebrow">Puntaje</div><span class="big">${Math.round(avg*100)}<small>%</small></span></div>
-        <div class="stat"><div class="eyebrow">De memoria</div><span class="big">${P.result.memo}<small>/ 6</small></span></div>
-        <div class="stat"><div class="eyebrow">Citas</div><span class="big">${P.result.refs}<small>/ 6</small></span></div>
+        <div class="stat"><div class="eyebrow">De memoria</div><span class="big">${P.result.memo}<small>/ ${P.result.memoN}</small></span></div>
+        <div class="stat"><div class="eyebrow">Citas</div><span class="big">${P.result.refs}<small>/ ${P.result.refN}</small></span></div>
       </div>
       <div class="levels">${LEVELS.map(l=>`<div class="lvl ${l===L?"on":""}"><b>${l.key}</b><small>${l.desc}</small></div>`).join("")}</div>
       <div class="panel" style="display:flex;flex-direction:column;gap:6px"><b>Tu plan inicial</b><p class="muted">Arrancas con ${S.unlocked} versículos en tu plan. ${P.result.known? `${P.result.known} ya quedaron marcados como “en proceso” porque los respondiste bien; te los preguntaremos con menos frecuencia.`:"Todos empiezan como “por aprender”."} A partir de aquí la app ajusta el ritmo según tus resultados.</p></div>
@@ -1549,6 +1568,8 @@ function renderPlacement(){
     const ins = [...root.querySelectorAll("[data-pblank]")];
     ins.forEach((el,k)=>el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(ins[k+1]) ins[k+1].focus(); else placementCheck(); } }));
     if(ins[0]) ins[0].focus();
+    const rf = $("#plRef"); if(rf){ rf.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); placementCheck(); } }); rf.focus(); }
+    const tx = $("#plText"); if(tx) tx.focus();
   }
 }
 function placementAnswer(score, html){
@@ -1560,17 +1581,36 @@ function placementAnswer(score, html){
   const n = $("#plNext"); if(n) n.focus();
 }
 function placementCheck(){
-  const P = PLACE, it = P.items[P.i]; if(P.answered || it.type!=="blanks") return;
-  let ok = 0;
-  it.blanks.forEach(i=>{
-    const el = root.querySelector(`[data-pblank="${i}"]`);
-    const right = norm(el.value) && close(norm(el.value), norm(it.toks[i]));
-    if(right) ok++;
-    el.classList.add(right?"right":"wrong"); el.disabled = true;
-    if(!right){ const f=document.createElement("span"); f.className="fix"; f.textContent=it.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(f); }
-  });
-  const sc = ok/it.blanks.length;
-  placementAnswer(sc, `<div class="result-bar ${sc>=.9?"ok":sc>=.6?"mid":"bad"}"><b>${Math.round(sc*100)}%</b><span>${ok} de ${it.blanks.length} palabras</span></div>`);
+  const P = PLACE, it = P.items[P.i]; if(P.answered) return;
+  const v = verse(it.id);
+  if(it.type==="blanks"){
+    let ok = 0;
+    it.blanks.forEach(i=>{
+      const el = root.querySelector(`[data-pblank="${i}"]`);
+      const right = norm(el.value) && close(norm(el.value), norm(it.toks[i]));
+      if(right) ok++;
+      el.classList.add(right?"right":"wrong"); el.disabled = true;
+      if(!right){ const f=document.createElement("span"); f.className="fix"; f.textContent=it.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(f); }
+    });
+    const sc = ok/it.blanks.length;
+    placementAnswer(sc, `<div class="result-bar ${sc>=.9?"ok":sc>=.6?"mid":"bad"}"><b>${Math.round(sc*100)}%</b><span>${ok} de ${it.blanks.length} palabras</span></div>`);
+  } else if(it.type==="finish"){
+    const el = $("#plText"), val = el.value.trim();
+    if(!val){ toast("Escribe cómo sigue o toca “No lo conozco”."); el.focus(); return; }
+    el.disabled = true;
+    const r = scoreFreeText(it.rest, val), sc = r.score;
+    placementAnswer(sc, `<div class="result-bar ${sc>=.9?"ok":sc>=.6?"mid":"bad"}"><b>${Math.round(sc*100)}%</b><span>${sc>=.9?"¡Lo sabes!":sc>=.6?"Casi.":"Sigue practicando."} En esta prueba no cuentan tildes ni signos.</span></div><p class="diff" style="font-size:17px">${esc(it.start)} ${r.html}</p>`);
+  } else {
+    const el = $("#plRef"), val = el.value.trim();
+    if(!val){ toast("Escribe la cita o toca “No lo sé”."); el.focus(); return; }
+    el.disabled = true;
+    const ok = refMatch(v.ref, val);
+    const book = v.ref.replace(/\s+\d.*$/,"");
+    const bookOk = !ok && norm(val).startsWith(norm(book));
+    const sc = ok ? 1 : bookOk ? 0.5 : 0;
+    el.classList.add(ok?"ref-ok":"ref-bad");
+    placementAnswer(sc, `<div class="result-bar ${ok?"ok":bookOk?"mid":"bad"}"><span>${ok?"¡Correcto!":bookOk?"El libro es correcto, pero el capítulo o versículo no.":"No es esa."} La cita es <b style="font-size:inherit">${esc(v.ref)}</b>.</span></div>`);
+  }
 }
 function finishPlacement(){
   const P = PLACE, now = Date.now();
@@ -1579,7 +1619,7 @@ function finishPlacement(){
   let memo=0, refs=0, known=0, maxIdx=-1;
   P.items.forEach((it,k)=>{
     const sc = P.scores[k]||0; let box = 0;
-    if(it.type==="blanks"){ if(sc>=.9){ box=3; memo++; } else if(sc>=.6){ box=1; memo+=.5; } }
+    if(it.type==="blanks" || it.type==="finish"){ if(sc>=.9){ box=3; memo++; } else if(sc>=.6){ box=1; memo+=.5; } }
     else if(sc>=1){ box=1; refs++; }
     if(box){
       known++; maxIdx = Math.max(maxIdx, SUG_MAP[it.id].order);
@@ -1590,7 +1630,7 @@ function finishPlacement(){
   S.extraActive = Object.keys(S.progress).filter(id=>SUG_MAP[id] && SUG_MAP[id].order>=S.unlocked);
   S.placed = { level:level.key, score:Math.round(avg*100), date:todayKey() };
   persist();
-  P.result = { avg, level, memo:Math.floor(memo), refs, known };
+  P.result = { avg, level, memo:Math.floor(memo), refs, known, memoN:P.items.filter(x=>x.type!=="ref").length, refN:P.items.filter(x=>x.type==="ref").length };
   P.phase = "done"; render(); window.scrollTo({top:0});
 }
 
