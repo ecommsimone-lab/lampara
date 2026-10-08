@@ -306,9 +306,12 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 }
 /* ---------- Comunidad y temas ---------- */
 a.btn{text-decoration:none}
+a.btn:not(.primary){color:var(--ink)}
 .input::placeholder{text-transform:none}
 .drow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px}
 .drow:hover{background:var(--surface-2)}
+.nbadge{position:absolute;top:4px;left:26px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--bad);color:#fff;font:700 10px/17px var(--f-ui,inherit);font-style:normal;text-align:center}
+.tabbar .nbadge{top:2px;left:calc(50% + 4px)}
 .drow b{display:block}
 @media (max-width:560px){ .lists-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px} .lcard .cv span{font-size:34px} }
 /* ---------- Política ---------- */
@@ -711,7 +714,8 @@ function render(){
   if(VIEW.name==="session" && SESSION){ renderSession(); return; }
   if(VIEW.name==="placement" && PLACE){ renderPlacement(); return; }
   if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
-  const navItem = (id,label,icon) => `<button data-go="${id}" aria-current="${VIEW.name===id}">${icon}<span>${label}</span></button>`;
+  const badge = commBadge();
+  const navItem = (id,label,icon) => `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && VIEW.name==="friend")}" style="position:relative">${icon}<span>${label}</span>${id==="community"&&badge?`<i class="nbadge" aria-label="${badge} pendientes">${badge>9?"9+":badge}</i>`:""}</button>`;
   const lists = listDefs();
   root.innerHTML = `
   <div class="app">
@@ -756,8 +760,9 @@ function render(){
   else if(VIEW.name==="books") v.innerHTML = mtop + viewBooks();
   else if(VIEW.name==="topic") v.innerHTML = mtop + viewTopic(VIEW.topic);
   else if(VIEW.name==="community") v.innerHTML = mtop + viewCommunity();
-  const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
+  else if(VIEW.name==="friend") v.innerHTML = mtop + viewFriend(VIEW.uid);
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
+  const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
 }
 
 /* ---------- Inicio / Dashboard ---------- */
@@ -1775,13 +1780,15 @@ function viewTopic(id){
 /* =========================================================
    COMUNIDAD: perfil visible, compañero de racha y esgrima
    ========================================================= */
-const COMM = { profile:null, partners:[], partnerProfile:null, days:{}, duels:[], profiles:{}, loaded:false, loading:false, err:"" };
-let PENDING_LINK = (()=>{ try{ const q=new URLSearchParams(location.search); const d=q.get("duelo"), c=q.get("companero"); return d?{type:"duel",code:d}:c?{type:"partner",code:c}:null; }catch(e){ return null; } })();
+const COMM = { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, loaded:false, loading:false, err:"" };
+let PENDING_LINK = (()=>{ try{ const q=new URLSearchParams(location.search); const d=q.get("duelo"), a=q.get("amigo"); return d?{type:"duel",code:d}:a?{type:"friend",code:a}:null; }catch(e){ return null; } })();
 function cloudOn(){ return !!(SB && ME && ME.mode==="cloud"); }
 function shortCode(n=6){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; const r=crypto.getRandomValues(new Uint32Array(n)); let s=""; for(const x of r) s+=a[x%a.length]; return s; }
 function appLink(param, code){ return location.origin + location.pathname + "?" + param + "=" + encodeURIComponent(code); }
 function dayKey(d){ return todayKey(d); }
+function slugName(s){ return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9_.]/g,"").slice(0,14); }
 function displayName(){ return (COMM.profile && COMM.profile.display_name) || ME.name; }
+function myUsername(){ return COMM.profile && COMM.profile.username; }
 function avatarHTML(name, color, url, size=32){
   const s = `width:${size}px;height:${size}px;font-size:${Math.round(size*0.42)}px`;
   if(url) return `<span class="avatar" style="${s};background:${color||"#888"};overflow:hidden;position:relative">${esc((name||"?").charAt(0).toUpperCase())}<img src="${esc(url)}" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></span>`;
@@ -1790,18 +1797,23 @@ function avatarHTML(name, color, url, size=32){
 function myAvatar(size){ return avatarHTML(displayName(), ME.color, COMM.profile && COMM.profile.avatar_url, size); }
 
 const API = {
-  async myProfile(){ const { data, error } = await SB.from("profiles").select("user_id,display_name,avatar_url").eq("user_id", ME.id).maybeSingle(); if(error) throw error; return data; },
+  async myProfile(){ const { data, error } = await SB.from("profiles").select("user_id,display_name,avatar_url,username").eq("user_id", ME.id).maybeSingle(); if(error) throw error; return data; },
   async saveProfile(p){ const { error } = await SB.from("profiles").upsert({ user_id: ME.id, display_name: p.display_name, avatar_url: p.avatar_url || null, updated_at: new Date().toISOString() }); if(error) throw error; },
-  async profiles(ids){ ids = [...new Set(ids.filter(Boolean))]; if(!ids.length) return []; const { data, error } = await SB.from("profiles").select("user_id,display_name,avatar_url").in("user_id", ids); if(error) throw error; return data || []; },
+  async profiles(ids){ ids = [...new Set(ids.filter(Boolean))]; if(!ids.length) return []; const { data, error } = await SB.from("profiles").select("user_id,display_name,avatar_url,username").in("user_id", ids); if(error) throw error; return data || []; },
   async uploadAvatar(blob){ const path = ME.id + "/avatar.jpg"; const { error } = await SB.storage.from("avatars").upload(path, blob, { upsert:true, contentType:"image/jpeg", cacheControl:"3600" }); if(error) throw error; const { data } = SB.storage.from("avatars").getPublicUrl(path); return data.publicUrl + "?v=" + Date.now(); },
   async removeAvatar(){ try{ await SB.storage.from("avatars").remove([ME.id + "/avatar.jpg"]); }catch(e){} },
   async markDay(day){ const { error } = await SB.from("activity").upsert({ user_id: ME.id, day }, { onConflict:"user_id,day", ignoreDuplicates:true }); if(error) throw error; },
   async days(uids, since){ const { data, error } = await SB.from("activity").select("user_id,day").in("user_id", uids).gte("day", since); if(error) throw error; return data || []; },
-  async myPartners(){ const { data, error } = await SB.from("partners").select("id,code,user_a,user_b,created_at").or(`user_a.eq.${ME.id},user_b.eq.${ME.id}`).order("created_at", { ascending:false }); if(error) throw error; return data || []; },
-  async createInvite(){ const { data, error } = await SB.from("partners").insert({ code: shortCode(), user_a: ME.id }).select("id,code,user_a,user_b,created_at").single(); if(error) throw error; return data; },
-  async joinPartner(code){ const { data, error } = await SB.rpc("join_partner", { p_code: code }); if(error) throw error; return data; },
-  async leavePartner(id){ const { error } = await SB.from("partners").delete().eq("id", id); if(error) throw error; },
-  async createDuel(questions){ const { data, error } = await SB.from("duels").insert({ code: shortCode(), creator: ME.id, questions }).select("*").single(); if(error) throw error; return data; },
+  async rpc(name, args){ const { data, error } = await SB.rpc(name, args || {}); if(error) throw error; return data; },
+  ensureUsername(hint){ return API.rpc("ensure_username", { p_hint: hint }); },
+  setUsername(name){ return API.rpc("set_username", { p_name: name }); },
+  async findUser(q){ const d = await API.rpc("find_user", { p_query: q }); return (d && d[0]) || null; },
+  sendRequest(uid){ return API.rpc("send_friend_request", { p_user: uid }); },
+  respond(id, accept){ return API.rpc("respond_friend", { p_id: id, p_accept: accept }); },
+  removeFriend(id){ return API.rpc("remove_friend", { p_id: id }); },
+  async myFriends(){ return (await API.rpc("my_friends")) || []; },
+  friendCount(uid){ return API.rpc("friend_count", { p_uid: uid }); },
+  async createDuel(questions, opponent){ const row = { code: shortCode(), creator: ME.id, questions }; if(opponent) row.opponent = opponent; const { data, error } = await SB.from("duels").insert(row).select("*").single(); if(error) throw error; return data; },
   async joinDuel(code){ const { data, error } = await SB.rpc("join_duel", { p_code: code }); if(error) throw error; return data; },
   async getDuel(id){ const { data, error } = await SB.from("duels").select("*").eq("id", id).maybeSingle(); if(error) throw error; return data; },
   async submitDuel(id, score, ms){ const { error } = await SB.rpc("submit_duel", { p_id: id, p_score: score, p_ms: ms }); if(error) throw error; },
@@ -1809,102 +1821,109 @@ const API = {
 };
 function commError(e){
   const m = String((e && e.message) || e || "");
-  if(/relation .* does not exist|schema cache|Could not find the (table|function)/i.test(m)) return "Falta activar Comunidad en Supabase (código SQL de Comunidad).";
-  if(/ya_tienes_companero/.test(m)) return "Ya tienes un compañero de racha. Termina esa racha compartida para unirte a otra.";
+  if(/relation .* does not exist|schema cache|Could not find the (table|function)|function .* does not exist/i.test(m)) return "Falta activar Amigos en Supabase (código SQL de Amigos).";
+  if(/usuario_invalido/.test(m)) return "El usuario debe tener de 3 a 20 letras sin tildes, números, punto o guion bajo.";
+  if(/usuario_ocupado/.test(m)) return "Ese usuario ya lo tiene otra persona. Prueba con otro.";
+  if(/demasiadas_solicitudes/.test(m)) return "Tienes muchas solicitudes sin responder. Espera a que te acepten.";
+  if(/demasiados_amigos/.test(m)) return "Llegaste al máximo de amigos.";
   return authError(e);
 }
 
-/* Perfil público: se crea al entrar con el nombre de la cuenta */
+/* Perfil público: se crea al entrar con el nombre de la cuenta y recibe un @usuario */
 async function ensureProfile(){
   if(!cloudOn()) return;
   try{
     let p = await API.myProfile();
     if(!p){ p = { user_id: ME.id, display_name: ME.name, avatar_url: null }; await API.saveProfile(p); }
+    if(!p.username){ try{ p.username = await API.ensureUsername(slugName(ME.name)); }catch(e){} }
     COMM.profile = p; if(VIEW.name!=="welcome-goal" && VIEW.name!=="placement") render();
+    loadCommunity();
   }catch(e){ /* tabla aún no creada o sin conexión: se usa el nombre de la cuenta */ }
 }
 
-/* Registra que hoy practicaste (para la racha compartida) */
+/* Registra que hoy practicaste (para las rachas con amigos) */
 function markToday(){
   if(!cloudOn()) return;
   const k = todayKey();
   if(S._marked === k) return;
-  API.markDay(k).then(()=>{ S._marked = k; LS.set("lampara.state."+ME.key, S); }).catch(()=>{});
+  API.markDay(k).then(()=>{ S._marked = k; LS.set("lampara.state."+ME.key, S); (COMM.days[ME.id] = COMM.days[ME.id] || new Set()).add(k); }).catch(()=>{});
 }
 
-/* Racha compartida: días seguidos en que ambos practicaron */
-function sharedStreak(daysA, daysB){
+/* Rachas: personal (desde la actividad) y compartida (los dos el mismo día) */
+function runOfDays(has){
   let d = new Date(), n = 0;
-  const both = x => daysA.has(dayKey(x)) && daysB.has(dayKey(x));
-  if(!both(d)) d = new Date(Date.now() - DAY);
-  while(both(d)){ n++; d = new Date(d.getTime() - DAY); }
+  if(!has(d)) d = new Date(Date.now() - DAY);
+  while(has(d)){ n++; d = new Date(d.getTime() - DAY); }
   return n;
 }
-function activePartner(){ return COMM.partners.find(p=>p.user_b); }
-function pendingInvite(){ return COMM.partners.find(p=>!p.user_b && p.user_a===ME.id); }
+function sharedStreak(daysA, daysB){ daysA = daysA || new Set(); daysB = daysB || new Set(); return runOfDays(x => daysA.has(dayKey(x)) && daysB.has(dayKey(x))); }
+function soloStreak(days){ days = days || new Set(); return runOfDays(x => days.has(dayKey(x))); }
+function daysInLast(days, n){ days = days || new Set(); let c = 0; for(let i=0;i<n;i++) if(days.has(dayKey(new Date(Date.now() - i*DAY)))) c++; return c; }
+
+const friendsAccepted = () => COMM.friends.filter(f=>f.status==="accepted");
+const friendsIncoming = () => COMM.friends.filter(f=>f.status==="pending" && f.incoming);
+const friendsOutgoing = () => COMM.friends.filter(f=>f.status==="pending" && !f.incoming);
+function myDuelTurn(d){ return (d.creator===ME.id ? d.creator_score : d.opponent_score) == null; }
+function commBadge(){ return COMM.loaded ? friendsIncoming().length + COMM.duels.filter(myDuelTurn).length : 0; }
 
 async function loadCommunity(){
   if(!cloudOn() || COMM.loading) return;
   COMM.loading = true; COMM.err = "";
   try{
-    COMM.partners = await API.myPartners();
+    COMM.friends = await API.myFriends();
+    COMM.friends.forEach(f=>COMM.profiles[f.user_id] = f);
     COMM.duels = await API.myDuels();
-    const ap = activePartner();
-    const other = ap ? (ap.user_a===ME.id ? ap.user_b : ap.user_a) : null;
-    const ids = COMM.duels.flatMap(d=>[d.creator, d.opponent]).concat(other ? [other] : []).filter(x=>x && x!==ME.id);
-    (await API.profiles(ids)).forEach(p=>COMM.profiles[p.user_id] = p);
-    if(other){
-      const since = dayKey(new Date(Date.now() - 60*DAY));
-      const rows = await API.days([ME.id, other], since);
-      COMM.days = { [ME.id]: new Set(rows.filter(r=>r.user_id===ME.id).map(r=>r.day)), [other]: new Set(rows.filter(r=>r.user_id===other).map(r=>r.day)) };
-      COMM.partnerId = other;
-    } else { COMM.partnerId = null; }
+    const missing = COMM.duels.flatMap(d=>[d.creator, d.opponent]).filter(x=>x && x!==ME.id && !COMM.profiles[x]);
+    if(missing.length) (await API.profiles(missing)).forEach(p=>COMM.profiles[p.user_id] = p);
+    const ids = [ME.id, ...friendsAccepted().map(f=>f.user_id)];
+    const rows = await API.days(ids, dayKey(new Date(Date.now() - 60*DAY)));
+    COMM.days = {}; ids.forEach(id=>COMM.days[id] = new Set());
+    rows.forEach(r=>{ (COMM.days[r.user_id] = COMM.days[r.user_id] || new Set()).add(r.day); });
+    COMM.counts[ME.id] = friendsAccepted().length;
     COMM.loaded = true;
   }catch(e){ COMM.err = commError(e); }
   COMM.loading = false;
-  if(VIEW.name==="community") render();
+  if(["community","friend","profile","home","library","books"].includes(VIEW.name)) render();
 }
+function reloadCommunity(){ COMM.loaded = false; COMM.counts = {}; return loadCommunity(); }
 function personLabel(uid){ const p = COMM.profiles[uid]; return p ? (p.display_name || "Alguien") : "Alguien"; }
 function personAvatar(uid, size){ const p = COMM.profiles[uid] || {}; return avatarHTML(p.display_name || "?", colorFor(uid), p.avatar_url, size); }
 
 function shareButtons(kind, code){
-  const link = appLink(kind==="duel" ? "duelo" : "companero", code);
-  const msg = kind==="duel" ? `Te reto a un esgrima bíblico en Lámpara. Entra aquí y responde las mismas 10 preguntas: ${link}` : `¿Quieres ser mi compañero de racha en Lámpara? Practiquemos la Biblia cada día juntos: ${link}`;
+  const link = appLink(kind==="duel" ? "duelo" : "amigo", code);
+  const msg = kind==="duel" ? `Te reto a un esgrima bíblico en Lámpara. Entra aquí y responde las mismas 10 preguntas: ${link}` : `Agrégame como amigo en Lámpara para aprender la Biblia juntos. Mi usuario es @${code}: ${link}`;
   return `<div class="row" style="gap:8px">
-    <span class="chip acc mono" style="font-size:16px;padding:8px 14px;letter-spacing:.12em">${esc(code)}</span>
-    <a class="btn primary" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-    <button class="btn" data-act="copy-link" data-link="${esc(link)}">Copiar enlace</button>
+    ${kind==="duel"?`<span class="chip acc mono" style="font-size:16px;padding:8px 14px;letter-spacing:.12em">${esc(code)}</span>`:""}
+    <a class="btn ${kind==="duel"?"primary":""}" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+    <button class="btn ${kind==="duel"?"":"ghost"}" data-act="copy-link" data-link="${esc(link)}">Copiar enlace</button>
   </div>`;
 }
 const HEART_NOTE = `<div class="result-bar mid" style="align-items:flex-start;gap:10px"><span style="font-size:20px;line-height:1">♡</span><span style="font-size:14px;line-height:1.5"><b style="font-size:inherit">Ni la racha ni los puntos miden tu fe.</b> Si conozco las Escrituras pero no tengo amor, de nada sirve (1 Corintios 13:1–3). Lo que importa es que la Palabra transforme tu corazón y tu manera de vivir (Santiago 1:22).</span></div>`;
 
+function personLine(f){ return `<b>${esc(f.display_name || "Alguien")}</b>${f.username?`<small class="muted mono" style="display:block;font-size:12px">@${esc(f.username)}</small>`:""}`; }
+function searchResultHTML(){
+  const r = COMM.search;
+  if(r===null) return "";
+  if(r==="loading") return `<p class="muted" style="font-size:14px">Buscando…</p>`;
+  if(r==="none") return `<p class="muted" style="font-size:14px">No encontramos a nadie con ese correo o usuario. Revisa que esté completo y bien escrito.</p>`;
+  let act;
+  if(r.status==="accepted") act = `<span class="chip ok">Ya son amigos</span>`;
+  else if(r.status==="pending" && r.incoming) act = `<button class="btn primary" data-act="friend-add" data-id="${r.user_id}" style="padding:6px 14px">Aceptar</button>`;
+  else if(r.status==="pending") act = `<span class="chip none">Solicitud enviada</span>`;
+  else act = `<button class="btn primary" data-act="friend-add" data-id="${r.user_id}" style="padding:6px 14px">${I.plus} Agregar</button>`;
+  return `<div class="drow" style="background:var(--surface-2)">${avatarHTML(r.display_name, colorFor(r.user_id), r.avatar_url, 36)}<div style="min-width:0">${personLine(r)}</div><div>${act}</div></div>`;
+}
+function friendRow(f){
+  const t = todayKey(), theirs = COMM.days[f.user_id] || new Set(), st = sharedStreak(COMM.days[ME.id], theirs);
+  return `<div class="drow" data-act="friend-open" data-id="${f.user_id}" role="button" tabindex="0" style="cursor:pointer">${personAvatar(f.user_id,40)}
+    <div style="min-width:0">${personLine(f)}<div class="row" style="gap:6px;margin-top:4px"><span class="chip ${st?"acc":"none"}">${I.flame} ${st} ${st===1?"día":"días"} juntos</span>${theirs.has(t)?`<span class="chip ok">✓ Practicó hoy</span>`:""}</div></div>
+    <div><button class="btn" data-act="duel-friend" data-id="${f.user_id}" style="padding:6px 14px">Retar</button></div></div>`;
+}
+
 function viewCommunity(){
-  if(!cloudOn()) return `<div class="empty"><b>Comunidad necesita conexión con la nube</b><span>Entra con tu cuenta para retar a otros y tener un compañero de racha.</span></div>`;
-  if(!COMM.loaded && !COMM.err){ setTimeout(loadCommunity, 0); return `<section><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Comunidad</h1></section><div class="empty"><b>Cargando…</b></div>`; }
-  const ap = activePartner(), inv = pendingInvite();
-  let partnerCard;
-  if(ap){
-    const other = COMM.partnerId, mine = COMM.days[ME.id] || new Set(), theirs = COMM.days[other] || new Set();
-    const st = sharedStreak(mine, theirs), t = todayKey();
-    const status = (uid, set) => `<div class="row" style="gap:10px;flex-wrap:nowrap">${uid===ME.id?myAvatar(36):personAvatar(uid,36)}<div style="display:flex;flex-direction:column;min-width:0"><b>${esc(uid===ME.id?"Tú":personLabel(uid))}</b><small class="${set.has(t)?"":"muted"}" style="${set.has(t)?"color:var(--ok)":""}">${set.has(t)?"✓ Practicó hoy":"Aún no practica hoy"}</small></div></div>`;
-    partnerCard = `
-      <div class="spread"><h3>Racha compartida</h3><button class="btn ghost" data-act="partner-leave" data-id="${ap.id}" style="padding:6px 12px">Terminar</button></div>
-      <div class="row" style="gap:16px"><span class="flame" style="transform:scale(1.4)">${I.flame}</span><span class="big" style="font-size:44px;font-weight:800;letter-spacing:-.04em">${st}<small style="font-size:18px;color:var(--muted);font-weight:600"> ${st===1?"día":"días"} juntos</small></span></div>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">${status(ME.id, mine)}${status(other, theirs)}</div>
-      <p class="muted" style="font-size:13px">La racha sube cuando los dos practican el mismo día. Anímense mutuamente.</p>`;
-  } else if(inv){
-    partnerCard = `
-      <h3>Racha compartida</h3>
-      <p class="muted" style="font-size:14px">Comparte este código con la persona que quieres que sea tu compañero. Cuando lo use, empiezan su racha juntos.</p>
-      ${shareButtons("partner", inv.code)}
-      <button class="linkbtn" data-act="partner-leave" data-id="${inv.id}" style="align-self:flex-start;padding:0">Cancelar invitación</button>`;
-  } else {
-    partnerCard = `
-      <h3>Racha compartida</h3>
-      <p class="muted" style="font-size:14px">Escoge a alguien para practicar cada día. Si los dos practican el mismo día, su racha juntos sube.</p>
-      <div class="row"><button class="btn primary" data-act="partner-invite">Invitar a alguien</button></div>
-      <div class="row" style="flex-wrap:nowrap" data-enter="partner-join"><input class="input" id="partnerCode" placeholder="¿Tienes un código? Ej. K7M2QX" maxlength="8" autocapitalize="characters" style="max-width:220px;text-transform:uppercase"><button class="btn" data-act="partner-join">Unirme</button></div>`;
-  }
+  if(!cloudOn()) return `<div class="empty"><b>Comunidad necesita conexión con la nube</b><span>Entra con tu cuenta para agregar amigos y retarlos.</span></div>`;
+  if(!COMM.loaded && !COMM.err){ setTimeout(loadCommunity, 0); return `<section><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1></section><div class="empty"><b>Cargando…</b></div>`; }
+  const acc = friendsAccepted(), inc = friendsIncoming(), out = friendsOutgoing(), me = myUsername();
   const duelRow = d => {
     const iAmCreator = d.creator===ME.id, other = iAmCreator ? d.opponent : d.creator;
     const my = iAmCreator ? d.creator_score : d.opponent_score, their = iAmCreator ? d.opponent_score : d.creator_score;
@@ -1917,21 +1936,55 @@ function viewCommunity(){
     return `<div class="drow"><span>${other?personAvatar(other,32):`<span class="avatar" style="width:32px;height:32px;background:var(--surface-2);color:var(--muted)">?</span>`}</span><div style="min-width:0"><b>${other?esc(personLabel(other)):"Reto abierto"}</b><div style="margin-top:4px">${state}</div></div><div>${act}</div></div>`;
   };
   return `
-  <section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1><p class="muted">Practica con otros, anímense y aprendan la Palabra en comunidad.</p></section>
+  <section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1><p class="muted">Agrega amigos, anímense cada día y aprendan la Palabra en comunidad.</p></section>
   ${COMM.err?`<div class="result-bar bad"><span>${esc(COMM.err)}</span></div>`:""}
   ${HEART_NOTE}
+  ${inc.length?`<section style="display:flex;flex-direction:column;gap:10px"><h3>Solicitudes de amistad <span class="chip acc">${inc.length}</span></h3><div class="panel" style="padding:10px"><div class="vlist">${inc.map(f=>`<div class="drow">${personAvatar(f.user_id,36)}<div style="min-width:0">${personLine(f)}</div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn primary" data-act="friend-accept" data-id="${f.id}" style="padding:6px 14px">Aceptar</button><button class="btn ghost" data-act="friend-reject" data-id="${f.id}" style="padding:6px 12px">Rechazar</button></div></div>`).join("")}</div></div></section>`:""}
   <section class="split">
-    <div class="panel" style="display:flex;flex-direction:column;gap:14px">${partnerCard}</div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+      <h3>Agregar amigos</h3>
+      <p class="muted" style="font-size:14px">Escribe el correo completo o el @usuario de la persona. Le llegará una solicitud y, cuando la acepte, serán amigos.</p>
+      <div class="row" style="flex-wrap:nowrap" data-enter="friend-search"><input class="input" id="friendQuery" placeholder="correo@ejemplo.com o @usuario" autocapitalize="none" autocomplete="off" spellcheck="false" value="${esc(COMM.searchQ||"")}"><button class="btn primary" data-act="friend-search">Buscar</button></div>
+      <div id="friendResult">${searchResultHTML()}</div>
+      ${me?`<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px"><span class="muted" style="font-size:13px">Tu usuario es <b class="mono" style="color:var(--ink)">@${esc(me)}</b>. También puedes invitar con un enlace:</span>${shareButtons("friend", me)}</div>`:""}
+    </div>
     <div class="panel" style="display:flex;flex-direction:column;gap:14px">
       <h3>Esgrima bíblico</h3>
-      <p class="muted" style="font-size:14px">Reta a alguien: los dos responden las mismas 10 preguntas sobre libros, citas e historias. Gana quien acierte más; si empatan, quien lo haga más rápido.</p>
-      <div class="row"><button class="btn primary" data-act="duel-new">${I.play} Crear un reto</button></div>
+      <p class="muted" style="font-size:14px">Los dos responden las mismas 10 preguntas sobre libros, citas e historias. Gana quien acierte más; si empatan, quien lo haga más rápido. Reta a un amigo desde tu lista o crea un reto abierto para compartir.</p>
+      <div class="row"><button class="btn" data-act="duel-new">${I.play} Crear reto abierto</button></div>
       <div class="row" style="flex-wrap:nowrap" data-enter="duel-join"><input class="input" id="duelCode" placeholder="¿Te retaron? Escribe el código" maxlength="8" autocapitalize="characters" style="max-width:240px;text-transform:uppercase"><button class="btn" data-act="duel-join">Aceptar</button></div>
     </div>
   </section>
+  <section style="display:flex;flex-direction:column;gap:10px"><h3>Mis amigos <span class="chip none">${acc.length}</span></h3>
+    <div class="panel" style="padding:10px">${acc.length?`<div class="vlist">${acc.map(friendRow).join("")}</div>`:`<div class="empty"><b>Aún no tienes amigos aquí</b><span>Busca a alguien por su correo o @usuario. Con cada amigo llevas una racha juntos: sube los días en que los dos practican.</span></div>`}
+    ${out.length?`<div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px"><span class="eyebrow" style="padding:0 12px">Solicitudes enviadas</span><div class="vlist">${out.map(f=>`<div class="drow">${personAvatar(f.user_id,32)}<div style="min-width:0">${personLine(f)}</div><button class="btn ghost" data-act="friend-cancel" data-id="${f.id}" style="padding:6px 12px">Cancelar</button></div>`).join("")}</div></div>`:""}</div>
+  </section>
   <section style="display:flex;flex-direction:column;gap:10px"><h3>Mis retos</h3>
-    <div class="panel" style="padding:10px">${COMM.duels.length?`<div class="vlist">${COMM.duels.map(duelRow).join("")}</div>`:`<div class="empty"><b>Aún no tienes retos</b><span>Crea uno y compártelo por WhatsApp.</span></div>`}</div>
+    <div class="panel" style="padding:10px">${COMM.duels.length?`<div class="vlist">${COMM.duels.map(duelRow).join("")}</div>`:`<div class="empty"><b>Aún no tienes retos</b><span>Reta a un amigo o crea un reto abierto.</span></div>`}</div>
   </section>`;
+}
+
+function viewFriend(uid){
+  const f = COMM.friends.find(x=>x.user_id===uid && x.status==="accepted");
+  if(!f) return `<div class="empty"><b>Esta persona ya no está en tus amigos</b><button class="btn" data-go="community">Volver a Comunidad</button></div>`;
+  if(COMM.counts[uid]===undefined){ COMM.counts[uid] = null; API.friendCount(uid).then(n=>{ COMM.counts[uid] = n; if(VIEW.name==="friend") render(); }).catch(()=>{}); }
+  const theirs = COMM.days[uid] || new Set(), n = COMM.counts[uid];
+  const st = sharedStreak(COMM.days[ME.id], theirs);
+  const stat = (label, val, unit) => `<div class="stat"><div class="eyebrow">${label}</div><span class="big">${val}${unit?`<small>${unit}</small>`:""}</span></div>`;
+  return `
+  <button class="linkbtn" data-go="community" style="align-self:flex-start;padding:0">← Comunidad</button>
+  <section class="prof-head">
+    ${personAvatar(uid,64)}
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(f.display_name||"Alguien")}</h1>${f.username?`<span class="muted mono">@${esc(f.username)}</span>`:""}
+      <div class="row" style="gap:6px"><span class="chip none">${n==null?"…":n} ${n===1?"amigo":"amigos"}</span>${theirs.has(todayKey())?`<span class="chip ok">✓ Practicó hoy</span>`:""}</div></div>
+  </section>
+  <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    ${stat("Su racha", soloStreak(theirs), soloStreak(theirs)===1?" día":" días")}
+    ${stat("Practicó en 30 días", daysInLast(theirs,30), " / 30")}
+    ${stat("Racha juntos", st, st===1?" día":" días")}
+  </div>
+  ${HEART_NOTE}
+  <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn ghost" data-act="friend-remove" data-id="${f.id}">Eliminar amigo</button></div>`;
 }
 
 /* Preguntas del esgrima: libros, citas de versículos e historias */
@@ -1977,7 +2030,7 @@ function duelResultHTML(d){
     ${!other ? `<div class="panel" style="display:flex;flex-direction:column;gap:10px"><b>Comparte el reto</b><p class="muted" style="font-size:14px">Tu rival responde las mismas preguntas. El reto vence en 7 días.</p>${shareButtons("duel", d.code)}</div>` : ""}`;
 }
 
-/* Deep links: ?duelo=CODIGO y ?companero=CODIGO */
+/* Deep links: ?duelo=CODIGO y ?amigo=USUARIO */
 async function handlePendingLink(){
   if(!PENDING_LINK || !cloudOn()) return;
   const { type, code } = PENDING_LINK; PENDING_LINK = null;
@@ -1990,11 +2043,37 @@ async function handlePendingLink(){
       const mine = d.creator===ME.id ? d.creator_score : d.opponent_score;
       if(mine==null) startDuelPlay(d); else { BQ = { kind:"duel", duel:d, qs:d.questions, i:d.questions.length, done:true, score:mine }; VIEW={name:"bquiz"}; render(); }
     } else {
-      const id = await API.joinPartner(code);
-      if(!id){ toast("Ese código de compañero no es válido o ya se usó."); return; }
-      COMM.loaded = false; go("community"); toast("¡Ahora tienen una racha compartida!");
+      const u = await API.findUser("@" + String(code).replace(/^@/,""));
+      if(!u){ toast("No encontramos ese usuario."); return; }
+      let msg;
+      if(u.status==="accepted") msg = `Ya eres amigo de ${u.display_name}.`;
+      else { const r = await API.sendRequest(u.user_id); msg = r==="accepted" ? `¡Ahora eres amigo de ${u.display_name}!` : `Le enviamos una solicitud de amistad a ${u.display_name}.`; }
+      COMM.loaded = false; go("community"); toast(msg);
     }
   }catch(e){ toast(commError(e)); }
+}
+
+/* Botón de amigos: agregar, aceptar, retar */
+async function friendAction(act, id, btn){
+  if(btn) btn.disabled = true;
+  try{
+    if(act==="add"){ const r = await API.sendRequest(id); const name = (COMM.search && COMM.search.display_name) || "esa persona"; if(COMM.search && COMM.search.user_id===id) COMM.search = Object.assign({}, COMM.search, { status: r, incoming:false }); toast(r==="accepted" ? `¡Ahora eres amigo de ${name}!` : `Solicitud enviada a ${name}.`); }
+    else if(act==="accept"){ await API.respond(id, true); toast("¡Ahora son amigos!"); }
+    else if(act==="reject"){ await API.respond(id, false); }
+    else if(act==="cancel" || act==="remove"){ await API.removeFriend(id); }
+    await reloadCommunity(); if(act==="remove") go("community"); else render();
+  }catch(e){ if(btn) btn.disabled = false; toast(commError(e)); }
+}
+async function searchFriend(){
+  const q = ($("#friendQuery").value || "").trim(); COMM.searchQ = q;
+  if(q.replace(/^@/,"").length < 3){ toast("Escribe el correo completo o el @usuario."); return; }
+  COMM.search = "loading"; $("#friendResult").innerHTML = searchResultHTML();
+  try{
+    const looksEmail = q.indexOf("@") > 0;
+    if(!looksEmail && !/^@?[a-zA-Z0-9_.]{3,20}$/.test(q)){ COMM.search = "none"; }
+    else { const r = await API.findUser(looksEmail ? q.toLowerCase() : "@" + q.replace(/^@/,"").toLowerCase()); COMM.search = r || "none"; }
+  }catch(e){ COMM.search = null; toast(commError(e)); }
+  const el = $("#friendResult"); if(el) el.innerHTML = searchResultHTML();
 }
 
 /* Foto de perfil: se recorta cuadrada y se reduce a 256 px */
@@ -2027,12 +2106,14 @@ function profileCommunityPanel(){
   <section class="panel">
     <h3 style="margin-bottom:6px">Cómo te ven los demás</h3>
     <div class="set-group">
-      <div class="set-row"><div class="row" style="gap:14px;flex-wrap:nowrap">${myAvatar(56)}<div class="lbl"><b>Foto de perfil</b><small>Se ve en Comunidad: esgrima y racha compartida</small></div></div>
+      <div class="set-row"><div class="row" style="gap:14px;flex-wrap:nowrap">${myAvatar(56)}<div class="lbl"><b>Foto de perfil</b><small>La ven tus amigos y tus rivales de esgrima</small></div></div>
         <div class="row" style="gap:6px"><label class="btn" for="avatarInput" style="cursor:pointer">${hasPhoto?"Cambiar foto":"Agregar foto"}</label>${hasPhoto?`<button class="btn ghost" data-act="avatar-remove">Quitar</button>`:""}<input type="file" id="avatarInput" accept="image/*" hidden></div></div>
       <div class="set-row"><div class="lbl"><b>Nombre visible</b><small>Por defecto es tu nombre; puedes usar un apodo</small></div>
         <div class="row" style="flex-wrap:nowrap" data-enter="save-display"><input class="input" id="displayName" value="${esc(name)}" maxlength="40" style="max-width:220px"><button class="btn" data-act="save-display">Guardar</button></div></div>
+      <div class="set-row"><div class="lbl"><b>Usuario</b><small>Con él te pueden buscar y agregar como amigo</small></div>
+        <div class="row" style="flex-wrap:nowrap" data-enter="save-username"><span class="muted mono">@</span><input class="input mono" id="username" value="${esc(myUsername()||"")}" maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false" style="max-width:200px;text-transform:lowercase"><button class="btn" data-act="save-username">Guardar</button></div></div>
     </div>
-    <p class="muted" style="font-size:12px;margin-top:8px">Usa una foto apropiada: la verán otras personas de la comunidad.</p>
+    <p class="muted" style="font-size:12px;margin-top:8px">Usa una foto apropiada. Tus amigos ven tu nombre, tu foto, tu racha, los días que practicas y cuántos amigos tienes; tu correo nunca se muestra.</p>
   </section>`;
 }
 
@@ -2478,7 +2559,7 @@ async function signOut(){
   if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} try{ await SB.auth.signOut(); }catch(e){} }
   localSignOut();
 }
-function localSignOut(){ Object.assign(COMM, { profile:null, partners:[], days:{}, duels:[], profiles:{}, loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function localSignOut(){ Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
 async function deleteAccount(){
   if(ME.mode==="cloud" && SB){
     await API.removeAvatar();
@@ -2513,8 +2594,8 @@ function viewProfile(){
   return `
   <section class="prof-head">
     ${myAvatar(64)}
-    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${esc(ME.email||"")}</span>
-      <div class="row" style="gap:6px">${S.placed&&S.placed.level?`<span class="chip acc">Nivel inicial: ${esc(S.placed.level)}</span>`:""}<span class="chip ok">${learned} aprendidos</span><span class="chip none">racha ${streak()} ${streak()===1?"día":"días"}</span></div></div>
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${myUsername()?`<span class="mono">@${esc(myUsername())}</span> · `:""}${esc(ME.email||"")}</span>
+      <div class="row" style="gap:6px">${cloudOn()&&COMM.loaded?`<button class="chip acc" data-go="community" style="border:0;cursor:pointer">${friendsAccepted().length} ${friendsAccepted().length===1?"amigo":"amigos"}</button>`:""}${S.placed&&S.placed.level?`<span class="chip acc">Nivel inicial: ${esc(S.placed.level)}</span>`:""}<span class="chip ok">${learned} aprendidos</span><span class="chip none">racha ${streak()} ${streak()===1?"día":"días"}</span></div></div>
   </section>
   ${profileCommunityPanel()}
   <section class="panel">
@@ -2561,9 +2642,15 @@ document.addEventListener("click", e=>{
     case "play-topic": { const tp=TOPIC_MAP[t.dataset.id]; S.extraActive=[...new Set((S.extraActive||[]).concat(tp.ids.filter(x=>!activeIds().includes(x))))]; persist(); startSession(pickFor("topic:"+tp.id),{title:tp.name, source:"topic:"+tp.id}); break; }
     case "save-topic": { const tp=TOPIC_MAP[t.dataset.id]; let l=S.lists.find(x=>x.topic===tp.id); if(!l){ l={ id:"l-"+uid(), name:tp.name, ids:tp.ids.slice(), topic:tp.id }; S.lists.push(l); persist(); toast(`“${tp.name}” se guardó en tus listas.`); } else toast("Ya tienes este tema en tus listas."); go("list",{list:l.id}); break; }
     case "copy-link": { const link=t.dataset.link; (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>toast("Enlace copiado.")).catch(()=>{ toast("Copia este enlace: "+link); }); break; }
-    case "partner-invite": API.createInvite().then(()=>{ COMM.loaded=false; render(); }).catch(e=>toast(commError(e))); break;
-    case "partner-join": { const c=($("#partnerCode").value||"").trim().toUpperCase(); if(c.length<4){ toast("Escribe el código que te compartieron."); break; } API.joinPartner(c).then(id=>{ if(!id){ toast("Ese código no es válido o ya se usó."); return; } COMM.loaded=false; render(); toast("¡Ahora tienen una racha compartida!"); }).catch(e=>toast(commError(e))); break; }
-    case "partner-leave": confirmBox("¿Terminar la racha compartida?", "Dejarán de ver su racha juntos. Cada uno conserva su propio progreso.", "Terminar", ()=>API.leavePartner(t.dataset.id).then(()=>{ COMM.loaded=false; render(); }).catch(e=>toast(commError(e)))); break;
+    case "friend-search": searchFriend(); break;
+    case "friend-add": friendAction("add", t.dataset.id, t); break;
+    case "friend-accept": friendAction("accept", t.dataset.id, t); break;
+    case "friend-reject": friendAction("reject", t.dataset.id, t); break;
+    case "friend-cancel": friendAction("cancel", t.dataset.id, t); break;
+    case "friend-remove": confirmBox("¿Eliminar a este amigo?", "Dejarán de ver su racha y actividad. Cada uno conserva su propio progreso.", "Eliminar", ()=>friendAction("remove", t.dataset.id)); break;
+    case "friend-open": go("friend", { uid: t.dataset.id }); break;
+    case "duel-friend": { t.disabled=true; API.createDuel(makeDuelQuestions(), t.dataset.id).then(d=>{ COMM.loaded=false; startDuelPlay(d); }).catch(e=>{ t.disabled=false; toast(commError(e)); }); break; }
+    case "save-username": { const v=($("#username").value||"").trim().replace(/^@/,"").toLowerCase(); if(!/^[a-z0-9_.]{3,20}$/.test(v)){ toast(commError("usuario_invalido")); break; } API.setUsername(v).then(u=>{ COMM.profile=Object.assign({},COMM.profile,{username:u}); render(); toast("Usuario actualizado: @"+u); }).catch(e=>toast(commError(e))); break; }
     case "duel-new": { t.disabled=true; API.createDuel(makeDuelQuestions()).then(d=>{ COMM.loaded=false; startDuelPlay(d); }).catch(e=>{ t.disabled=false; toast(commError(e)); }); break; }
     case "duel-join": { const c=($("#duelCode").value||"").trim().toUpperCase(); if(c.length<4){ toast("Escribe el código del reto."); break; } PENDING_LINK={type:"duel",code:c}; handlePendingLink(); break; }
     case "duel-play": { const d=COMM.duels.find(x=>x.id===t.dataset.id); if(d) startDuelPlay(d); break; }
