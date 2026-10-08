@@ -304,6 +304,11 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
   .wel-art{display:none}
   .wel-main{padding:28px 20px calc(24px + env(safe-area-inset-bottom,0px));min-height:100%}
 }
+/* ---------- Política ---------- */
+.policy{display:flex;flex-direction:column;gap:12px;max-width:68ch;line-height:1.6}
+.policy h1{font-size:clamp(28px,5vw,40px)}
+.policy h2{font-size:18px;margin-top:10px}
+.policy ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 /* ---------- Perfil ---------- */
 .prof-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .prof-head .avatar{width:64px;height:64px;font-size:26px}
@@ -500,7 +505,11 @@ function persist(){
 const SB_URL = "https://vapcakmrzyjazjhfjeqa.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhcGNha21yenlqYXpqaGZqZXFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0ODA2MzksImV4cCI6MjEwNzA1NjYzOX0.neh231Jbi_NxP9_JpypPo24Xv3ygWPupGG3iK-JO9Mg";
 let SB = null;
+const IS_RECOVERY = /type=recovery/.test(location.hash) || /type=recovery/.test(location.search);
+const LINK_ERROR = /error_code=otp_expired|error=access_denied/.test(location.hash);
 try{ if(window.supabase && SB_KEY) SB = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true, storageKey:"lampara.auth" } }); }catch(e){ SB = null; }
+let RECOVERY = IS_RECOVERY;
+if(SB){ try{ SB.auth.onAuthStateChange((event)=>{ if(event==="PASSWORD_RECOVERY") RECOVERY = true; }); }catch(e){} }
 let cloudTimer = null, cloudDirty = false, cloudWarned = false, cloudLoaded = false, cloudLastSync = null;
 function colorFor(id){ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))|0; return COLORS[Math.abs(h)%COLORS.length]; }
 function cloudSave(){
@@ -733,6 +742,7 @@ function render(){
   else if(VIEW.name==="review") v.innerHTML = mtop + viewList("rev");
   else if(VIEW.name==="profile") v.innerHTML = mtop + viewProfile();
   else if(VIEW.name==="books") v.innerHTML = mtop + viewBooks();
+  else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
 }
 
 /* ---------- Inicio / Dashboard ---------- */
@@ -1815,7 +1825,7 @@ function renderWelcome(){
         <div class="field"><label for="suName">Nombre</label><input class="input" id="suName" autocomplete="given-name" maxlength="30" required value="${esc(WEL.migrate||"")}"></div>
         <div class="field"><label for="suEmail">Correo</label><input class="input" id="suEmail" type="email" autocomplete="email" inputmode="email" maxlength="80" required></div>
         <div class="field"><label for="suPass">Contraseña</label>${pwField("suPass","Mínimo 6 caracteres","new-password")}</div>
-        ${SB?`<label class="check" style="align-items:flex-start;font-size:13px;line-height:1.4"><input type="checkbox" id="suConsent" style="margin-top:2px;flex:none"><span>Autorizo que Lámpara guarde mi nombre, correo y progreso de práctica para usar la app. Puedo eliminar mi cuenta y mis datos cuando quiera desde Perfil.</span></label>`:""}
+        ${SB?`<label class="check" style="align-items:flex-start;font-size:13px;line-height:1.4"><input type="checkbox" id="suConsent" style="margin-top:2px;flex:none"><span>${PRIV_READY?`Autorizo el tratamiento de mi nombre, correo y progreso de práctica según la <button type="button" class="linkbtn" data-act="wel-privacy" style="padding:0;display:inline;font-size:inherit">política de privacidad</button>.`:"Autorizo que Lámpara guarde mi nombre, correo y progreso de práctica para usar la app."} Puedo eliminar mi cuenta y mis datos cuando quiera desde Perfil.</span></label>`:""}
         <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
         <button class="btn primary lg" type="button" data-act="do-signup">Continuar</button>
       </div>
@@ -1830,6 +1840,35 @@ function renderWelcome(){
         ${[[5,"Ligero","3 versículos"],[10,"Constante","6 versículos"],[15,"Dedicado","9 versículos"],[20,"Intenso","13 versículos"]].map(([m,t,d])=>`<button class="goal" data-act="wel-goal" data-m="${m}" aria-pressed="${WEL.goal===m}"><b>${m} min</b><small>${t} · ${d}</small></button>`).join("")}
       </div>
       <div class="wel-actions"><button class="btn primary lg" data-act="wel-finish">Hacer la prueba de nivel</button><button class="linkbtn" data-act="wel-finish-skip">Empezar desde cero</button></div>`;
+  } else if(st==="forgot"){
+    main = `
+      <div class="spread"><button class="btn ghost" data-act="wel-login" style="padding:8px 12px">← Atrás</button><span></span></div>
+      <h1>Recupera tu <em>contraseña</em></h1>
+      <p class="lead">Escribe el correo de tu cuenta y te enviaremos un enlace para crear una contraseña nueva.</p>
+      <div class="form" id="forgotForm" data-enter="do-forgot">
+        <div class="field"><label for="fgEmail">Correo</label><input class="input" id="fgEmail" type="email" autocomplete="email" inputmode="email" required></div>
+        <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
+        <button class="btn primary lg" type="button" data-act="do-forgot">Enviar enlace</button>
+      </div>
+      <p class="note">El enlace llega en unos minutos. Revisa también la carpeta de spam o correo no deseado.</p>`;
+  } else if(st==="sent"){
+    main = `
+      <h1>Revisa tu <em>correo</em></h1>
+      <p class="lead">Si hay una cuenta con <b>${esc(WEL.sentTo||"")}</b>, te enviamos un enlace para crear una contraseña nueva. Ábrelo en este mismo celular o computador.</p>
+      <p class="note">¿No llegó en 5 minutos? Revisa spam o correo no deseado, o vuelve a intentarlo.</p>
+      <div class="wel-actions"><button class="btn primary lg" data-act="wel-login">Volver a entrar</button><button class="linkbtn" data-act="wel-forgot">Enviar otra vez</button></div>`;
+  } else if(st==="reset"){
+    main = `
+      <h1>Crea tu nueva <em>contraseña</em></h1>
+      <p class="lead">Escríbela dos veces para confirmarla.</p>
+      <div class="form" id="resetForm" data-enter="do-reset">
+        <div class="field"><label for="rsPass">Nueva contraseña</label>${pwField("rsPass","Mínimo 6 caracteres","new-password")}</div>
+        <div class="field"><label for="rsPass2">Repite la contraseña</label>${pwField("rsPass2","Escríbela otra vez","new-password")}</div>
+        <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
+        <button class="btn primary lg" type="button" data-act="do-reset">Guardar contraseña</button>
+      </div>`;
+  } else if(st==="privacy"){
+    main = `<div class="spread"><button class="btn ghost" data-act="wel-back-from-privacy" style="padding:8px 12px">← Atrás</button><span></span></div>${privacyHTML()}`;
   } else if(st==="login"){
     const accs = accounts(), legacy = localProfiles().filter(p=>!accs.some(a=>a.legacy===p.name));
     main = `
@@ -1841,6 +1880,7 @@ function renderWelcome(){
         <div class="field"><label for="liPass">Contraseña</label>${pwField("liPass","Tu contraseña","current-password")}</div>
         <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
         <button class="btn primary lg" type="button" data-act="do-login">Entrar</button>
+        ${SB?`<button class="linkbtn" data-act="wel-forgot" style="align-self:center">¿Olvidaste tu contraseña?</button>`:""}
       </div>
       ${accs.length&&SB?`<div class="prev-acc"><span class="eyebrow">Cuentas guardadas solo en este dispositivo</span>${accs.map(a=>`<button class="profile" data-act="migrate-acc" data-id="${esc(a.id)}"><div class="avatar" style="background:${a.color}">${esc(a.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(a.name)}</b><small>Pasar a la nube y conservar el progreso</small></div></button>`).join("")}</div>`:""}
       ${accs.length&&!SB?`<div class="prev-acc"><span class="eyebrow">Cuentas en este dispositivo</span>${accs.map(a=>`<button class="profile" data-act="pick-acc" data-email="${esc(a.email)}"><div class="avatar" style="background:${a.color}">${esc(a.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(a.name)}</b><small>${esc(a.email)}</small></div></button>`).join("")}</div>`:""}
@@ -1848,6 +1888,8 @@ function renderWelcome(){
       <button class="linkbtn" data-act="wel-signup">Crear una cuenta nueva</button>`;
   }
   root.innerHTML = `<div class="wel"><div class="wel-card">${welArt()}<section class="wel-main">${main}</section></div></div>`;
+  const ff = $("#fgEmail"); if(ff){ if(WEL.prefillEmail){ ff.value=WEL.prefillEmail; WEL.prefillEmail=null; } ff.focus(); }
+  const rf = $("#rsPass"); if(rf) rf.focus();
   const sf = $("#signupForm"); if(sf){ if(WEL.prefillEmail){ $("#suEmail").value=WEL.prefillEmail; WEL.prefillEmail=null; } if(WEL.prefillName){ $("#suName").value=WEL.prefillName; WEL.prefillName=null; } $("#suName").focus(); }
   const lf = $("#loginForm"); if(lf){ if(WEL.prefill){ $("#liEmail").value=WEL.prefill; $("#liPass").focus(); } }
   WEL.prefill = null;
@@ -1900,6 +1942,26 @@ async function cloudLogin(){
     return formErr(msg);
   }
   await cloudEnter(data.user, { seed: localSeed(email) });
+}
+async function cloudForgot(){
+  const email = $("#fgEmail").value.trim().toLowerCase();
+  if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
+  formErr("");
+  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  if(error) return formErr(authError(error));
+  WEL.step = "sent"; WEL.sentTo = email; render();
+}
+async function cloudReset(){
+  const a = $("#rsPass").value, b = $("#rsPass2").value;
+  if(a.length<6) return formErr("La contraseña debe tener al menos 6 caracteres.");
+  if(a!==b) return formErr("Las dos contraseñas no coinciden.");
+  formErr("");
+  const { data, error } = await SB.auth.updateUser({ password: a });
+  if(error) return formErr(/session|expired|jwt/i.test(error.message||"") ? "El enlace ya venció. Pide uno nuevo desde “¿Olvidaste tu contraseña?”." : authError(error));
+  RECOVERY = false;
+  try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  toast("Contraseña actualizada.");
+  await cloudEnter(data.user);
 }
 async function cloudEnter(user, { name, seed, fresh } = {}){
   const meta = user.user_metadata || {};
@@ -1984,6 +2046,13 @@ function needsPlacement(){ return !S.placed && Object.keys(S.progress).length===
 function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
 
 /* ---------- Perfil y ajustes ---------- */
+/* ---------- Política de privacidad ---------- */
+const PRIV = { responsable:"", ciudad:"", correo:"" };   // datos del responsable (Ley 1581)
+const PRIV_READY = !!(PRIV.responsable && PRIV.correo);
+const PRIVACY_TEMPLATE = "<article class=\"policy\">\n  <span class=\"eyebrow\">\u00daltima actualizaci\u00f3n: 8 de octubre de 2026</span>\n  <h1>Pol\u00edtica de privacidad</h1>\n  <p>Esta pol\u00edtica explica qu\u00e9 datos personales recoge <b>L\u00e1mpara B\u00edblica</b>, para qu\u00e9 los usa y c\u00f3mo puedes ejercer tus derechos, seg\u00fan la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.</p>\n\n  <h2>1. Responsable del tratamiento</h2>\n  <p><b>{{RESPONSABLE}}</b>, persona natural responsable del proyecto L\u00e1mpara B\u00edblica, en {{CIUDAD}}, Colombia.<br>Correo de contacto: <b>{{CORREO}}</b></p>\n\n  <h2>2. Datos que recogemos</h2>\n  <ul>\n    <li><b>Datos de tu cuenta:</b> nombre y correo electr\u00f3nico. Tu contrase\u00f1a se guarda cifrada; nadie del equipo puede verla.</li>\n    <li><b>Tu progreso:</b> vers\u00edculos que practicas, resultados de tus respuestas, racha, listas, vers\u00edculos que agregas, avance en libros de la Biblia y tus preferencias (duraci\u00f3n de la sesi\u00f3n, tema, tipo de pr\u00e1ctica).</li>\n    <li><b>Recitaci\u00f3n con micr\u00f3fono:</b> cuando usas esta opci\u00f3n, el reconocimiento de voz lo hace el servicio de tu navegador o tel\u00e9fono (por ejemplo, Google en Chrome). L\u00e1mpara B\u00edblica recibe solo el texto reconocido para calificar tu respuesta y no guarda grabaciones de tu voz.</li>\n  </ul>\n  <p>No recogemos tu ubicaci\u00f3n, tus contactos ni datos de pago, y no mostramos publicidad.</p>\n\n  <h2>3. Para qu\u00e9 usamos tus datos</h2>\n  <ul>\n    <li>Crear tu cuenta y permitirte entrar desde cualquier dispositivo.</li>\n    <li>Guardar y sincronizar tu progreso.</li>\n    <li>Enviarte correos necesarios para tu cuenta, como el enlace para restablecer tu contrase\u00f1a.</li>\n    <li>Mejorar la app con estad\u00edsticas generales de uso que no te identifican.</li>\n  </ul>\n  <p>No vendemos, alquilamos ni compartimos tus datos con terceros para fines comerciales o publicitarios.</p>\n\n  <h2>4. D\u00f3nde se guardan</h2>\n  <p>Tus datos se guardan en <b>Supabase</b>, el servicio que usamos para las cuentas y la base de datos. Sus servidores pueden estar fuera de Colombia; al aceptar esta pol\u00edtica autorizas esa transferencia, con las medidas de seguridad descritas abajo. La app se publica a trav\u00e9s de <b>GitHub Pages</b>, que no recibe tus datos de cuenta.</p>\n\n  <h2>5. C\u00f3mo protegemos tus datos</h2>\n  <ul>\n    <li>Toda la informaci\u00f3n viaja cifrada (https).</li>\n    <li>Reglas en la base de datos permiten que cada persona vea y modifique solo sus propios datos.</li>\n    <li>Las contrase\u00f1as se guardan cifradas.</li>\n  </ul>\n\n  <h2>6. Tus derechos</h2>\n  <p>Como titular de tus datos tienes derecho a:</p>\n  <ul>\n    <li>Conocer, actualizar y rectificar tus datos.</li>\n    <li>Solicitar prueba de la autorizaci\u00f3n que nos diste.</li>\n    <li>Ser informado sobre el uso que damos a tus datos.</li>\n    <li>Revocar la autorizaci\u00f3n y pedir que eliminemos tus datos.</li>\n    <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</li>\n  </ul>\n  <p><b>Eliminar tu cuenta:</b> puedes hacerlo en cualquier momento desde <b>Perfil \u2192 Eliminar cuenta</b>. Se borran tu cuenta y todo tu progreso de forma definitiva.</p>\n  <p><b>Consultas y reclamos:</b> escr\u00edbenos a <b>{{CORREO}}</b>. Respondemos las consultas en m\u00e1ximo 10 d\u00edas h\u00e1biles y los reclamos en m\u00e1ximo 15 d\u00edas h\u00e1biles, como lo indica la ley.</p>\n\n  <h2>7. Menores de edad</h2>\n  <p>La app est\u00e1 pensada para j\u00f3venes y adultos. Si eres menor de 18 a\u00f1os, \u00fasala con autorizaci\u00f3n de tu padre, madre o acudiente.</p>\n\n  <h2>8. Cambios a esta pol\u00edtica</h2>\n  <p>Si cambiamos esta pol\u00edtica, actualizaremos la fecha de arriba y te avisaremos dentro de la app cuando el cambio sea importante.</p>\n</article>\n";
+function privacyHTML(){
+  return PRIVACY_TEMPLATE.replace(/{{RESPONSABLE}}/g, esc(PRIV.responsable||"[pendiente]")).replace(/{{CIUDAD}}/g, esc(PRIV.ciudad||"[pendiente]")).replace(/{{CORREO}}/g, esc(PRIV.correo||"[pendiente]"));
+}
 const RVR_NOTICE = "Texto bíblico tomado de la versión Reina-Valera © 1960 Sociedades Bíblicas en América Latina; © renovado 1988 Sociedades Bíblicas Unidas. Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas.";
 function noticeHTML(){ return `<p class="muted" style="font-size:11.5px;line-height:1.5;max-width:80ch">${esc(RVR_NOTICE)}</p>`; }
 function viewProfile(){
@@ -2014,7 +2083,7 @@ function viewProfile(){
       <div class="set-row"><div class="lbl"><b>Eliminar cuenta</b><small>Borra la cuenta y todo su progreso. No se puede deshacer.</small></div><button class="btn danger" data-act="delete-account">${I.trash} Eliminar cuenta</button></div>
     </div>
   </section>
-  <section class="panel"><h3 style="margin-bottom:6px">Acerca de</h3>${noticeHTML()}</section>`;
+  <section class="panel" style="display:flex;flex-direction:column;gap:10px"><h3>Acerca de</h3>${PRIV_READY?`<button class="linkbtn" data-act="privacy" style="align-self:flex-start;padding:0">Política de privacidad</button>`:""}${noticeHTML()}</section>`;
 }
 
 /* =========================================================
@@ -2034,6 +2103,12 @@ document.addEventListener("click", e=>{
   switch(a){
     case "logout": signOut(); break;
     case "do-signup": onSignup().catch(()=>formErr("No se pudo crear la cuenta. Inténtalo de nuevo.")); break;
+    case "do-forgot": busy("do-forgot","Enviando…", cloudForgot).catch(()=>formErr("No se pudo enviar el enlace. Inténtalo de nuevo.")); break;
+    case "do-reset": busy("do-reset","Guardando…", cloudReset).catch(()=>formErr("No se pudo guardar la contraseña. Inténtalo de nuevo.")); break;
+    case "wel-forgot": { const em=$("#liEmail"); WEL.prefillEmail = (em&&em.value.trim()) || WEL.sentTo || null; WEL.step="forgot"; WEL.err=""; render(); break; }
+    case "wel-privacy": WEL.prevStep = WEL.step; WEL.step="privacy"; render(); window.scrollTo({top:0}); break;
+    case "wel-back-from-privacy": WEL.step = WEL.prevStep || 0; render(); break;
+    case "privacy": go("privacy"); break;
     case "do-login": onLogin().catch(()=>formErr("No se pudo iniciar sesión. Inténtalo de nuevo.")); break;
     case "delete-account": confirmBox("¿Eliminar tu cuenta?", `Se borrarán la cuenta de ${ME.email} y todo su progreso, racha y listas${ME.mode==="cloud"?", también en la nube":""}. No se puede deshacer.`, "Eliminar definitivamente", deleteAccount); break;
     case "pref": { const k=t.dataset.k; let v=t.dataset.v; if(k==="minutes"){ v=+v; S.prefs.size=versesFor(v); } S.prefs[k]=v; if(k==="theme") applyTheme(v); persist(); render(); break; }
@@ -2165,6 +2240,8 @@ function renderSplash(){ root.innerHTML = `<div class="wel"><div class="empty" s
     renderSplash();
     let user = null;
     try{ const { data } = await SB.auth.getSession(); user = data && data.session && data.session.user; }catch(e){}
+    if(RECOVERY && user){ WEL.step = "reset"; render(); return; }
+    if(LINK_ERROR){ WEL.step = "forgot"; WEL.err = "El enlace ya venció o ya se usó. Pide uno nuevo."; try{ history.replaceState(null, "", location.pathname); }catch(e){} render(); return; }
     if(user){ await cloudEnter(user); return; }
     if(accounts().length || localProfiles().length) WEL.step = "login";
     render(); return;
