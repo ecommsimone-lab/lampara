@@ -1,0 +1,1811 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16152B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Lámpara Bíblica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+[hidden]{display:none!important}
+html,body{margin:0}img{max-width:100%}
+/* Layout: app shell tipo reproductor — barra lateral de navegación (abajo en móvil), escenario central con la tarjeta del versículo como protagonista */
+:root{
+  --bg:#F2F1F6; --surface:#FFFFFF; --surface-2:#E9E8F0; --line:#DAD8E4;
+  --ink:#16152B; --muted:#6B6982; --accent:#B86E00; --accent-ink:#FFFFFF; --accent-soft:#F6E5C8;
+  --glow:rgba(184,110,0,.16);
+  --ok:#1E8A5A; --ok-soft:#D7EFE3; --mid:#4457D0; --mid-soft:#DFE3FA; --bad:#C2384F; --bad-soft:#F7DCE1; --none:#9A98AE;
+  --f-display:"Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --f-verse:"Instrument Serif", Georgia, "Times New Roman", serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  --r:14px; --r-lg:22px;
+  --shadow:0 1px 2px rgba(22,21,43,.06), 0 8px 24px rgba(22,21,43,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E0F1C; --surface:#171829; --surface-2:#1F2135; --line:#2B2D45;
+  --ink:#EDEBF5; --muted:#9496B2; --accent:#F2B544; --accent-ink:#1A1300; --accent-soft:#3A2E14;
+  --glow:rgba(242,181,68,.18);
+  --ok:#4CC98E; --ok-soft:#173527; --mid:#8C9DFF; --mid-soft:#232A52; --bad:#FF7A8E; --bad-soft:#3E1C25; --none:#6E7090;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0F1C; --surface:#171829; --surface-2:#1F2135; --line:#2B2D45;
+  --ink:#EDEBF5; --muted:#9496B2; --accent:#F2B544; --accent-ink:#1A1300; --accent-soft:#3A2E14;
+  --glow:rgba(242,181,68,.18);
+  --ok:#4CC98E; --ok-soft:#173527; --mid:#8C9DFF; --mid-soft:#232A52; --bad:#FF7A8E; --bad-soft:#3E1C25; --none:#6E7090;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-display);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.1;text-wrap:balance;font-weight:700;letter-spacing:-.02em}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* ---------- Shell ---------- */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100%}
+.side{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;padding:22px 14px;display:flex;flex-direction:column;gap:22px;border-right:1px solid var(--line);background:var(--surface)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);box-shadow:0 0 0 6px var(--glow)}
+.brand b{font-size:19px;letter-spacing:-.03em}
+.brand small{display:block;font-family:var(--f-mono);font-size:10px;color:var(--muted);letter-spacing:.08em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--muted);font-weight:600}
+.nav button:hover{background:var(--surface-2);color:var(--ink)}
+.nav button[aria-current="true"]{background:var(--surface-2);color:var(--ink)}
+.nav button[aria-current="true"] svg{color:var(--accent)}
+.nav button:focus-visible{outline:2px solid var(--accent)}
+.side-lists{display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0}
+.side-lists button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:9px;font-size:14px}
+.side-lists button:hover{background:var(--surface-2)}
+.side-lists button:focus-visible{outline:2px solid var(--accent)}
+.side-lists .cover{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;flex:none;font-size:12px;font-weight:700}
+.side-lists span.n{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--surface-2)}
+.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;flex:none;font-size:14px}
+.side-foot .who{min-width:0;flex:1}
+.side-foot .who b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-foot .who small{font-size:11px;color:var(--muted)}
+.icon-btn{all:unset;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;color:var(--muted)}
+.icon-btn:hover{background:var(--surface);color:var(--ink)}
+.icon-btn:focus-visible{outline:2px solid var(--accent)}
+
+main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+
+.tabbar{display:none}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{display:none}
+  main{padding-block:18px 110px}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around}
+  .tabbar button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 10px;border-radius:10px}
+  .tabbar button[aria-current="true"]{color:var(--accent)}
+  .mtop{display:flex!important}
+}
+.mtop{display:none;align-items:center;justify-content:space-between;gap:12px}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;transition:transform .12s ease, background .15s}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06);background:var(--accent)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.lg{padding:14px 22px;font-size:15px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.play{width:52px;height:52px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 6px 18px var(--glow);transition:transform .12s}
+.play:hover{transform:scale(1.05)}
+.play.sm{width:40px;height:40px}
+
+/* ---------- Cards / panels ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.grid{display:grid;gap:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.mid{background:var(--mid-soft);color:var(--mid)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.none{background:var(--surface-2);color:var(--muted)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ---------- Dashboard ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}
+@media (max-width:900px){.hero{grid-template-columns:1fr}}
+.today{position:relative;overflow:hidden;background:var(--ink);color:var(--bg);border-radius:var(--r-lg);padding:28px;display:flex;flex-direction:column;gap:18px;min-height:250px}
+.today::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,var(--accent) 0%,transparent 65%);opacity:.55;pointer-events:none}
+.today .eyebrow{color:color-mix(in srgb,var(--bg) 60%,transparent)}
+.today h1{font-size:clamp(28px,4vw,40px);position:relative;z-index:1}
+.today h1 em{font-family:var(--f-verse);font-style:italic;font-weight:400;color:var(--accent)}
+.today .verse-peek{font-family:var(--f-verse);font-size:19px;line-height:1.4;max-width:46ch;color:color-mix(in srgb,var(--bg) 80%,transparent);position:relative;z-index:1}
+.today .row{position:relative;z-index:1;margin-top:auto}
+.today .btn:not(.primary){background:transparent;color:var(--bg);border-color:color-mix(in srgb,var(--bg) 30%,transparent)}
+.today .btn:not(.primary):hover{background:color-mix(in srgb,var(--bg) 10%,transparent)}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:6px}
+.stat .big{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.stat .big small{font-size:18px;font-weight:600;color:var(--muted);margin-left:2px}
+.ring-wrap{display:flex;align-items:center;gap:16px}
+.flame{color:var(--accent)}
+
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+.stackbar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--surface-2);gap:2px}
+.stackbar i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.legend div{display:flex;flex-direction:column;gap:2px}
+.legend b{font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.legend span{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:10px}
+
+.vlist{display:flex;flex-direction:column}
+.vrow{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:10px 12px;border-radius:12px}
+.vrow:hover{background:var(--surface-2)}
+.vrow .idx{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.vrow .t{min-width:0}
+.vrow .t b{font-weight:700;font-size:15px}
+.vrow .t p{font-family:var(--f-verse);font-size:16px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vrow .acts{display:flex;gap:2px}
+.vrow.locked{opacity:.55}
+@media (max-width:560px){.vrow{grid-template-columns:minmax(0,1fr) auto;gap:8px}.vrow .idx{display:none}.vrow .chip{grid-column:1;justify-self:start}.vrow .acts{grid-row:1/span 2;grid-column:2}}
+
+/* ---------- Library ---------- */
+.lib-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:end}
+.cover-xl{width:160px;height:160px;border-radius:18px;display:grid;place-items:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.cover-xl .glyph{font-family:var(--f-verse);font-size:64px;font-style:italic;line-height:1}
+@media (max-width:620px){.lib-head{grid-template-columns:1fr}.cover-xl{width:110px;height:110px}.cover-xl .glyph{font-size:44px}}
+.lib-head h1{font-size:clamp(30px,5vw,54px);letter-spacing:-.035em}
+.lists-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.lcard{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;display:flex;flex-direction:column;gap:12px;transition:transform .15s, box-shadow .15s}
+.lcard:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.lcard:focus-visible{outline:2px solid var(--accent)}
+.lcard .cv{aspect-ratio:1;max-width:100%;border-radius:12px;display:grid;place-items:center}
+.lcard .cv span{font-family:var(--f-verse);font-style:italic;font-size:48px}
+.lcard b{font-size:16px}
+.lcard small{color:var(--muted);font-size:13px}
+.cv-sug{background:linear-gradient(140deg,#F2B544,#D9792B);color:#2A1500}
+.cv-fav{background:linear-gradient(140deg,#8C9DFF,#5B46C9);color:#fff}
+.cv-rev{background:linear-gradient(140deg,#4CC98E,#1E7A6C);color:#04241A}
+.cv-c1{background:linear-gradient(140deg,#FF9DA9,#C2384F);color:#2B0710}
+.cv-c2{background:linear-gradient(140deg,#7FD6E8,#2D7FA6);color:#03202B}
+.cv-c3{background:linear-gradient(140deg,#E2C7FF,#8E5BD6);color:#1D0A35}
+.cv-c4{background:linear-gradient(140deg,#C9E58A,#5E9431);color:#132104}
+
+/* ---------- Forms ---------- */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600}
+.input,.textarea,select.input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 14px;outline:none;transition:border-color .15s, box-shadow .15s}
+.input:focus,.textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--glow)}
+.textarea{min-height:120px;resize:vertical;font-family:var(--f-verse);font-size:19px;line-height:1.45}
+
+/* ---------- Session ---------- */
+.stage{max-width:760px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:22px}
+.progress{height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .35s ease}
+.phase-tag{display:flex;gap:8px;flex-wrap:wrap}
+.flash{perspective:1600px;cursor:pointer}
+.flash-inner{position:relative;min-height:340px;transition:transform .6s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
+.flash.flipped .flash-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:26px;padding:32px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);overflow:auto}
+.face.front{background:var(--ink);color:var(--bg);border-color:transparent}
+.face.front .ref{font-size:clamp(36px,7vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1}
+.face.front .hint{color:color-mix(in srgb,var(--bg) 55%,transparent);font-size:13px}
+.face.back{transform:rotateY(180deg)}
+.verse-text{font-family:var(--f-verse);font-size:clamp(22px,3.4vw,30px);line-height:1.35;text-wrap:pretty}
+.ref-line{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+
+.q-card{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:28px;display:flex;flex-direction:column;gap:20px;box-shadow:var(--shadow)}
+.q-card .ref{font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.03em}
+.blanks{font-family:var(--f-verse);font-size:clamp(21px,3vw,27px);line-height:2.05}
+.blanks input{font-family:var(--f-verse);font-size:inherit;border:0;border-bottom:2px solid var(--accent);background:var(--accent-soft);border-radius:6px 6px 0 0;padding:0 6px;margin:0 2px;text-align:center;outline:none;max-width:100%}
+.blanks input:focus{box-shadow:0 0 0 3px var(--glow)}
+.blanks input.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.blanks input.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad);text-decoration:line-through}
+.blanks .fix{font-family:var(--f-display);font-size:13px;font-weight:700;color:var(--ok);vertical-align:super;margin-right:4px}
+.diff{font-family:var(--f-verse);font-size:22px;line-height:1.6}
+.diff .ok{color:var(--ok)}
+.diff .miss{color:var(--bad);text-decoration:underline wavy;text-underline-offset:4px}
+.diff .near{color:var(--accent);text-decoration:underline dotted;text-underline-offset:4px;cursor:help}
+.diff .near small{font-family:var(--f-display);font-size:12px;color:var(--muted);text-decoration:line-through;margin-left:3px}
+.blanks input.near{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.diff .extra{color:var(--muted);text-decoration:line-through}
+.result-bar{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:16px}
+.result-bar.ok{background:var(--ok-soft);color:var(--ok)}
+.result-bar.mid{background:var(--mid-soft);color:var(--mid)}
+.result-bar.bad{background:var(--bad-soft);color:var(--bad)}
+.result-bar b{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.grade{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.grade{grid-template-columns:1fr 1fr}}
+.grade button{border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:12px 8px;font-weight:700;display:flex;flex-direction:column;gap:2px;align-items:center}
+.grade button small{font-weight:500;color:var(--muted);font-size:11px}
+.grade button:hover{border-color:var(--accent)}
+.mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--surface-2);display:grid;place-items:center;color:var(--ink);margin:0 auto;position:relative}
+.mic.live{background:var(--bad);color:#fff}
+.mic.live::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:2px solid var(--bad);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{transform:scale(.9);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.q-ref{transition:filter .35s}
+.q-ref.masked{filter:blur(12px);user-select:none}
+.ref-field{border-top:1px dashed var(--line);padding-top:16px}
+.input.ref-ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.input.ref-bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad);text-decoration:line-through}
+.hidden-verse{font-family:var(--f-verse);font-size:24px;line-height:1.5;filter:blur(9px);user-select:none;transition:filter .4s}
+.hidden-verse.shown{filter:none;user-select:auto}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.opts{grid-template-columns:1fr}}
+.opt{all:unset;cursor:pointer;border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:14px 16px;font-weight:700;font-size:17px;text-align:left}
+.opt:hover{border-color:var(--accent)}
+.opt:focus-visible{outline:2px solid var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.opt[disabled]{pointer-events:none}
+.levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lvl{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.lvl.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.lvl b{font-size:16px}.lvl small{color:var(--muted);font-size:12.5px}
+@media (max-width:560px){.levels{grid-template-columns:1fr}}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mode{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.mode[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.mode:focus-visible{outline:2px solid var(--accent)}
+.mode b{font-size:15px}
+.mode small{color:var(--muted);font-size:12.5px;line-height:1.35}
+
+/* ---------- Bienvenida / cuenta ---------- */
+.wel{min-height:100%;display:grid;place-items:center;padding-inline:clamp(0px,3vw,32px);padding-block:clamp(0px,4vh,40px)}
+.wel-card{width:100%;max-width:1040px;min-height:min(640px,100%);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:var(--shadow)}
+.wel-art{position:relative;background:var(--ink);color:var(--bg);padding:40px;display:flex;flex-direction:column;justify-content:space-between;gap:24px;overflow:hidden}
+.wel-art::after{content:"";position:absolute;left:-120px;bottom:-140px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,var(--accent) 0%,transparent 62%);opacity:.5;pointer-events:none}
+.wel-art .big-quote{font-family:var(--f-verse);font-size:clamp(28px,3.2vw,40px);line-height:1.2;position:relative;z-index:1;text-wrap:balance}
+.wel-art .big-quote em{color:var(--accent)}
+.wel-art .src{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;opacity:.7;position:relative;z-index:1}
+.wel-main{padding:40px clamp(24px,4vw,48px);display:flex;flex-direction:column;gap:24px;min-width:0}
+.wel-main h1{font-size:clamp(32px,4.4vw,48px);letter-spacing:-.04em;line-height:1}
+.wel-main h1 em{font-family:var(--f-verse);font-weight:400;font-style:italic;color:var(--accent)}
+.wel-main .lead{font-size:16px;color:var(--muted);max-width:44ch}
+.slide-visual{border-radius:20px;background:var(--surface-2);padding:18px;display:flex;flex-direction:column;gap:10px}
+.mini-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mini-steps div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.mini-steps b{font-size:14px}.mini-steps small{color:var(--muted);font-size:12px}
+.mini-blank{font-family:var(--f-verse);font-size:20px;line-height:1.8}
+.mini-blank span{display:inline-block;min-width:70px;border-bottom:2px solid var(--accent);background:var(--accent-soft);border-radius:4px 4px 0 0;margin:0 3px;height:1.2em;vertical-align:-3px}
+.dots{display:flex;gap:6px}
+.dots i{width:8px;height:8px;border-radius:999px;background:var(--line);transition:width .25s}
+.dots i.on{width:22px;background:var(--accent)}
+.wel-actions{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.wel-actions .btn{width:100%}
+.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:600;text-align:center;padding:8px}
+.linkbtn:focus-visible{outline:2px solid var(--accent);border-radius:6px}
+.form{display:flex;flex-direction:column;gap:14px}
+.form .err{color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em}
+.pw{position:relative}.pw .input{padding-right:84px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:8px}
+.goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.goal{all:unset;cursor:pointer;border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.goal[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.goal:focus-visible{outline:2px solid var(--accent)}
+.goal b{font-size:20px;font-weight:800;letter-spacing:-.02em}.goal small{color:var(--muted);font-size:12.5px}
+.note{font-size:12.5px;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.prev-acc{display:flex;flex-direction:column;gap:6px}
+@media (max-width:820px){
+  .wel{place-items:stretch;padding:0;background:var(--surface);min-height:100vh;min-height:100dvh}
+  .wel-card{grid-template-columns:1fr;border:0;border-radius:0;min-height:100%;box-shadow:none}
+  .wel-art{display:none}
+  .wel-main{padding:28px 20px calc(24px + env(safe-area-inset-bottom,0px));min-height:100%}
+}
+/* ---------- Perfil ---------- */
+.prof-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.prof-head .avatar{width:64px;height:64px;font-size:26px}
+.set-group{display:flex;flex-direction:column}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 4px;border-top:1px solid var(--line);flex-wrap:wrap}
+.set-row:first-child{border-top:0}
+.set-row .lbl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.set-row .lbl small{color:var(--muted);font-size:12.5px}
+.seg{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:4px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 12px;border-radius:9px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.danger{color:var(--bad)!important}
+.side-foot{cursor:pointer}
+/* ---------- Login ---------- */
+.login{min-height:100%;display:grid;place-items:center;padding-inline:16px;padding-block:40px}
+.login-card{width:100%;max-width:520px;display:flex;flex-direction:column;gap:26px}
+.login h1{font-size:clamp(40px,8vw,68px);letter-spacing:-.045em;line-height:.95}
+.login h1 em{font-family:var(--f-verse);font-weight:400;color:var(--accent)}
+.login .quote{font-family:var(--f-verse);font-size:21px;line-height:1.4;color:var(--muted);border-left:2px solid var(--accent);padding-left:14px}
+.profiles{display:flex;flex-direction:column;gap:8px}
+.profile{all:unset;cursor:pointer;display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.profile:hover{border-color:var(--accent)}
+.profile:focus-visible{outline:2px solid var(--accent)}
+.profile .avatar{width:42px;height:42px;font-size:17px}
+.profile .meta{flex:1;min-width:0}
+.profile .meta b{display:block}
+.profile .meta small{color:var(--muted);font-size:12.5px}
+.cloud-card{border-color:var(--accent);background:linear-gradient(135deg,var(--accent-soft),var(--surface) 70%)}
+
+/* ---------- Modal / toast ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,10,20,.5);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:50;padding:16px}
+.modal{width:100%;max-width:520px;max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:18px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:600;font-size:14px;z-index:60;box-shadow:var(--shadow);max-width:calc(100% - 32px);animation:tin .25s ease}
+@media (min-width:821px){.toast{bottom:28px}}
+@keyframes tin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+.check{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);cursor:pointer}
+.check input{accent-color:var(--accent);width:18px;height:18px}
+.empty{padding:36px 20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;color:var(--muted)}
+.empty b{color:var(--ink);font-size:17px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div id="root"></div>
+
+<script>
+/* =========================================================
+   DATOS — Versículos sugeridos (Reina-Valera 1960)
+   Orden = orden de desbloqueo (de lo más fundamental a lo más extenso)
+   ========================================================= */
+const SUGGESTED = [
+ ["jn-3-16","Juan 3:16","Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna.","Salvación"],
+ ["gn-1-1","Génesis 1:1","En el principio creó Dios los cielos y la tierra.","Creación"],
+ ["sal-23-1","Salmos 23:1","Jehová es mi pastor; nada me faltará.","Confianza"],
+ ["flp-4-13","Filipenses 4:13","Todo lo puedo en Cristo que me fortalece.","Fortaleza"],
+ ["sal-119-105","Salmos 119:105","Lámpara es a mis pies tu palabra, y lumbrera a mi camino.","La Palabra"],
+ ["jn-14-6","Juan 14:6","Jesús le dijo: Yo soy el camino, y la verdad, y la vida; nadie viene al Padre, sino por mí.","Jesús"],
+ ["mt-6-33","Mateo 6:33","Mas buscad primeramente el reino de Dios y su justicia, y todas estas cosas os serán añadidas.","Prioridades"],
+ ["rom-3-23","Romanos 3:23","Por cuanto todos pecaron, y están destituidos de la gloria de Dios,","Salvación"],
+ ["rom-6-23","Romanos 6:23","Porque la paga del pecado es muerte, mas la dádiva de Dios es vida eterna en Cristo Jesús Señor nuestro.","Salvación"],
+ ["mt-11-28","Mateo 11:28","Venid a mí todos los que estáis trabajados y cargados, y yo os haré descansar.","Descanso"],
+ ["jn-8-32","Juan 8:32","Y conoceréis la verdad, y la verdad os hará libres.","Verdad"],
+ ["mt-7-7","Mateo 7:7","Pedid, y se os dará; buscad, y hallaréis; llamad, y se os abrirá.","Oración"],
+ ["1jn-4-8","1 Juan 4:8","El que no ama, no ha conocido a Dios; porque Dios es amor.","Amor"],
+ ["jn-1-1","Juan 1:1","En el principio era el Verbo, y el Verbo era con Dios, y el Verbo era Dios.","Jesús"],
+ ["hb-11-1","Hebreos 11:1","Es, pues, la fe la certeza de lo que se espera, la convicción de lo que no se ve.","Fe"],
+ ["sal-46-1","Salmos 46:1","Dios es nuestro amparo y fortaleza, nuestro pronto auxilio en las tribulaciones.","Confianza"],
+ ["1p-5-7","1 Pedro 5:7","Echando toda vuestra ansiedad sobre él, porque él tiene cuidado de vosotros.","Paz"],
+ ["rom-5-8","Romanos 5:8","Mas Dios muestra su amor para con nosotros, en que siendo aún pecadores, Cristo murió por nosotros.","Amor"],
+ ["sal-119-11","Salmos 119:11","En mi corazón he guardado tus dichos, para no pecar contra ti.","La Palabra"],
+ ["sal-37-4","Salmos 37:4","Deléitate asimismo en Jehová, y él te concederá las peticiones de tu corazón.","Confianza"],
+ ["1jn-1-9","1 Juan 1:9","Si confesamos nuestros pecados, él es fiel y justo para perdonar nuestros pecados, y limpiarnos de toda maldad.","Perdón"],
+ ["rom-8-28","Romanos 8:28","Y sabemos que a los que aman a Dios, todas las cosas les ayudan a bien, esto es, a los que conforme a su propósito son llamados.","Propósito"],
+ ["prov-3-5-6","Proverbios 3:5-6","Fíate de Jehová de todo tu corazón, y no te apoyes en tu propia prudencia. Reconócelo en todos tus caminos, y él enderezará tus veredas.","Sabiduría"],
+ ["jer-29-11","Jeremías 29:11","Porque yo sé los pensamientos que tengo acerca de vosotros, dice Jehová, pensamientos de paz, y no de mal, para daros el fin que esperáis.","Esperanza"],
+ ["jos-1-9","Josué 1:9","Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo en dondequiera que vayas.","Valentía"],
+ ["ef-2-8-9","Efesios 2:8-9","Porque por gracia sois salvos por medio de la fe; y esto no de vosotros, pues es don de Dios; no por obras, para que nadie se gloríe.","Gracia"],
+ ["rom-10-9","Romanos 10:9","Que si confesares con tu boca que Jesús es el Señor, y creyeres en tu corazón que Dios le levantó de los muertos, serás salvo.","Salvación"],
+ ["2co-5-17","2 Corintios 5:17","De modo que si alguno está en Cristo, nueva criatura es; las cosas viejas pasaron; he aquí todas son hechas nuevas.","Nueva vida"],
+ ["is-41-10","Isaías 41:10","No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo; siempre te ayudaré, siempre te sustentaré con la diestra de mi justicia.","Valentía"],
+ ["jn-11-25","Juan 11:25","Le dijo Jesús: Yo soy la resurrección y la vida; el que cree en mí, aunque esté muerto, vivirá.","Esperanza"],
+ ["jn-15-5","Juan 15:5","Yo soy la vid, vosotros los pámpanos; el que permanece en mí, y yo en él, éste lleva mucho fruto; porque separados de mí nada podéis hacer.","Jesús"],
+ ["2tim-3-16","2 Timoteo 3:16","Toda la Escritura es inspirada por Dios, y útil para enseñar, para redargüir, para corregir, para instruir en justicia,","La Palabra"],
+ ["mt-5-16","Mateo 5:16","Así alumbre vuestra luz delante de los hombres, para que vean vuestras buenas obras, y glorifiquen a vuestro Padre que está en los cielos.","Testimonio"],
+ ["stg-1-5","Santiago 1:5","Y si alguno de vosotros tiene falta de sabiduría, pídala a Dios, el cual da a todos abundantemente y sin reproche, y le será dada.","Sabiduría"],
+ ["sal-27-1","Salmos 27:1","Jehová es mi luz y mi salvación; ¿de quién temeré? Jehová es la fortaleza de mi vida; ¿de quién he de atemorizarme?","Confianza"],
+ ["jn-16-33","Juan 16:33","Estas cosas os he hablado para que en mí tengáis paz. En el mundo tendréis aflicción; pero confiad, yo he vencido al mundo.","Paz"],
+ ["col-3-23","Colosenses 3:23","Y todo lo que hagáis, hacedlo de corazón, como para el Señor y no para los hombres;","Servicio"],
+ ["mt-22-37","Mateo 22:37","Jesús le dijo: Amarás al Señor tu Dios con todo tu corazón, y con toda tu alma, y con toda tu mente.","Amor"],
+ ["prov-22-6","Proverbios 22:6","Instruye al niño en su camino, y aun cuando fuere viejo no se apartará de él.","Familia"],
+ ["sal-34-8","Salmos 34:8","Gustad, y ved que es bueno Jehová; dichoso el hombre que confía en él.","Confianza"],
+ ["ap-3-20","Apocalipsis 3:20","He aquí, yo estoy a la puerta y llamo; si alguno oye mi voz y abre la puerta, entraré a él, y cenaré con él, y él conmigo.","Comunión"],
+ ["ef-6-10","Efesios 6:10","Por lo demás, hermanos míos, fortaleceos en el Señor, y en el poder de su fuerza.","Fortaleza"],
+ ["jn-10-10","Juan 10:10","El ladrón no viene sino para hurtar y matar y destruir; yo he venido para que tengan vida, y para que la tengan en abundancia.","Vida"],
+ ["sal-139-14","Salmos 139:14","Te alabaré; porque formidables, maravillosas son tus obras; estoy maravillado, y mi alma lo sabe muy bien.","Identidad"],
+ ["rom-1-16","Romanos 1:16","Porque no me avergüenzo del evangelio, porque es poder de Dios para salvación a todo aquel que cree; al judío primeramente, y también al griego.","Evangelio"],
+ ["1co-13-4","1 Corintios 13:4","El amor es sufrido, es benigno; el amor no tiene envidia, el amor no es jactancioso, no se envanece;","Amor"],
+ ["dt-31-6","Deuteronomio 31:6","Esforzaos y cobrad ánimo; no temáis, ni tengáis miedo de ellos, porque Jehová tu Dios es el que va contigo; no te dejará, ni te desamparará.","Valentía"],
+ ["1ts-5-16-18","1 Tesalonicenses 5:16-18","Estad siempre gozosos. Orad sin cesar. Dad gracias en todo, porque esta es la voluntad de Dios para con vosotros en Cristo Jesús.","Oración"],
+ ["mi-6-8","Miqueas 6:8","Oh hombre, él te ha declarado lo que es bueno, y qué pide Jehová de ti: solamente hacer justicia, y amar misericordia, y humillarte ante tu Dios.","Justicia"],
+ ["lm-3-22-23","Lamentaciones 3:22-23","Por la misericordia de Jehová no hemos sido consumidos, porque nunca decayeron sus misericordias. Nuevas son cada mañana; grande es tu fidelidad.","Fidelidad"],
+ ["gal-5-22-23","Gálatas 5:22-23","Mas el fruto del Espíritu es amor, gozo, paz, paciencia, benignidad, bondad, fe, mansedumbre, templanza; contra tales cosas no hay ley.","Espíritu"],
+ ["is-40-31","Isaías 40:31","Pero los que esperan a Jehová tendrán nuevas fuerzas; levantarán alas como las águilas; correrán, y no se cansarán; caminarán, y no se fatigarán.","Esperanza"],
+ ["is-53-5","Isaías 53:5","Mas él herido fue por nuestras rebeliones, molido por nuestros pecados; el castigo de nuestra paz fue sobre él, y por su llaga fuimos nosotros curados.","Cruz"],
+ ["rom-12-2","Romanos 12:2","No os conforméis a este siglo, sino transformaos por medio de la renovación de vuestro entendimiento, para que comprobéis cuál sea la buena voluntad de Dios, agradable y perfecta.","Transformación"],
+ ["hch-1-8","Hechos 1:8","Pero recibiréis poder, cuando haya venido sobre vosotros el Espíritu Santo, y me seréis testigos en Jerusalén, en toda Judea, en Samaria, y hasta lo último de la tierra.","Misión"],
+ ["gal-2-20","Gálatas 2:20","Con Cristo estoy juntamente crucificado, y ya no vivo yo, mas vive Cristo en mí; y lo que ahora vivo en la carne, lo vivo en la fe del Hijo de Dios, el cual me amó y se entregó a sí mismo por mí.","Nueva vida"],
+ ["2co-12-9","2 Corintios 12:9","Y me ha dicho: Bástate mi gracia; porque mi poder se perfecciona en la debilidad. Por tanto, de buena gana me gloriaré más bien en mis debilidades, para que repose sobre mí el poder de Cristo.","Gracia"],
+ ["flp-4-6-7","Filipenses 4:6-7","Por nada estéis afanosos, sino sean conocidas vuestras peticiones delante de Dios en toda oración y ruego, con acción de gracias. Y la paz de Dios, que sobrepasa todo entendimiento, guardará vuestros corazones y vuestros pensamientos en Cristo Jesús.","Paz"],
+ ["hb-4-12","Hebreos 4:12","Porque la palabra de Dios es viva y eficaz, y más cortante que toda espada de dos filos; y penetra hasta partir el alma y el espíritu, las coyunturas y los tuétanos, y discierne los pensamientos y las intenciones del corazón.","La Palabra"],
+ ["mt-28-19-20","Mateo 28:19-20","Por tanto, id, y haced discípulos a todas las naciones, bautizándolos en el nombre del Padre, y del Hijo, y del Espíritu Santo; enseñándoles que guarden todas las cosas que os he mandado; y he aquí yo estoy con vosotros todos los días, hasta el fin del mundo. Amén.","Misión"]
+];
+const SUG_MAP = Object.fromEntries(SUGGESTED.map(([id,ref,text,theme],i)=>[id,{id,ref,text,theme,order:i,sug:true}]));
+
+/* =========================================================
+   CONFIGURACIÓN DE REPETICIÓN ESPACIADA
+   Nivel 0 = no lo sé · 1–3 = en proceso · 4–5 = aprendido
+   ========================================================= */
+const DAY = 864e5;
+const INTERVAL_DAYS = [0, 1, 2, 4, 9, 21];   // días hasta la próxima pregunta según nivel
+const MASTER = 4;
+const START_UNLOCKED = 5;
+const UNLOCK_STEP = 3;
+const SESSION_SIZE = 8;
+const COLORS = ["#E0793A","#5B46C9","#1E8A5A","#C2384F","#2D7FA6","#8E5BD6","#B86E00","#3B6B2A"];
+
+/* ---------- Utilidades ---------- */
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayKey = (d=new Date()) => { const z=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; };
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9ñ\s]/g," ").replace(/\s+/g," ").trim();
+const words = s => norm(s).split(" ").filter(Boolean);
+function lev(a,b){ if(a===b) return 0; const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=Array.from({length:n+1},(_,i)=>i); for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c;} return p[n]; }
+const close = (a,b) => a===b || (b.length>=5 && lev(a,b)<=1);
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+/* Si el navegador bloquea el almacenamiento, se usa memoria mientras la página esté abierta */
+const MEM = {};
+const LS = {
+  get(k,d){ try{ const v=localStorage.getItem(k); if(v) return JSON.parse(v); }catch(e){} return k in MEM ? JSON.parse(MEM[k]) : d; },
+  set(k,v){ const j=JSON.stringify(v); MEM[k]=j; try{ localStorage.setItem(k,j); }catch(e){} }
+};
+
+/* ---------- Iconos ---------- */
+const I = {
+  home:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  lib:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4v16M9 4v16M14 4l6 16"/></svg>',
+  play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>',
+  review:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>',
+  heart:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  heartF:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  listAdd:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h12M4 12h12M4 18h7M18 15v6M15 18h6"/></svg>',
+  trash:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  flame:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5 5 5.8 5 11a5 5 0 0 1-10 0c0-2.3 1-3.8 2-5 0 1.8.8 3 2 3.4C10.6 8.4 11 5 12 2z"/></svg>',
+  lock:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  speaker:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a3.5 3.5 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11"/></svg>',
+  mic:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  logout:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
+  x:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  lamp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z" opacity=".85"/></svg>',
+  user:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  cloud:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/></svg>'
+};
+
+/* =========================================================
+   ESTADO DE USUARIO Y PERSISTENCIA
+   - Modo nube: cuenta de Claude (base de datos privada por persona)
+   - Modo local: perfiles guardados en este navegador
+   ========================================================= */
+let ME = null;      // {mode:'cloud'|'local', name, color, key}
+let S = null;       // estado del usuario
+let saveTimer = null;
+
+function freshState(){
+  return { v:1, created:Date.now(), unlocked:START_UNLOCKED, progress:{}, custom:[], favs:[], lists:[], log:{}, prefs:{mode:"mixto", size:SESSION_SIZE} };
+}
+function persist(){
+  if(!ME) return;
+  LS.set("lampara.state."+ME.key, S);
+}
+
+/* ---------- Acceso a versículos ---------- */
+function verse(id){
+  if(SUG_MAP[id]) return SUG_MAP[id];
+  const c = S.custom.find(v=>v.id===id);
+  return c ? {...c, sug:false} : null;
+}
+function activeIds(){
+  const ids = new Set(S.favs);
+  SUGGESTED.slice(0,S.unlocked).forEach(([id])=>ids.add(id));
+  (S.extraActive||[]).forEach(id=>ids.add(id));
+  return [...ids].filter(id=>verse(id));
+}
+function prog(id){ return S.progress[id] || null; }
+function status(id){
+  const p = prog(id);
+  if(!p || p.box===0) return "none";
+  if(p.box>=MASTER) return "ok";
+  return "mid";
+}
+const STATUS_LABEL = { ok:"Aprendido", mid:"En proceso", none:"Por aprender" };
+function isDue(id, now=Date.now()){ const p=prog(id); return !p || p.reps===0 || p.due<=now; }
+
+/* ---------- Listas ---------- */
+function listDefs(){
+  const sugIds = SUGGESTED.slice(0,S.unlocked).map(r=>r[0]).concat((S.extraActive||[]).filter(id=>SUG_MAP[id].order>=S.unlocked)).filter(id=>!S.favs.includes(id));
+  const mastered = activeIds().filter(id=>status(id)==="ok");
+  const base = [
+    { id:"sug", name:"Versículos sugeridos", short:"Sugeridos", cv:"cv-sug", glyph:"Rv", desc:"Los pasajes más memorizados de la Biblia. Se desbloquean nuevos a medida que avanzas.", ids:sugIds, builtin:true },
+    { id:"fav", name:"Mis versículos", short:"Mis versículos", cv:"cv-fav", glyph:"♡", desc:"Los que tú agregaste o marcaste como favoritos.", ids:S.favs.slice(), builtin:true },
+    { id:"rev", name:"Repaso de memorizados", short:"Memorizados", cv:"cv-rev", glyph:"✓", desc:"Todo lo que ya sabes. Si fallas uno, vuelve a tu práctica.", ids:mastered, builtin:true }
+  ];
+  const custom = S.lists.map((l,i)=>({ id:l.id, name:l.name, short:l.name, cv:"cv-c"+((i%4)+1), glyph:l.name.trim().charAt(0).toUpperCase()||"L", desc:"Lista personal", ids:l.ids.filter(id=>verse(id)), builtin:false }));
+  return [...base, ...custom];
+}
+const getList = id => listDefs().find(l=>l.id===id);
+
+/* =========================================================
+   MOTOR DE REPETICIÓN ESPACIADA
+   ========================================================= */
+function applyResult(id, score){
+  const now = Date.now();
+  const p = S.progress[id] || { box:0, due:now, reps:0, lapses:0, last:0, introduced:now, hist:[] };
+  const wasDue = p.reps===0 || p.due<=now;
+  let outcome;
+  if(score>=0.9){
+    outcome = "ok";
+    if(wasDue) p.box = Math.min(5, p.box+1);         // solo sube de nivel si tocaba repasarlo (evita "atiborrarse")
+    p.due = now + INTERVAL_DAYS[p.box]*DAY;
+  } else if(score>=0.6){
+    outcome = "mid";
+    p.box = Math.max(1, Math.min(p.box, MASTER-1));  // casi: se queda en proceso
+    p.due = now + 0.5*DAY;
+  } else {
+    outcome = "bad";
+    p.lapses++;
+    p.box = p.box>=MASTER ? 1 : 0;                   // si era memorizado y falla, regresa a práctica
+    p.due = now;
+  }
+  p.reps++; p.last = now;
+  p.hist = (p.hist||[]).concat(Math.round(score*100)).slice(-12);
+  S.progress[id] = p;
+  const k = todayKey();
+  const L = S.log[k] || { n:0, sum:0 };
+  L.n++; L.sum += score; S.log[k] = L;
+  return outcome;
+}
+function maybeUnlock(){
+  const struggling = activeIds().filter(id=>{ const p=prog(id); return !p || p.box<2; }).length;
+  if(struggling < 3 && S.unlocked < SUGGESTED.length){
+    const before = S.unlocked;
+    S.unlocked = Math.min(SUGGESTED.length, S.unlocked+UNLOCK_STEP);
+    return S.unlocked-before;
+  }
+  return 0;
+}
+function streak(){
+  let d = new Date(); let n = 0;
+  if(!S.log[todayKey(d)]) d = new Date(Date.now()-DAY);
+  while(S.log[todayKey(d)]){ n++; d = new Date(d.getTime()-DAY); }
+  return n;
+}
+function practicedToday(){ return !!S.log[todayKey()]; }
+function accuracy(days=30){
+  let n=0,sum=0; for(let i=0;i<days;i++){ const L=S.log[todayKey(new Date(Date.now()-i*DAY))]; if(L){n+=L.n;sum+=L.sum;} }
+  return n? Math.round(sum/n*100) : null;
+}
+/* Elige versículos al azar, con más probabilidad para los de menor nivel,
+   los que tocan repaso, los que más fallas y los que no salieron en las últimas sesiones */
+function pickWeight(id, now){
+  const p = prog(id); const box = p ? p.box : 0;
+  let w = 6 - box;                                   // nivel 0 pesa 6, nivel 5 pesa 1
+  if(isDue(id,now)) w *= 3;
+  if(p && p.lapses) w *= 1 + Math.min(p.lapses,3)*0.3;
+  const r = (S.recent||[]).indexOf(id);
+  if(r>=0) w *= r < SESSION_SIZE ? 0.15 : 0.45;      // salió hace poco: baja mucho su probabilidad
+  return w * (0.6 + Math.random()*0.8);
+}
+function weightedSample(ids, size, now){
+  const pool = ids.slice(); const out = [];
+  while(out.length<size && pool.length){
+    const ws = pool.map(id=>pickWeight(id,now)); const tot = ws.reduce((a,b)=>a+b,0);
+    let r = Math.random()*tot, k = 0;
+    while(k<ws.length-1 && (r -= ws[k]) > 0) k++;
+    out.push(pool.splice(k,1)[0]);
+  }
+  return out;
+}
+function dueIds(ids){ const now=Date.now(); return shuffle(ids.filter(id=>isDue(id,now))); }
+let GROWN = 0;
+/* Arma cada sesión con versículos distintos a la anterior:
+   - los de la sesión pasada descansan (salvo los que fallaste, que vuelven, máximo un tercio)
+   - los ya aprendidos se guardan para su repaso programado
+   - si no hay suficientes distintos, se agregan versículos sugeridos nuevos */
+function buildQueue(ids, {grow=false, size=S.prefs.size}={}){
+  const now = Date.now(); GROWN = 0;
+  const last = new Set(S.lastIds||[]), failed = new Set(S.lastFailed||[]);
+  const avoid = id => last.has(id) && !failed.has(id);
+  const resting = id => status(id)==="ok" && !isDue(id,now);
+  let fresh = ids.filter(id=>!avoid(id) && !resting(id));
+  const want = Math.ceil(size*0.6);
+  const need = Math.max(want-fresh.length, size-ids.length);
+  if(grow && need>0 && S.unlocked<SUGGESTED.length){
+    const before = S.unlocked;
+    S.unlocked = Math.min(SUGGESTED.length, S.unlocked + Math.min(10, need));
+    const added = SUGGESTED.slice(before, S.unlocked).map(r=>r[0]);
+    ids = ids.concat(added); fresh = fresh.concat(added); GROWN = added.length;
+  }
+  const failedNow = fresh.filter(id=>failed.has(id));
+  let pick = weightedSample(failedNow, Math.min(failedNow.length, Math.ceil(size/3)), now);
+  const rest = fresh.filter(id=>!pick.includes(id));
+  pick = pick.concat(weightedSample(rest.filter(id=>isDue(id,now)), size-pick.length, now));
+  if(pick.length<size) pick = pick.concat(weightedSample(rest.filter(id=>!pick.includes(id)), size-pick.length, now));
+  if(pick.length<size) pick = pick.concat(weightedSample(ids.filter(id=>!pick.includes(id) && !resting(id)), size-pick.length, now));
+  if(pick.length<size) pick = pick.concat(weightedSample(ids.filter(id=>!pick.includes(id)), size-pick.length, now));
+  return shuffle(pick);
+}
+function rememberSession(ids, failed){
+  S.lastIds = ids.slice();
+  S.lastFailed = failed || [];
+  S.recent = ids.concat((S.recent||[]).filter(x=>!ids.includes(x))).slice(0, SESSION_SIZE*3);
+}
+
+/* =========================================================
+   VISTAS
+   ========================================================= */
+let VIEW = { name:"home", list:null };
+let SESSION = null;
+const root = $("#root");
+
+function go(name, extra={}){ stopSpeech(); VIEW = { name, ...extra }; render(); window.scrollTo({top:0}); }
+
+function render(){
+  if(!ME){ renderWelcome(); return; }
+  if(VIEW.name==="session" && SESSION){ renderSession(); return; }
+  if(VIEW.name==="placement" && PLACE){ renderPlacement(); return; }
+  const navItem = (id,label,icon) => `<button data-go="${id}" aria-current="${VIEW.name===id}">${icon}<span>${label}</span></button>`;
+  const lists = listDefs();
+  root.innerHTML = `
+  <div class="app">
+    <aside class="side">
+      <div class="brand"><div class="brand-mark">${I.lamp}</div><div><b>Lámpara</b><small>RVR · 1960</small></div></div>
+      <nav class="nav">
+        ${navItem("home","Inicio",I.home)}
+        <button data-act="start-due">${I.play}<span>Practicar</span></button>
+        ${navItem("library","Biblioteca",I.lib)}
+        ${navItem("review","Repaso",I.review)}
+        ${navItem("profile","Perfil",I.user)}
+      </nav>
+      <div class="eyebrow" style="padding:0 10px">Tus listas</div>
+      <div class="side-lists">
+        ${lists.map(l=>`<button data-list="${l.id}"><span class="cover ${l.cv}">${esc(l.glyph)}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.short)}</span><span class="n">${l.ids.length}</span></button>`).join("")}
+        <button data-act="new-list"><span class="cover" style="background:var(--surface-2);color:var(--muted)">${I.plus}</span><span class="muted">Nueva lista</span></button>
+      </div>
+      <div class="side-foot" data-go="profile" role="button" tabindex="0" aria-label="Abrir perfil">
+        <div class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</div>
+        <div class="who"><b>${esc(ME.name)}</b><small>${esc(ME.email||"Cuenta en este dispositivo")}</small></div>
+      </div>
+    </aside>
+    <main><div class="wrap" id="view"></div></main>
+    <nav class="tabbar">
+      ${navItem("home","Inicio",I.home)}
+      <button data-act="start-due">${I.play}<span>Practicar</span></button>
+      ${navItem("library","Biblioteca",I.lib)}
+      ${navItem("profile","Perfil",I.user)}
+    </nav>
+  </div>`;
+  const v = $("#view");
+  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto"><span class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</span></button></div>`;
+  if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
+  else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
+  else if(VIEW.name==="list") v.innerHTML = mtop + viewList(VIEW.list);
+  else if(VIEW.name==="review") v.innerHTML = mtop + viewList("rev");
+  else if(VIEW.name==="profile") v.innerHTML = mtop + viewProfile();
+}
+
+/* ---------- Inicio / Dashboard ---------- */
+function ring(pct, size=92, stroke=10){
+  const r=(size-stroke)/2, c=2*Math.PI*r, off=c*(1-pct/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${pct}% aprendido">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="${stroke}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--ok)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" fill="var(--ink)" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${size*.24}">${pct}%</text></svg>`;
+}
+function activityChart(){
+  const days = 14, W=560, H=150, pad={l:26,r:8,t:12,b:24};
+  const data = [];
+  for(let i=days-1;i>=0;i--){ const d=new Date(Date.now()-i*DAY); const L=S.log[todayKey(d)]; data.push({d, n:L?L.n:0, acc:L?L.sum/L.n:0}); }
+  const max = Math.max(4, ...data.map(x=>x.n));
+  const step = Math.ceil(max/4); const top = step*4;
+  const iw = W-pad.l-pad.r, ih = H-pad.t-pad.b, bw = iw/days;
+  const y = v => pad.t + ih - (v/top)*ih;
+  let g = "";
+  for(let t=0;t<=top;t+=step){ g += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-dasharray="${t?'2 4':''}"/><text x="${pad.l-6}" y="${y(t)+3}" text-anchor="end">${t}</text>`; }
+  const dn = ["D","L","M","M","J","V","S"];
+  data.forEach((x,i)=>{
+    const h = (x.n/top)*ih, bx = pad.l+i*bw+bw*.18, w = bw*.64;
+    const col = x.n ? (x.acc>=.9?"var(--ok)":x.acc>=.6?"var(--mid)":"var(--bad)") : "var(--surface-2)";
+    g += `<rect x="${bx}" y="${x.n?y(x.n):y(0)-3}" width="${w}" height="${x.n?h:3}" rx="4" fill="${col}"><title>${todayKey(x.d)}: ${x.n} preguntas${x.n?`, ${Math.round(x.acc*100)}% de acierto`:''}</title></rect>`;
+    g += `<text x="${bx+w/2}" y="${H-8}" text-anchor="middle" ${i===days-1?'fill="var(--ink)" font-weight="700"':''}>${i===days-1?'Hoy':dn[x.d.getDay()]}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
+}
+function viewHome(){
+  const act = activeIds();
+  const counts = { ok:0, mid:0, none:0 };
+  act.forEach(id=>counts[status(id)]++);
+  const total = act.length || 1;
+  const pct = Math.round(counts.ok/total*100);
+  const st = streak();
+  const acc = accuracy();
+  const dueAll = dueIds(act);
+  const dueReview = dueAll.filter(id=>prog(id)&&prog(id).reps>0).length;
+  const dueNew = dueAll.length - dueReview;
+  const first = dueAll[0] ? verse(dueAll[0]) : verse(act[0]);
+  const hour = new Date().getHours();
+  const greet = hour<12?"Buenos días":hour<19?"Buenas tardes":"Buenas noches";
+  const next = act.filter(id=>prog(id)&&prog(id).reps>0&&!isDue(id)).sort((a,b)=>prog(a).due-prog(b).due).slice(0,5);
+  const weakest = act.filter(id=>prog(id)&&prog(id).lapses>0).sort((a,b)=>prog(b).lapses-prog(a).lapses).slice(0,5);
+  return `
+  <section class="hero">
+    <div class="today">
+      <div class="eyebrow">${greet}, ${esc(ME.name)}</div>
+      <h1>${dueAll.length ? `Hoy tienes <em>${dueAll.length}</em> ${dueAll.length===1?"versículo":"versículos"} por practicar` : `Estás al día. <em>Bien hecho.</em>`}</h1>
+      ${first?`<p class="verse-peek">“${esc(first.text.length>130?first.text.slice(0,130)+"…":first.text)}” <span class="mono" style="font-size:12px;opacity:.8">— ${esc(first.ref)}</span></p>`:""}
+      <div class="row">
+        ${dueAll.length?`<button class="btn primary lg" data-act="start-due">${I.play} Practicar ahora</button>`:`<button class="btn primary lg" data-act="start-extra">${I.play} Práctica extra</button>`}
+        <button class="btn" data-go="review">${I.review} Repasar memorizados</button>
+      </div>
+      <div class="mono" style="font-size:12px;opacity:.7;position:relative;z-index:1">${dueReview} repasos · ${dueNew} nuevos</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="eyebrow">Racha</div>
+        <div class="row" style="gap:8px"><span class="flame" style="${practicedToday()?'':'opacity:.35'}">${I.flame}</span><span class="big">${st}<small>${st===1?"día":"días"}</small></span></div>
+        <small class="muted">${practicedToday()?"Ya practicaste hoy":"Practica hoy para mantenerla"}</small>
+      </div>
+      <div class="stat">
+        <div class="eyebrow">Aprendido</div>
+        <div class="ring-wrap">${ring(pct,76,9)}</div>
+        <small class="muted">${counts.ok} de ${act.length} versículos</small>
+      </div>
+      <div class="stat">
+        <div class="eyebrow">Acierto · 30 días</div>
+        <span class="big">${acc===null?"—":acc}<small>${acc===null?"":"%"}</small></span>
+        <small class="muted">Promedio de tus respuestas</small>
+      </div>
+      <div class="stat">
+        <div class="eyebrow">En tu plan</div>
+        <span class="big">${act.length}</span>
+        <small class="muted">${S.placed&&S.placed.level?`Nivel inicial: ${esc(S.placed.level)} · `:""}${S.unlocked<SUGGESTED.length?`${SUGGESTED.length-S.unlocked} sugeridos por desbloquear`:"Todos los sugeridos desbloqueados"}</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="split">
+    <div class="panel" style="display:flex;flex-direction:column;gap:18px">
+      <div class="spread"><h3>Estado de memorización</h3><span class="eyebrow">según tus resultados</span></div>
+      <div class="stackbar" role="img" aria-label="Distribución">
+        ${counts.ok?`<i style="width:${counts.ok/total*100}%;background:var(--ok)"></i>`:""}
+        ${counts.mid?`<i style="width:${counts.mid/total*100}%;background:var(--mid)"></i>`:""}
+        ${counts.none?`<i style="width:${counts.none/total*100}%;background:var(--none)"></i>`:""}
+      </div>
+      <div class="legend">
+        <div><b>${counts.ok}</b><span><i class="dot" style="background:var(--ok)"></i>Aprendidos</span></div>
+        <div><b>${counts.mid}</b><span><i class="dot" style="background:var(--mid)"></i>En proceso</span></div>
+        <div><b>${counts.none}</b><span><i class="dot" style="background:var(--none)"></i>Por aprender</span></div>
+      </div>
+      <p class="muted" style="font-size:13px">Un versículo pasa a <b style="color:var(--ink)">aprendido</b> cuando lo respondes bien en ${MASTER} repasos espaciados. Si fallas uno aprendido, vuelve a <b style="color:var(--ink)">en proceso</b>.</p>
+    </div>
+    <div class="panel chart" style="display:flex;flex-direction:column;gap:12px">
+      <div class="spread"><h3>Actividad</h3><span class="eyebrow">últimos 14 días</span></div>
+      ${activityChart()}
+      <div class="row" style="gap:16px;font-size:12px" class="muted"><span class="muted"><i class="dot" style="background:var(--ok)"></i> ≥90% acierto</span><span class="muted"><i class="dot" style="background:var(--mid)"></i> 60–89%</span><span class="muted"><i class="dot" style="background:var(--bad)"></i> &lt;60%</span></div>
+    </div>
+  </section>
+
+  <section class="split">
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="spread"><h3>Próximos repasos</h3></div>
+      ${next.length? `<div class="vlist">${next.map(id=>{ const v=verse(id), p=prog(id); const d=Math.max(0,Math.ceil((p.due-Date.now())/DAY)); return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip none mono">${d<=1?"mañana":"en "+d+" días"}</span></div>`; }).join("")}</div>`
+       : `<div class="empty"><b>Aún no hay repasos programados</b><span>Cuando practiques, aquí verás cuándo vuelve cada versículo.</span></div>`}
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="spread"><h3>Los que más te cuestan</h3></div>
+      ${weakest.length? `<div class="vlist">${weakest.map(id=>{ const v=verse(id), p=prog(id); return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip bad mono">${p.lapses} ${p.lapses===1?"fallo":"fallos"}</span></div>`; }).join("")}</div>`
+       : `<div class="empty"><b>Sin fallos registrados</b><span>Los versículos en los que te equivoques aparecerán aquí.</span></div>`}
+    </div>
+  </section>`;
+}
+
+/* ---------- Biblioteca ---------- */
+function viewLibrary(){
+  const lists = listDefs();
+  return `
+  <section class="spread">
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Biblioteca</span><h1 style="font-size:clamp(30px,5vw,46px)">Tus listas de práctica</h1></div>
+    <div class="row"><button class="btn" data-act="new-list">${I.plus} Nueva lista</button><button class="btn primary" data-act="add-verse">${I.plus} Agregar versículo</button></div>
+  </section>
+  <section class="lists-grid">
+    ${lists.map(l=>`<button class="lcard" data-list="${l.id}"><div class="cv ${l.cv}"><span>${esc(l.glyph)}</span></div><div><b>${esc(l.name)}</b><br><small>${l.ids.length} ${l.ids.length===1?"versículo":"versículos"}</small></div></button>`).join("")}
+  </section>`;
+}
+
+function verseRow(id, i, list){
+  const v = verse(id); if(!v) return "";
+  const s = status(id);
+  const fav = S.favs.includes(id);
+  const acts = [];
+  acts.push(`<button class="icon-btn" data-act="speak" data-id="${id}" title="Escuchar" aria-label="Escuchar ${esc(v.ref)}">${I.speaker}</button>`);
+  if(v.sug) acts.push(`<button class="icon-btn" data-act="fav" data-id="${id}" title="${fav?"Quitar de Mis versículos":"Mover a Mis versículos"}" aria-label="Favorito" style="${fav?'color:var(--accent)':''}">${fav?I.heartF:I.heart}</button>`);
+  acts.push(`<button class="icon-btn" data-act="to-list" data-id="${id}" title="Agregar a una lista" aria-label="Agregar a una lista">${I.listAdd}</button>`);
+  if(list && !list.builtin) acts.push(`<button class="icon-btn" data-act="rm-from-list" data-id="${id}" data-list="${list.id}" title="Quitar de esta lista" aria-label="Quitar de esta lista">${I.x}</button>`);
+  if(!v.sug) acts.push(`<button class="icon-btn" data-act="del-verse" data-id="${id}" title="Eliminar versículo" aria-label="Eliminar versículo">${I.trash}</button>`);
+  return `<div class="vrow"><span class="idx">${i+1}</span><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip ${s}"><i class="dot" style="background:currentColor"></i>${STATUS_LABEL[s]}</span><div class="acts">${acts.join("")}</div></div>`;
+}
+
+function viewList(id){
+  const l = getList(id);
+  if(!l) return `<div class="empty"><b>Esta lista ya no existe</b><button class="btn" data-go="library">Volver a la biblioteca</button></div>`;
+  const due = dueIds(l.ids).length;
+  const locked = id==="sug" ? SUGGESTED.slice(S.unlocked).map(r=>r[0]).filter(x=>!(S.extraActive||[]).includes(x)) : [];
+  const isRev = id==="rev";
+  return `
+  <section class="lib-head">
+    <div class="cover-xl ${l.cv}"><span class="glyph">${esc(l.glyph)}</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <span class="eyebrow">${l.builtin?"Lista":"Lista personal"}</span>
+      <h1>${esc(l.name)}</h1>
+      <p class="muted" style="max-width:60ch">${esc(l.desc)}</p>
+      <div class="mono muted" style="font-size:12px">${l.ids.length} versículos · ${isRev?l.ids.length+" para repasar":due+" pendientes hoy"}</div>
+    </div>
+  </section>
+  <section class="row">
+    <button class="play" data-act="${isRev?"start-review":"play-list"}" data-list="${l.id}" aria-label="Reproducir lista" ${l.ids.length?"":"disabled"}>${I.play}</button>
+    <div style="display:flex;flex-direction:column"><b>${isRev?"Repasar todo lo memorizado":id==="sug"?"Hacer test de sugeridos":"Practicar esta lista"}</b><small class="muted">${isRev?"Los que falles regresan a la práctica":"Tarjetas de repaso y luego preguntas"}</small></div>
+    <span style="flex:1"></span>
+    ${id==="fav"?`<button class="btn" data-act="add-verse">${I.plus} Agregar versículo</button>`:""}
+    ${!l.builtin?`<button class="btn ghost" data-act="add-to-this" data-list="${l.id}">${I.plus} Agregar versículos</button><button class="btn ghost" data-act="del-list" data-list="${l.id}">${I.trash} Eliminar lista</button>`:""}
+  </section>
+  <section class="panel" style="padding:10px">
+    ${l.ids.length? `<div class="vlist">${l.ids.map((vid,i)=>verseRow(vid,i,l)).join("")}</div>`
+     : `<div class="empty"><b>${isRev?"Aún no tienes versículos memorizados":id==="fav"?"Todavía no has agregado versículos":"Lista vacía"}</b><span>${isRev?"Practica tus listas y aquí aparecerán los que domines.":id==="fav"?"Agrega tu versículo favorito o toca el corazón en un sugerido para moverlo aquí.":"Agrega versículos desde cualquier otra lista."}</span>${id==="fav"?`<button class="btn primary" data-act="add-verse">${I.plus} Agregar versículo</button>`:""}</div>`}
+  </section>
+  ${locked.length?`
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:2px"><h3>Por desbloquear</h3><span class="muted" style="font-size:13px">Se agregan solos cuando dominas los actuales.</span></div><button class="btn" data-act="unlock-more">${I.plus} Agregar 3 versículos más</button></div>
+    <div class="panel" style="padding:10px"><div class="vlist">
+      ${locked.slice(0,12).map((vid,i)=>{ const v=verse(vid); return `<div class="vrow locked"><span class="idx">${SUG_MAP[vid].order+1}</span><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.theme)}</p></div><span class="chip none">${I.lock} Bloqueado</span><span></span></div>`; }).join("")}
+    </div></div>
+  </section>`:""}`;
+}
+
+/* =========================================================
+   SESIÓN DE PRÁCTICA
+   Fase 1: tarjetas (repaso) · Fase 2: preguntas · Fase 3: resumen
+   ========================================================= */
+/* Duración de la sesión → cantidad de versículos (≈ 1,6 min por versículo: tarjeta + pregunta + cita) */
+const MINUTES = [5,10,15,20,30];
+const versesFor = m => Math.max(2, Math.round(m/1.6));
+function sessionSize(){ return versesFor(S.prefs.minutes||10); }
+function pickFor(source, listId){
+  const size = sessionSize();
+  if(source==="rev"){
+    const ids = activeIds().filter(id=>status(id)==="ok");
+    const last = new Set(S.lastIds||[]); const fr = ids.filter(id=>!last.has(id));
+    return shuffle(weightedSample(fr.length>=Math.min(size,ids.length)?fr:ids, size, Date.now()));
+  }
+  if(source==="active") return buildQueue(activeIds(),{grow:true,size});
+  if(source==="sug") return buildQueue(activeIds().filter(id=>!S.favs.includes(id)),{grow:true,size});
+  const l = getList(listId||source);
+  return l ? buildQueue(l.ids,{size}) : [];
+}
+function startSession(ids, {title, review=false, listId=null}={}){
+  if(!ids.length){ toast("No hay versículos para practicar en esta lista."); return; }
+  if(GROWN){ toast(`Agregamos ${GROWN} ${GROWN===1?"versículo nuevo":"versículos nuevos"} para variar tu práctica.`); GROWN = 0; }
+  SESSION = { ids, source: arguments[1]&&arguments[1].source || ids, title, review, listId, phase:"setup", i:0, mode:S.prefs.mode, results:[], flipped:false, q:null, unlocked:0 };
+  VIEW = { name:"session" };
+  render();
+}
+function cardIdsFor(ids){ const failed=new Set(S.lastFailed||[]); return ids.filter(id=>{ const p=prog(id); return !p || p.box<3 || failed.has(id); }); }
+function modeFor(id){
+  const m = SESSION.mode;
+  if(m!=="mixto") return m;
+  if(SESSION.modes && SESSION.modes[id]) return SESSION.modes[id];
+  const b = (prog(id)||{box:0}).box;
+  if(b<=2) return "blanks";
+  if(b===3) return "write";
+  return Math.random()<.5 ? "write" : "recite";
+}
+function blankRatio(id){ const b=(prog(id)||{box:0}).box; return [.3,.45,.65,.85,.9,.95][b]; }
+
+function renderSession(){
+  const s = SESSION;
+  const total = s.ids.length;
+  let body = "";
+  const top = `<div class="spread"><button class="btn ghost" data-act="quit">${I.x} Salir</button><span class="mono muted" style="font-size:12px">${esc(s.title)}</span></div>`;
+  if(s.phase==="setup"){
+    const opt = (k,t,d) => `<button class="mode" data-mode="${k}" aria-pressed="${s.mode===k}"><b>${t}</b><small>${d}</small></button>`;
+    body = `
+      <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${total} ${total===1?"versículo":"versículos"}</span><h1 style="font-size:clamp(30px,5vw,44px)">${s.review?"Repaso de memorizados":"¿Cómo quieres practicar?"}</h1><p class="muted">Tarjetas para los versículos nuevos, después las preguntas.</p></div>
+      <div class="modes">
+        ${opt("mixto","Mixto","Incluye los tres: llenar espacios, escribir completo y recitar")}
+        ${opt("blanks","Llenar espacios","Completa las palabras que faltan")}
+        ${opt("write","Escribir completo","Escríbelo desde cero, palabra por palabra")}
+        ${opt("recite","Recitar en voz alta","Dilo de memoria y evalúate")}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="eyebrow">¿Cuánto tiempo tienes?</span>
+        <div class="row" style="gap:8px">${MINUTES.map(m=>`<button class="btn ${ (S.prefs.minutes||10)===m?"primary":""}" data-act="dur" data-m="${m}" aria-pressed="${(S.prefs.minutes||10)===m}">${m} min</button>`).join("")}</div>
+        <small class="muted">${s.ids.length} ${s.ids.length===1?"versículo":"versículos"} · unos ${Math.round(s.ids.length*1.6)} minutos${s.ids.length<versesFor(S.prefs.minutes||10)?" (no hay más versículos disponibles en esta lista)":""}</small>
+      </div>
+      <div class="panel" style="padding:14px 16px"><div class="vlist">${s.ids.map((id,i)=>{const v=verse(id);return `<div class="vrow" style="grid-template-columns:28px minmax(0,1fr) auto;padding:6px 4px"><span class="idx">${i+1}</span><div class="t"><b>${esc(v.ref)}</b></div><span class="chip ${status(id)}">${STATUS_LABEL[status(id)]}</span></div>`;}).join("")}</div></div>
+      ${(()=>{ const n=cardIdsFor(s.ids).length; return n ? `<p class="muted" style="font-size:13px">Primero verás ${n===1?"1 tarjeta":n+" tarjetas"} de los versículos nuevos o que fallaste. Los que ya conoces van directo a la pregunta.</p><div class="row"><button class="btn primary lg" data-act="begin-cards">${I.play} Empezar</button><button class="btn ghost" data-act="skip-cards">Saltar las tarjetas</button></div>` : `<div class="row"><button class="btn primary lg" data-act="skip-cards">${I.play} Empezar</button></div>`; })()}`;
+  }
+  else if(s.phase==="cards"){
+    const total = s.cardIds.length;
+    const v = verse(s.cardIds[s.i]);
+    body = `
+      <div class="progress"><i style="width:${(s.i)/total*100}%"></i></div>
+      <div class="spread"><div class="phase-tag"><span class="chip acc">Tarjetas de repaso</span><span class="chip none mono">${s.i+1} / ${total}</span></div><span class="chip ${status(v.id)}">${STATUS_LABEL[status(v.id)]}</span></div>
+      <div class="flash ${s.flipped?"flipped":""}" data-act="flip" role="button" tabindex="0" aria-label="Voltear tarjeta">
+        <div class="flash-inner">
+          <div class="face front"><span class="eyebrow" style="color:inherit;opacity:.6">Reina-Valera 1960</span><div class="ref">${esc(v.ref)}</div><span class="hint">Toca para ver el versículo · intenta recordarlo primero</span></div>
+          <div class="face back"><span class="ref-line">${esc(v.ref)}</span><p class="verse-text">${esc(v.text)}</p><span class="muted" style="font-size:13px">Léelo despacio, dos veces.</span></div>
+        </div>
+      </div>
+      <div class="spread">
+        <div class="row"><button class="btn" data-act="speak" data-id="${v.id}">${I.speaker} Escuchar</button><button class="btn ghost" data-act="flip">Voltear</button></div>
+        <div class="row">${s.i>0?`<button class="btn ghost" data-act="card-prev">Anterior</button>`:""}<button class="btn primary" data-act="card-next">${s.i<total-1?"Siguiente":"Empezar preguntas"}</button></div>
+      </div>`;
+  }
+  else if(s.phase==="quiz"){
+    body = `<div class="progress"><i style="width:${(s.t)/s.tasks.length*100}%"></i></div>` + quizBody();
+  }
+  else if(s.phase==="done"){
+    body = summaryBody();
+  }
+  root.innerHTML = `<main style="min-height:100%"><div class="stage">${top}${body}</div></main>`;
+  if(s.phase==="quiz") afterQuizRender();
+}
+
+/* ---------- Construcción de preguntas ---------- */
+/* Las preguntas de cita se mezclan al azar entre las demás, siempre con otras preguntas de por medio */
+function buildTasks(ids){
+  const tasks = ids.map(id=>({ type:"text", id }));
+  shuffle(ids).forEach(id=>{
+    const p = tasks.findIndex(x=>x.type==="text" && x.id===id);
+    const min = Math.min(tasks.length, p+3);
+    const pos = min + Math.floor(Math.random()*(tasks.length-min+1));
+    tasks.splice(pos, 0, { type:"ref", id });
+  });
+  return tasks;
+}
+function startQuiz(){
+  const s = SESSION;
+  s.phase = "quiz"; s.tasks = buildTasks(shuffle(s.ids)); s.t = 0; s.pending = {}; s.spoken = {};
+  s.modes = {};
+  if(s.mode==="mixto"){
+    // Reparte los tres tipos en la sesión: espacios para los de menor nivel, escribir en el medio, recitar para los más avanzados (con algo de azar)
+    const sorted = s.ids.map(id=>({ id, k:((prog(id)||{box:0}).box) + Math.random()*1.5 })).sort((a,b)=>a.k-b.k).map(x=>x.id);
+    const n = sorted.length, base = Math.floor(n/3), rem = n%3;
+    const counts = { blanks: base+(rem>0?1:0), write: base+(rem>1?1:0), recite: base };
+    let k = 0; ["blanks","write","recite"].forEach(t=>{ for(let c=0;c<counts[t];c++) s.modes[sorted[k++]] = t; });
+  }
+  prepQuestion();
+}
+function prepQuestion(){
+  const s = SESSION; const task = s.tasks[s.t]; const id = task.id; const v = verse(id);
+  if(task.type==="ref"){ s.q = { id, stage:"ref", done:false, spokenRef: s.spoken[id]||"" }; return; }
+  const mode = modeFor(id);
+  const q = { id, mode, stage:"text", textDone:false, textScore:0, done:false, score:null, transcript:"", spokenRef:"" };
+  if(mode==="blanks"){
+    const toks = v.text.split(/(\s+)/);
+    const cand = [];
+    toks.forEach((t,i)=>{ const w=norm(t); if(w && w.length>=3) cand.push(i); });
+    const nb = Math.max(1, Math.round(cand.length*blankRatio(id)));
+    const pick = new Set(shuffle(cand).slice(0,nb));
+    q.toks = toks; q.blanks = [...pick].sort((a,b)=>a-b);
+  }
+  s.q = q;
+}
+function refBody(){
+  const s = SESSION; const q = s.q; const v = verse(q.id);
+  return `
+  <div class="spread"><div class="phase-tag"><span class="chip acc">Cita bíblica</span><span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div></div>
+  <div class="q-card">
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Identifica la cita</span><h2 style="font-size:clamp(24px,3.6vw,32px)">¿Qué versículo es este?</h2></div>
+    <p class="verse-text">“${esc(v.text)}”</p>
+    ${q.done?"":`<div class="field"><label for="refBox">Escribe la cita: libro, capítulo y versículo</label><input class="input" id="refBox" placeholder="Libro capítulo:versículo" autocomplete="off" spellcheck="false" maxlength="40" value="${esc(q.spokenRef||"")}"></div>`}
+    <div id="feedback"></div>
+    ${q.done?"":`<div class="row"><button class="btn ghost" data-act="giveup-ref">No la recuerdo</button><span style="flex:1"></span><button class="btn primary" data-act="check-ref">Comprobar cita</button></div>`}
+  </div>`;
+}
+function quizBody(){
+  const s = SESSION; const q = s.q; const v = verse(q.id);
+  if(q.stage==="ref") return refBody();
+  const fav = S.favs.includes(q.id);
+  const modeName = { blanks:"Llenar espacios", write:"Escribir completo", recite:"Recitar" }[q.mode];
+  const favBtn = v.sug ? `<button class="btn ${fav?"":"ghost"}" data-act="fav" data-id="${q.id}" style="${fav?'color:var(--accent)':''}">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"Agregar a Mis versículos"}</button>` : "";
+  let inner = "";
+  if(q.mode==="blanks"){
+    const set = new Set(q.blanks);
+    inner = `<div class="blanks">${q.toks.map((t,i)=>{
+      if(!set.has(i)) return esc(t);
+      const m = t.match(/^([¿¡"«(]*)(.*?)([.,;:!?»")]*)$/) || ["",'',t,''];
+      const w = m[2]; const sz = Math.max(3, w.length+1);
+      return `${esc(m[1])}<input data-blank="${i}" aria-label="Palabra faltante" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
+    }).join("")}</div><p class="muted" style="font-size:13px">Escribe cada palabra con sus tildes. Una tilde mal puesta cuenta medio punto.</p>`;
+  } else if(q.mode==="write"){
+    inner = `<textarea class="textarea" id="writeBox" placeholder="Escribe el versículo completo de memoria…" ${q.done?"disabled":""}></textarea>
+      <div class="row"><span class="muted" style="font-size:13px">Cuentan las tildes y los signos de puntuación (las mayúsculas no).</span></div>`;
+  } else {
+    inner = `
+      <div style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+        <button class="mic" id="micBtn" data-act="mic" aria-label="Recitar con micrófono">${I.mic}</button>
+        <p class="muted" id="micMsg" style="max-width:46ch">Toca el micrófono y di el versículo de memoria. Si el micrófono no está disponible, recita en voz alta y evalúate tú.</p>
+        <p id="transcript" style="font-family:var(--f-verse);font-size:20px;min-height:1.4em"></p>
+      </div>
+      <p class="hidden-verse ${q.done?"shown":""}" id="hv">${esc(v.text)}</p>`;
+  }
+  let actions = "";
+  if(!q.done){
+    if(q.mode==="recite") actions = `<div class="row"><button class="btn" data-act="hint">Primera palabra</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Mostrar y evaluarme</button></div>`;
+    else actions = `<div class="row"><button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
+  }
+  return `
+  <div class="spread"><div class="phase-tag"><span class="chip acc">${modeName}</span><span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
+  <div class="q-card">
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
+    ${inner}
+    <div id="feedback"></div>
+    ${actions}
+  </div>`;
+}
+function afterQuizRender(){
+  const q = SESSION.q;
+  if(q.stage==="ref"){
+    const rb = $("#refBox");
+    if(rb){ rb.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); checkRef(); } }); rb.focus(); }
+    return;
+  }
+  if(q.mode==="blanks"){
+    const ins = [...root.querySelectorAll("[data-blank]")];
+    ins.forEach((el,k)=>{
+      el.addEventListener("keydown",e=>{ if(e.key==="Enter"||(e.key===" "&&el.value.trim())){ e.preventDefault(); if(ins[k+1]) ins[k+1].focus(); else checkAnswer(); } });
+    });
+    if(ins[0]) ins[0].focus();
+  } else if(q.mode==="write"){ const w=$("#writeBox"); if(w) w.focus(); }
+}
+/* ---------- Cita bíblica ---------- */
+function parseRef(s){
+  let t = " "+norm(s)+" ";
+  t = t.replace(/ (primera|primer|1ra|1a|i) /g," 1 ").replace(/ (segunda|segundo|2da|2a|ii) /g," 2 ").replace(/ (tercera|tercero|3ra|3a|iii) /g," 3 ").trim();
+  const nums = t.match(/\d+/g) || [];
+  const stop = ["de","del","capitulo","cap","versiculo","versiculos","vers","al","y","v"];
+  const book = (t.replace(/\d+/g," ").match(/[a-zñ]+/g)||[]).filter(w=>!stop.includes(w)).join("");
+  const lead = /^\d+\s*[a-zñ]/.test(t) ? nums[0] : null;
+  return { book, lead, nums: lead ? nums.slice(1) : nums };
+}
+function refMatch(target, ans){
+  const a = parseRef(ans), b = parseRef(target);
+  if(a.book.length<2 || !a.nums.length) return false;
+  const bookOk = a.book.slice(0,3)===b.book.slice(0,3) || (a.book.length>=2 && b.book.startsWith(a.book));
+  return bookOk && (a.lead||"")===(b.lead||"") && a.nums.join(":")===b.nums.join(":");
+}
+
+/* ---------- Corrección ---------- */
+function lcsAlign(target, answer){
+  const n=target.length, m=answer.length;
+  const dp = Array.from({length:n+1},()=>new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) dp[i][j] = close(answer[j],target[i]) ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j],dp[i][j+1]);
+  const ops=[]; let i=0,j=0;
+  while(i<n && j<m){
+    if(close(answer[j],target[i])){ ops.push({t:"ok",w:i,a:j}); i++; j++; }
+    else if(dp[i+1][j]>=dp[i][j+1]){ ops.push({t:"miss",w:i}); i++; }
+    else { ops.push({t:"extra",a:j}); j++; }
+  }
+  while(i<n){ ops.push({t:"miss",w:i}); i++; }
+  while(j<m){ ops.push({t:"extra",a:j}); j++; }
+  return { lcs:dp[0][0], ops };
+}
+function scoreFreeText(text, attempt){
+  const tw = words(text), aw = words(attempt);
+  if(!aw.length) return { score:0, html:"" };
+  const { lcs, ops } = lcsAlign(tw, aw);
+  const score = (2*lcs)/(tw.length+aw.length);
+  const disp = text.split(/\s+/);   // palabras originales para mostrar
+  const html = ops.map(o=> o.t==="extra" ? `<span class="extra">${esc(attempt.split(/\s+/).filter(x=>norm(x))[o.a]||"")}</span>` : `<span class="${o.t}">${esc(disp[o.w]||"")}</span>`).join(" ");
+  return { score, html };
+}
+/* Escritura estricta: cuentan tildes y signos de puntuación (no las mayúsculas).
+   Palabra exacta = 1 punto · misma palabra con tilde o signo distinto = medio punto */
+const strictTok = w => String(w).toLowerCase().replace(/[“”«»]/g,'"').replace(/[‘’]/g,"'");
+const bareTok = w => strictTok(w).replace(/[^a-záéíóúüñ0-9]/g,"");
+function errKind(target, got){
+  if(bareTok(target)===bareTok(got)) return "puntuación";
+  if(norm(target)===norm(got)) return "tilde";
+  return "ortografía";
+}
+function scoreStrict(text, attempt){
+  const tRaw = text.split(/\s+/).filter(Boolean);
+  const aRaw = attempt.trim().split(/\s+/).filter(Boolean);
+  if(!aRaw.length) return { score:0, html:"", errs:0 };
+  const { ops } = lcsAlign(tRaw.map(norm), aRaw.map(norm));
+  let credit = 0, errs = 0;
+  const html = ops.map(o=>{
+    if(o.t==="extra") return `<span class="extra">${esc(aRaw[o.a])}</span>`;
+    if(o.t==="miss") return `<span class="miss">${esc(tRaw[o.w])}</span>`;
+    const tw = tRaw[o.w], aw = aRaw[o.a];
+    if(strictTok(tw)===strictTok(aw)){ credit += 1; return `<span class="ok">${esc(tw)}</span>`; }
+    credit += 0.5; errs++;
+    return `<span class="near" title="Error de ${errKind(tw,aw)}">${esc(tw)}<small>${esc(aw)}</small></span>`;
+  }).join(" ");
+  // las operaciones "ok" se alinearon por palabra base; recorrerlas en orden de aparición
+  return { score: (2*credit)/(tRaw.length+aRaw.length), html, errs };
+}
+function feedbackHTML(score){
+  const pct = Math.round(score*100);
+  const cls = score>=.9?"ok":score>=.6?"mid":"bad";
+  const msg = score>=.9?"¡Excelente! Sube de nivel.":score>=.6?"Casi. Lo verás de nuevo pronto.":"Sigue practicando. Vuelve a tu lista de práctica.";
+  return `<div class="result-bar ${cls}"><b>${pct}%</b><span>${msg}</span></div>`;
+}
+/* Parte 1: califica el texto y pasa a la sección de la cita */
+function gradeText(score, extraHTML=""){
+  const s = SESSION, q = s.q;
+  if(q.textDone) return;
+  q.textDone = true; q.textScore = score; s.pending[q.id] = score;
+  const v = verse(q.id);
+  const pct = Math.round(score*100);
+  const cls = score>=.9?"ok":score>=.6?"mid":"bad";
+  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+    <div class="result-bar ${cls}"><b>${pct}%</b><span>en el texto. Más adelante te preguntaremos la cita de este versículo.</span></div>${extraHTML}
+    ${q.mode!=="recite"?`<p class="muted" style="font-size:13px">Texto correcto:</p><p class="verse-text" style="font-size:20px">${esc(v.text)}</p>`:""}
+    <div class="row"><button class="btn" data-act="speak" data-id="${q.id}">${I.speaker} Escuchar</button><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">Siguiente pregunta</button></div></div>`;
+  root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+  const n = $("#nextQ"); if(n) n.focus();
+}
+/* Parte 2: califica la cita y registra el resultado final */
+function checkRef(giveUp=false){
+  const q = SESSION.q; if(!q || q.done) return;
+  const v = verse(q.id); const rb = $("#refBox");
+  if(!giveUp && !rb.value.trim()){ toast("Escribe la cita o toca “No la recuerdo”."); rb.focus(); return; }
+  const ok = !giveUp && refMatch(v.ref, rb.value);
+  rb.disabled = true; rb.classList.add(ok?"ref-ok":"ref-bad");
+  const ts = SESSION.pending[q.id] ?? 0;
+  const score = ok ? ts : Math.min(ts*0.85, 0.85);   // sin la cita correcta no sube de nivel
+  const refHTML = `<div class="result-bar ${ok?"ok":"bad"}" style="padding:10px 16px"><span>${ok?"Cita correcta:":"La cita correcta es"} <b style="font-size:inherit">${esc(v.ref)}</b>${ok||giveUp?"":` · escribiste “${esc(rb.value.trim())}”`}</span></div>`;
+  finalize(score, refHTML);
+}
+function finalize(score, extraHTML=""){
+  const s = SESSION, q = s.q;
+  if(q.done) return;
+  q.done = true; q.score = score;
+  const before = status(q.id);
+  const outcome = applyResult(q.id, score);
+  s.results.push({ id:q.id, score, outcome, before, after:status(q.id) });
+  persist();
+  const tsPct = Math.round((s.pending[q.id] ?? 0)*100);
+  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${feedbackHTML(score)}<p class="muted" style="font-size:13px">Resultado final de ${esc(verse(q.id).ref)}: texto ${tsPct}% + cita.</p>${extraHTML}
+    <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${s.t<s.tasks.length-1?"Siguiente pregunta":"Ver resultados"}</button></div></div>`;
+  root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+  const n = $("#nextQ"); if(n) n.focus();
+}
+function checkAnswer(){
+  const q = SESSION.q; if(!q || q.textDone) return;
+  const v = verse(q.id);
+  if(q.mode==="blanks"){
+    let ok = 0;
+    q.blanks.forEach(i=>{
+      const el = root.querySelector(`[data-blank="${i}"]`);
+      const exact = el.value.trim() && bareTok(el.value)===bareTok(q.toks[i]);
+      const near = !exact && norm(el.value) && close(norm(el.value), norm(q.toks[i]));
+      const right = exact;
+      ok += exact ? 1 : near ? 0.5 : 0;
+      el.classList.add(exact?"right":near?"near":"wrong"); el.disabled = true;
+      if(!right){ const fix=document.createElement("span"); fix.className="fix"; fix.textContent=q.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(fix); }
+    });
+    gradeText(ok/q.blanks.length);
+  } else if(q.mode==="write"){
+    const val = $("#writeBox").value;
+    if(!val.trim()){ toast("Escribe el versículo o toca “No lo sé”."); return; }
+    const r = scoreStrict(v.text, val);
+    $("#writeBox").disabled = true;
+    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Tu respuesta comparada: <span style="color:var(--ok)">correcto</span> · <span style="color:var(--accent)">tilde, signo u ortografía</span> (tu versión tachada al lado) · <span style="color:var(--bad)">faltó</span> · <span style="text-decoration:line-through">sobró</span></p><p class="diff">${r.html}</p>${r.errs?`<p class="muted" style="font-size:13px;margin-top:6px">${r.errs} ${r.errs===1?"palabra tiene":"palabras tienen"} errores de tilde o puntuación (cuentan medio punto).</p>`:""}</div>`);
+  }
+}
+
+/* ---------- Recitación (voz) ---------- */
+let REC = null;
+function startMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const msg = $("#micMsg"), btn = $("#micBtn"), tr = $("#transcript");
+  if(!SR){ msg.textContent = "Tu navegador no ofrece reconocimiento de voz aquí. Recita en voz alta y luego toca “Mostrar y evaluarme”."; return; }
+  if(REC){ try{REC.stop();}catch(e){} return; }
+  try{
+    REC = new SR(); REC.lang = "es-CO"; REC.continuous = true; REC.interimResults = true;
+    let finalText = "";
+    REC.onresult = e => { let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalText += r[0].transcript+" "; else interim += r[0].transcript; } SESSION.q.transcript = finalText+interim; tr.textContent = SESSION.q.transcript; };
+    REC.onerror = e => { msg.textContent = (e.error==="not-allowed"||e.error==="service-not-allowed") ? "No hay permiso para el micrófono. Permítelo en el navegador (ícono junto a la dirección) o recita en voz alta y toca “Mostrar y evaluarme”." : e.error==="no-speech" ? "No se escuchó nada. Toca el micrófono e inténtalo otra vez." : "No se pudo escuchar bien. Puedes intentarlo de nuevo o evaluarte tú."; };
+    REC.onend = () => { btn.classList.remove("live"); REC = null; if(SESSION && SESSION.q && !SESSION.q.done){ { const m=(SESSION.q.transcript||"").match(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i); if(m){ SESSION.q.spokenRef=m[0].trim(); SESSION.spoken[SESSION.q.id]=m[0].trim(); } } } if(SESSION && SESSION.q && SESSION.q.transcript.trim()) msg.textContent = "Listo. Toca “Mostrar y evaluarme” para ver tu resultado."; };
+    REC.start(); btn.classList.add("live"); msg.textContent = "Escuchando… toca de nuevo para terminar.";
+  }catch(e){ REC=null; msg.textContent = "El micrófono no está disponible en esta vista. Recita en voz alta y luego evalúate."; }
+}
+function reveal(){
+  const q = SESSION.q; const v = verse(q.id);
+  if(q.textDone) return;
+  if(REC){ try{REC.stop();}catch(e){} }
+  $("#hv").classList.add("shown");
+  if(q.transcript && q.transcript.trim()){
+    const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
+    const r = scoreFreeText(v.text, tx);
+    root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p></div>`);
+    return;
+  }
+  root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:10px"><p style="font-weight:600">¿Qué tan bien lo recitaste?</p>
+    <div class="grade">
+      <button data-grade="0.2">No lo recordé<small>Volver a practicar</small></button>
+      <button data-grade="0.7">Con errores<small>Varias palabras mal</small></button>
+      <button data-grade="0.9">Bien<small>Detalles menores</small></button>
+      <button data-grade="1">Perfecto<small>Palabra por palabra</small></button>
+    </div></div>`;
+}
+
+/* =========================================================
+   PRUEBA DE NIVEL (solo al crear un usuario nuevo)
+   12 versículos de tres franjas de dificultad:
+   llenar espacios (¿lo sabes de memoria?) + elegir la cita (¿conoces la Biblia?)
+   ========================================================= */
+let PLACE = null;
+const LEVELS = [
+  { key:"Principiante", min:0,   unlock:5,  desc:"Empiezas con los versículos más conocidos." },
+  { key:"Intermedio",   min:.35, unlock:15, desc:"Ya conoces varios; arrancas con un plan más amplio." },
+  { key:"Avanzado",     min:.7,  unlock:30, desc:"Tienes buena base; vas directo a pasajes más largos." }
+];
+function startPlacement(){
+  const bands = [[0,20],[20,40],[40,SUGGESTED.length]];
+  const items = [];
+  bands.forEach(([a,b])=>{
+    const ids = shuffle(SUGGESTED.slice(a,b).map(r=>r[0])).slice(0,4);
+    const types = shuffle(["blanks","blanks","mc","mc"]);
+    shuffle(ids.map((id,k)=>({ id, type:types[k] }))).forEach(x=>items.push(x));
+  });
+  items.forEach(it=>{
+    const v = verse(it.id);
+    if(it.type==="blanks"){
+      const toks = v.text.split(/(\s+)/); const cand = [];
+      toks.forEach((t,i)=>{ if(norm(t).length>=3) cand.push(i); });
+      it.toks = toks; it.blanks = shuffle(cand).slice(0, Math.max(2, Math.round(cand.length*.4))).sort((a,b)=>a-b);
+    } else {
+      const others = shuffle(SUGGESTED.filter(r=>r[0]!==it.id)).slice(0,3).map(r=>r[1]);
+      it.opts = shuffle([v.ref, ...others]);
+    }
+  });
+  PLACE = { phase:"intro", i:0, items, scores:[], answered:false };
+  VIEW = { name:"placement" }; render(); window.scrollTo({top:0});
+}
+function renderPlacement(){
+  const P = PLACE; let body = "";
+  if(P.phase==="intro"){
+    body = `
+      <div style="display:flex;flex-direction:column;gap:10px"><span class="eyebrow">Bienvenido, ${esc(ME.name)}</span>
+        <h1 style="font-size:clamp(32px,6vw,52px)">Prueba de nivel</h1>
+        <p class="muted" style="max-width:58ch;font-size:16px">Son 12 preguntas cortas, de las más conocidas a las más difíciles. Sirven para saber qué versículos ya dominas y desde dónde empezar. Si no conoces uno, toca “No lo conozco” sin problema.</p></div>
+      <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+        <div class="row" style="gap:10px"><span class="chip acc">6 × completar el versículo</span><span class="chip mid">6 × identificar la cita</span><span class="chip none">≈ 4 minutos</span></div>
+        <div class="levels">${LEVELS.map(l=>`<div class="lvl"><b>${l.key}</b><small>${l.desc}</small></div>`).join("")}</div>
+      </div>
+      <div class="row"><button class="btn primary lg" data-act="pl-start">${I.play} Empezar la prueba</button><button class="btn ghost" data-act="pl-skip">Saltar y empezar desde cero</button></div>`;
+  }
+  else if(P.phase==="q"){
+    const it = P.items[P.i]; const v = verse(it.id);
+    let inner = "", actions = "";
+    if(it.type==="blanks"){
+      const set = new Set(it.blanks);
+      inner = `<div><span class="eyebrow">Completa el versículo</span><div class="ref" style="margin-top:4px">${esc(v.ref)}</div></div>
+        <div class="blanks">${it.toks.map((t,i)=>{
+          if(!set.has(i)) return esc(t);
+          const m = t.match(/^([¿¡"«(]*)(.*?)([.,;:!?»")]*)$/) || ["","",t,""];
+          const sz = Math.max(3, m[2].length+1);
+          return `${esc(m[1])}<input data-pblank="${i}" aria-label="Palabra faltante" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
+        }).join("")}</div>`;
+      actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo conozco</button><span style="flex:1"></span><button class="btn primary" data-act="pl-check">Comprobar</button></div>`;
+    } else {
+      inner = `<div><span class="eyebrow">¿De qué cita es este versículo?</span></div>
+        <p class="verse-text">“${esc(v.text)}”</p>
+        <div class="opts">${it.opts.map((o,k)=>`<button class="opt" data-act="pl-opt" data-k="${k}">${esc(o)}</button>`).join("")}</div>`;
+      actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo sé</button></div>`;
+    }
+    body = `
+      <div class="progress"><i style="width:${P.i/P.items.length*100}%"></i></div>
+      <div class="spread"><div class="phase-tag"><span class="chip acc">Prueba de nivel</span><span class="chip none mono">${P.i+1} / ${P.items.length}</span></div><span class="chip none">${P.i<4?"Básico":P.i<8?"Intermedio":"Avanzado"}</span></div>
+      <div class="q-card">${inner}<div id="plFeedback"></div>${actions}</div>`;
+  }
+  else {
+    const avg = P.result.avg, L = P.result.level;
+    body = `
+      <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Resultado de tu prueba</span><h1 style="font-size:clamp(34px,6vw,56px)">Nivel ${esc(L.key)}</h1><p class="muted" style="font-size:16px;max-width:58ch">${esc(L.desc)}</p></div>
+      <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="stat"><div class="eyebrow">Puntaje</div><span class="big">${Math.round(avg*100)}<small>%</small></span></div>
+        <div class="stat"><div class="eyebrow">De memoria</div><span class="big">${P.result.memo}<small>/ 6</small></span></div>
+        <div class="stat"><div class="eyebrow">Citas</div><span class="big">${P.result.refs}<small>/ 6</small></span></div>
+      </div>
+      <div class="levels">${LEVELS.map(l=>`<div class="lvl ${l===L?"on":""}"><b>${l.key}</b><small>${l.desc}</small></div>`).join("")}</div>
+      <div class="panel" style="display:flex;flex-direction:column;gap:6px"><b>Tu plan inicial</b><p class="muted">Arrancas con ${S.unlocked} versículos en tu plan. ${P.result.known? `${P.result.known} ya quedaron marcados como “en proceso” porque los respondiste bien; te los preguntaremos con menos frecuencia.`:"Todos empiezan como “por aprender”."} A partir de aquí la app ajusta el ritmo según tus resultados.</p></div>
+      <div class="row"><button class="btn primary lg" data-act="pl-finish">Ir a mi panel</button></div>`;
+  }
+  root.innerHTML = `<main style="min-height:100%"><div class="stage">${body}</div></main>`;
+  if(P.phase==="q"){
+    const ins = [...root.querySelectorAll("[data-pblank]")];
+    ins.forEach((el,k)=>el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(ins[k+1]) ins[k+1].focus(); else placementCheck(); } }));
+    if(ins[0]) ins[0].focus();
+  }
+}
+function placementAnswer(score, html){
+  const P = PLACE; if(P.answered) return;
+  P.answered = true; P.scores[P.i] = score;
+  const last = P.i===P.items.length-1;
+  $("#plFeedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">${html||""}<div class="row"><span style="flex:1"></span><button class="btn primary" id="plNext" data-act="pl-next">${last?"Ver mi nivel":"Siguiente"}</button></div></div>`;
+  const a = $("#plActs"); if(a) a.remove();
+  const n = $("#plNext"); if(n) n.focus();
+}
+function placementCheck(){
+  const P = PLACE, it = P.items[P.i]; if(P.answered || it.type!=="blanks") return;
+  let ok = 0;
+  it.blanks.forEach(i=>{
+    const el = root.querySelector(`[data-pblank="${i}"]`);
+    const right = norm(el.value) && close(norm(el.value), norm(it.toks[i]));
+    if(right) ok++;
+    el.classList.add(right?"right":"wrong"); el.disabled = true;
+    if(!right){ const f=document.createElement("span"); f.className="fix"; f.textContent=it.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(f); }
+  });
+  const sc = ok/it.blanks.length;
+  placementAnswer(sc, `<div class="result-bar ${sc>=.9?"ok":sc>=.6?"mid":"bad"}"><b>${Math.round(sc*100)}%</b><span>${ok} de ${it.blanks.length} palabras</span></div>`);
+}
+function finishPlacement(){
+  const P = PLACE, now = Date.now();
+  const avg = P.scores.reduce((a,b)=>a+(b||0),0)/P.items.length;
+  const level = LEVELS.slice().reverse().find(l=>avg>=l.min);
+  let memo=0, refs=0, known=0, maxIdx=-1;
+  P.items.forEach((it,k)=>{
+    const sc = P.scores[k]||0; let box = 0;
+    if(it.type==="blanks"){ if(sc>=.9){ box=3; memo++; } else if(sc>=.6){ box=1; memo+=.5; } }
+    else if(sc>=1){ box=1; refs++; }
+    if(box){
+      known++; maxIdx = Math.max(maxIdx, SUG_MAP[it.id].order);
+      S.progress[it.id] = { box, due: now + INTERVAL_DAYS[box]*DAY, reps:1, lapses:0, last:now, introduced:now, hist:[Math.round(sc*100)] };
+    }
+  });
+  S.unlocked = Math.min(SUGGESTED.length, level.unlock);
+  S.extraActive = Object.keys(S.progress).filter(id=>SUG_MAP[id] && SUG_MAP[id].order>=S.unlocked);
+  S.placed = { level:level.key, score:Math.round(avg*100), date:todayKey() };
+  persist();
+  P.result = { avg, level, memo:Math.floor(memo), refs, known };
+  P.phase = "done"; render(); window.scrollTo({top:0});
+}
+
+/* ---------- Resumen ---------- */
+function summaryBody(){
+  const s = SESSION; const r = s.results;
+  const avg = r.length ? Math.round(r.reduce((a,x)=>a+x.score,0)/r.length*100) : 0;
+  const up = r.filter(x=>x.outcome==="ok").length, bad = r.filter(x=>x.outcome==="bad").length;
+  const fell = r.filter(x=>x.before==="ok" && x.after!=="ok");
+  const newMaster = r.filter(x=>x.before!=="ok" && x.after==="ok");
+  return `
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Sesión terminada</span><h1 style="font-size:clamp(34px,6vw,56px)">${avg>=90?"¡Excelente trabajo!":avg>=60?"Buen avance":"Cada repaso cuenta"}</h1>${s.started?`<span class="mono muted" style="font-size:12px">${r.length} versículos en ${Math.max(1,Math.round((Date.now()-s.started)/60000))} min</span>`:""}</div>
+    <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="stat"><div class="eyebrow">Acierto</div><span class="big">${avg}<small>%</small></span></div>
+      <div class="stat"><div class="eyebrow">Bien</div><span class="big" style="color:var(--ok)">${up}</span></div>
+      <div class="stat"><div class="eyebrow">A practicar</div><span class="big" style="color:var(--bad)">${bad}</span></div>
+    </div>
+    ${newMaster.length?`<div class="result-bar ok"><span>Nuevos aprendidos: <b style="font-size:inherit">${newMaster.map(x=>esc(verse(x.id).ref)).join(", ")}</b></span></div>`:""}
+    ${fell.length?`<div class="result-bar bad"><span>Regresan a tu práctica: <b style="font-size:inherit">${fell.map(x=>esc(verse(x.id).ref)).join(", ")}</b></span></div>`:""}
+    ${s.unlocked?`<div class="result-bar mid"><span>Vas muy bien. Agregamos <b style="font-size:inherit">${s.unlocked}</b> versículos nuevos a tu plan.</span></div>`:""}
+    <div class="panel" style="padding:10px"><div class="vlist">${r.map((x,i)=>{ const v=verse(x.id); const cls=x.outcome==="ok"?"ok":x.outcome==="mid"?"mid":"bad"; return `<div class="vrow" style="grid-template-columns:28px minmax(0,1fr) auto auto"><span class="idx">${i+1}</span><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip ${cls} mono">${Math.round(x.score*100)}%</span><span class="chip ${x.after}">${STATUS_LABEL[x.after]}</span></div>`; }).join("")}</div></div>
+    <div class="row"><button class="btn primary lg" data-act="end-home">Ver mi progreso</button><button class="btn" data-act="again">Practicar otra vez</button></div>`;
+}
+
+/* ---------- Voz (lectura en voz alta) ---------- */
+function speak(text){
+  try{
+    if(!("speechSynthesis" in window)){ toast("Tu navegador no puede leer en voz alta."); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = speechSynthesis.getVoices();
+    const pick = vs.find(v=>/es[-_](CO|MX|US|419)/i.test(v.lang)) || vs.find(v=>/^es/i.test(v.lang));
+    if(pick) u.voice = pick;
+    u.lang = pick ? pick.lang : "es-ES"; u.rate = .92;
+    speechSynthesis.speak(u);
+  }catch(e){ toast("No se pudo reproducir el audio."); }
+}
+function stopSpeech(){ try{ speechSynthesis.cancel(); }catch(e){} if(REC){ try{REC.stop();}catch(e){} } }
+
+/* =========================================================
+   MODALES Y AVISOS
+   ========================================================= */
+function toast(msg){
+  document.querySelectorAll(".toast").forEach(t=>t.remove());
+  const t = document.createElement("div"); t.className="toast"; t.textContent = msg; t.setAttribute("role","status");
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 3200);
+}
+function modal(html, onMount){
+  closeModal();
+  const sc = document.createElement("div"); sc.className="scrim"; sc.id="scrim";
+  sc.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
+  sc.addEventListener("click",e=>{ if(e.target===sc) closeModal(); });
+  document.body.appendChild(sc);
+  if(onMount) onMount(sc);
+  const f = sc.querySelector("input,textarea,select,button"); if(f) f.focus();
+}
+function closeModal(){ const s=$("#scrim"); if(s) s.remove(); }
+function confirmBox(title, text, okLabel, onOk){
+  modal(`<h2 style="font-size:24px">${esc(title)}</h2><p class="muted">${esc(text)}</p><div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="okBtn">${esc(okLabel)}</button></div>`, sc=>{
+    sc.querySelector("[data-close]").onclick = closeModal;
+    sc.querySelector("#okBtn").onclick = ()=>{ closeModal(); onOk(); };
+  });
+}
+function addVerseModal(presetList){
+  const lists = S.lists;
+  modal(`
+    <div class="spread"><h2 style="font-size:24px">Agregar un versículo</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="font-size:14px">Copia el texto de tu Biblia Reina-Valera 1960 tal como quieres memorizarlo.</p>
+    <div id="vf" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="vref">Cita</label><input class="input" id="vref" placeholder="Ej. Salmos 91:1" required maxlength="60"></div>
+      <div class="field"><label for="vtext">Texto del versículo</label><textarea class="textarea" id="vtext" placeholder="El que habita al abrigo del Altísimo…" required maxlength="900"></textarea></div>
+      ${lists.length?`<div class="field"><label for="vlist">Agregar también a la lista (opcional)</label><select class="input" id="vlist"><option value="">Solo en Mis versículos</option>${lists.map(l=>`<option value="${l.id}" ${presetList===l.id?"selected":""}>${esc(l.name)}</option>`).join("")}</select></div>`:""}
+      <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-close>Cancelar</button><button class="btn primary" type="button" id="vfOk">${I.plus} Agregar</button></div>
+    </div>`, sc=>{
+      sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+      const submitVerse = ()=>{
+        const ref = $("#vref").value.trim(), text = $("#vtext").value.trim().replace(/\s+/g," ");
+        if(!ref || !text){ toast("Escribe la cita y el texto."); return; }
+        if(words(text).length<2){ toast("El texto es muy corto para practicarlo."); return; }
+        const id = "c-"+uid();
+        S.custom.push({ id, ref, text, theme:"Personal" });
+        S.favs.unshift(id);
+        const sel = $("#vlist"); if(sel && sel.value){ const l=S.lists.find(x=>x.id===sel.value); if(l) l.ids.push(id); }
+        persist(); closeModal(); toast(`${ref} se agregó a Mis versículos.`);
+        render();
+      };
+      sc.querySelector("#vfOk").onclick = submitVerse;
+      sc.querySelector("#vref").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#vtext").focus(); } });
+  });
+}
+function newListModal(){
+  modal(`
+    <div class="spread"><h2 style="font-size:24px">Nueva lista</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div id="lf" style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label for="lname">Nombre</label><input class="input" id="lname" placeholder="Ej. Promesas para la ansiedad" required maxlength="40"></div>
+      <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-close>Cancelar</button><button class="btn primary" type="button" id="lfOk">Crear lista</button></div>
+    </div>`, sc=>{
+      sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+      const submitList = ()=>{ const name=$("#lname").value.trim(); if(!name) return;
+        const id = "l-"+uid(); S.lists.push({ id, name, ids:[] }); persist(); closeModal();
+        go("list",{list:id}); toast(`Lista “${name}” creada.`);
+      };
+      sc.querySelector("#lfOk").onclick = submitList;
+      sc.querySelector("#lname").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submitList(); } });
+  });
+}
+function toListModal(vid){
+  const v = verse(vid);
+  if(!S.lists.length){
+    modal(`<div class="spread"><h2 style="font-size:24px">Agregar a una lista</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div><p class="muted">Todavía no tienes listas personales. Crea una para organizar versículos como una playlist.</p><div class="row" style="justify-content:flex-end"><button class="btn primary" id="mk">${I.plus} Crear lista</button></div>`, sc=>{
+      sc.querySelector("[data-close]").onclick=closeModal; sc.querySelector("#mk").onclick=()=>{ closeModal(); newListModal(); };
+    }); return;
+  }
+  modal(`<div class="spread"><h2 style="font-size:24px">${esc(v.ref)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div><p class="muted">Elige en qué listas quieres este versículo.</p>
+    <div style="display:flex;flex-direction:column;gap:8px">${S.lists.map(l=>`<label class="check"><input type="checkbox" data-l="${l.id}" ${l.ids.includes(vid)?"checked":""}> ${esc(l.name)}</label>`).join("")}</div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" data-close>Listo</button></div>`, sc=>{
+      sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ closeModal(); render(); });
+      sc.querySelectorAll("[data-l]").forEach(cb=>cb.onchange=()=>{
+        const l=S.lists.find(x=>x.id===cb.dataset.l); if(!l) return;
+        if(cb.checked){ if(!l.ids.includes(vid)) l.ids.push(vid); } else l.ids = l.ids.filter(x=>x!==vid);
+        persist();
+      });
+  });
+}
+function addToListModal(listId){
+  const l = S.lists.find(x=>x.id===listId); if(!l) return;
+  const all = [...S.favs, ...SUGGESTED.slice(0,S.unlocked).map(r=>r[0])].filter((x,i,a)=>a.indexOf(x)===i && verse(x));
+  modal(`<div class="spread"><h2 style="font-size:24px">Agregar a “${esc(l.name)}”</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto">${all.map(id=>`<label class="check"><input type="checkbox" data-v="${id}" ${l.ids.includes(id)?"checked":""}><span><b>${esc(verse(id).ref)}</b></span></label>`).join("")}</div>
+    <div class="row" style="justify-content:space-between"><button class="btn ghost" id="newv">${I.plus} Versículo nuevo</button><button class="btn primary" data-close>Listo</button></div>`, sc=>{
+      sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ closeModal(); render(); });
+      sc.querySelector("#newv").onclick=()=>{ closeModal(); addVerseModal(listId); };
+      sc.querySelectorAll("[data-v]").forEach(cb=>cb.onchange=()=>{
+        const id=cb.dataset.v; if(cb.checked){ if(!l.ids.includes(id)) l.ids.push(id); } else l.ids=l.ids.filter(x=>x!==id); persist();
+      });
+  });
+}
+
+/* =========================================================
+   INGRESO (usuarios)
+   ========================================================= */
+function localProfiles(){ return LS.get("lampara.profiles", []); }
+function accounts(){ return LS.get("lampara.accounts", []); }
+function saveAccounts(a){ LS.set("lampara.accounts", a); }
+async function hashPass(pass, salt){
+  const txt = salt + "|" + pass;
+  try{
+    if(!(window.crypto && crypto.subtle)) throw 0;
+    const buf = await Promise.race([crypto.subtle.digest("SHA-256", new TextEncoder().encode(txt)), new Promise((_,r)=>setTimeout(()=>r(0),1500))]);
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+  }catch(e){ let h=2166136261; for(const c of txt){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return "f"+(h>>>0).toString(16); }
+}
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+function applyTheme(t){ try{ if(t==="light"||t==="dark") document.documentElement.setAttribute("data-theme",t); else document.documentElement.removeAttribute("data-theme"); }catch(e){} }
+
+/* ---------- Pantallas de bienvenida ---------- */
+let WEL = { step:0, migrate:null, pending:null, goal:10, err:"" };
+const SLIDES = [
+  { h:`Guarda la Palabra <em>en tu corazón.</em>`, p:"Memoriza los versículos más importantes de la Reina-Valera 1960, a tu ritmo y sin perder lo que ya aprendiste.",
+    v:()=>`<div class="slide-visual"><span class="eyebrow">Salmos 119:11</span><p class="verse-text" style="font-size:22px">“En mi corazón he guardado tus dichos, para no pecar contra ti.”</p></div>` },
+  { h:`Un método que <em>se adapta a ti.</em>`, p:"Repasas con tarjetas y luego practicas de tres formas. Lo que más te cuesta vuelve antes; lo que dominas, espaciado.",
+    v:()=>`<div class="slide-visual"><div class="mini-blank">Jehová es mi <span></span>; nada me <span></span>.</div><div class="mini-steps"><div><b>Llenar espacios</b><small>completa palabras</small></div><div><b>Escribir</b><small>con tildes y signos</small></div><div><b>Recitar</b><small>en voz alta</small></div><div><b>Cita</b><small>libro, capítulo, versículo</small></div></div></div>` },
+  { h:`Unos minutos <em>cada día.</em>`, p:"Elige cuánto tiempo practicar y mantén tu racha. Empiezas con una prueba corta para saber tu nivel.",
+    v:()=>`<div class="slide-visual"><div class="row" style="gap:16px"><span class="flame" style="transform:scale(1.6)">${I.flame}</span><div><b style="font-size:28px;letter-spacing:-.03em">7 días</b><br><small class="muted">ejemplo de racha</small></div></div><div class="row" style="gap:6px">${[5,10,15,20,30].map(m=>`<span class="chip ${m===10?"acc":"none"}">${m} min</span>`).join("")}</div></div>` }
+];
+function welArt(){
+  return `<aside class="wel-art"><div class="brand" style="padding:0;position:relative;z-index:1"><div class="brand-mark">${I.lamp}</div><div><b style="color:var(--bg)">Lámpara</b><small style="color:inherit;opacity:.6">REINA-VALERA 1960</small></div></div>
+    <p class="big-quote">“Lámpara es a mis pies tu palabra, <em>y lumbrera a mi camino.</em>”</p><span class="src">SALMOS 119:105</span></aside>`;
+}
+function pwField(id, ph, auto){ return `<div class="pw"><input class="input" id="${id}" type="password" placeholder="${ph}" autocomplete="${auto}" minlength="6" required><button type="button" data-act="toggle-pw" data-for="${id}">Mostrar</button></div>`; }
+function renderWelcome(){
+  const st = WEL.step; let main = "";
+  if(typeof st==="number"){
+    const sl = SLIDES[st]; const last = st===SLIDES.length-1;
+    main = `
+      <div class="spread"><div class="brand" style="padding:0"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div>${!last?`<button class="linkbtn" data-act="wel-skip" style="padding:4px 8px">Saltar</button>`:""}</div>
+      <div class="dots" aria-hidden="true">${SLIDES.map((_,i)=>`<i class="${i===st?"on":""}"></i>`).join("")}</div>
+      <h1>${sl.h}</h1>
+      <p class="lead">${sl.p}</p>
+      ${sl.v()}
+      <div class="wel-actions">
+        <button class="btn primary lg" data-act="${last?"wel-signup":"wel-next"}">${last?"Crear mi cuenta":"Siguiente"}</button>
+        <button class="linkbtn" data-act="wel-login">Ya tengo una cuenta</button>
+      </div>`;
+  } else if(st==="signup"){
+    main = `
+      <div class="spread"><button class="btn ghost" data-act="wel-back" style="padding:8px 12px">← Atrás</button><span class="eyebrow">Paso 1 de 2</span></div>
+      <h1>Crea tu <em>cuenta</em></h1>
+      <p class="lead">${WEL.migrate?`Tu progreso de “${esc(WEL.migrate)}” pasa a esta cuenta.`:"Cada persona tiene su propio progreso, racha y listas."}</p>
+      <div class="form" id="signupForm" data-enter="do-signup">
+        <div class="field"><label for="suName">Nombre</label><input class="input" id="suName" autocomplete="given-name" maxlength="30" required value="${esc(WEL.migrate||"")}"></div>
+        <div class="field"><label for="suEmail">Correo</label><input class="input" id="suEmail" type="email" autocomplete="email" inputmode="email" maxlength="80" required></div>
+        <div class="field"><label for="suPass">Contraseña</label>${pwField("suPass","Mínimo 6 caracteres","new-password")}</div>
+        <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
+        <button class="btn primary lg" type="button" data-act="do-signup">Continuar</button>
+      </div>
+      <p class="note">Versión de prueba: la cuenta se guarda solo en este dispositivo. En la app final podrás entrar con Apple, Google o correo desde cualquier teléfono.</p>
+      <button class="linkbtn" data-act="wel-login">Ya tengo una cuenta</button>`;
+  } else if(st==="goal"){
+    main = `
+      <div class="spread"><span></span><span class="eyebrow">Paso 2 de 2</span></div>
+      <h1>¿Cuánto tiempo <em>al día?</em></h1>
+      <p class="lead">Con esto armamos cada sesión. Puedes cambiarlo cuando quieras en tu perfil.</p>
+      <div class="goal-grid">
+        ${[[5,"Ligero","3 versículos"],[10,"Constante","6 versículos"],[15,"Dedicado","9 versículos"],[20,"Intenso","13 versículos"]].map(([m,t,d])=>`<button class="goal" data-act="wel-goal" data-m="${m}" aria-pressed="${WEL.goal===m}"><b>${m} min</b><small>${t} · ${d}</small></button>`).join("")}
+      </div>
+      <div class="wel-actions"><button class="btn primary lg" data-act="wel-finish">Hacer la prueba de nivel</button><button class="linkbtn" data-act="wel-finish-skip">Empezar desde cero</button></div>`;
+  } else if(st==="login"){
+    const accs = accounts(), legacy = localProfiles().filter(p=>!accs.some(a=>a.legacy===p.name));
+    main = `
+      <div class="spread"><button class="btn ghost" data-act="wel-back" style="padding:8px 12px">← Atrás</button><span></span></div>
+      <h1>Bienvenido <em>de nuevo</em></h1>
+      <div class="form" id="loginForm" data-enter="do-login">
+        <div class="field"><label for="liEmail">Correo</label><input class="input" id="liEmail" type="email" autocomplete="email" inputmode="email" required></div>
+        <div class="field"><label for="liPass">Contraseña</label>${pwField("liPass","Tu contraseña","current-password")}</div>
+        <p class="err" id="formErr" role="alert">${esc(WEL.err)}</p>
+        <button class="btn primary lg" type="button" data-act="do-login">Entrar</button>
+      </div>
+      ${accs.length?`<div class="prev-acc"><span class="eyebrow">Cuentas en este dispositivo</span>${accs.map(a=>`<button class="profile" data-act="pick-acc" data-email="${esc(a.email)}"><div class="avatar" style="background:${a.color}">${esc(a.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(a.name)}</b><small>${esc(a.email)}</small></div></button>`).join("")}</div>`:""}
+      ${legacy.length?`<div class="prev-acc"><span class="eyebrow">Perfiles de la versión anterior</span>${legacy.map(p=>`<button class="profile" data-act="migrate" data-name="${esc(p.name)}"><div class="avatar" style="background:${p.color}">${esc(p.name.charAt(0).toUpperCase())}</div><div class="meta"><b>${esc(p.name)}</b><small>Crear cuenta y conservar el progreso</small></div></button>`).join("")}</div>`:""}
+      <button class="linkbtn" data-act="wel-signup">Crear una cuenta nueva</button>`;
+  }
+  root.innerHTML = `<div class="wel"><div class="wel-card">${welArt()}<section class="wel-main">${main}</section></div></div>`;
+  const sf = $("#signupForm"); if(sf){ $("#suName").focus(); }
+  const lf = $("#loginForm"); if(lf){ if(WEL.prefill){ $("#liEmail").value=WEL.prefill; $("#liPass").focus(); } }
+  WEL.prefill = null;
+}
+function formErr(msg){ WEL.err=""; const e=$("#formErr"); if(e) e.textContent = msg; }
+async function onSignup(){
+  const name=$("#suName").value.trim(), email=$("#suEmail").value.trim().toLowerCase(), pass=$("#suPass").value;
+  if(!name) return formErr("Escribe tu nombre.");
+  if(!validEmail(email)) return formErr("Escribe un correo válido, por ejemplo nombre@correo.com.");
+  if(pass.length<6) return formErr("La contraseña debe tener al menos 6 caracteres.");
+  const accs = accounts();
+  if(accs.some(a=>a.email===email)) return formErr("Ya hay una cuenta con ese correo en este dispositivo. Toca “Ya tengo una cuenta”.");
+  const salt = uid()+uid();
+  const acc = { id:"a-"+uid()+uid(), name, email, color:COLORS[accs.length%COLORS.length], salt, hash: await hashPass(pass,salt), created:Date.now() };
+  if(WEL.migrate){
+    acc.legacy = WEL.migrate;
+    const old = LS.get("lampara.state.local:"+WEL.migrate, null);
+    if(old) LS.set("lampara.state.acct:"+acc.id, old);
+  }
+  accs.push(acc); saveAccounts(accs);
+  signIn(acc, { fresh: !WEL.migrate });
+}
+async function onLogin(){
+  const email=$("#liEmail").value.trim().toLowerCase(), pass=$("#liPass").value;
+  const acc = accounts().find(a=>a.email===email);
+  if(!acc || await hashPass(pass, acc.salt)!==acc.hash) return formErr("El correo o la contraseña no coinciden.");
+  signIn(acc, {});
+}
+function signIn(acc, {fresh}){
+  ME = { mode:"account", id:acc.id, name:acc.name, email:acc.email, color:acc.color, key:"acct:"+acc.id };
+  S = Object.assign(freshState(), LS.get("lampara.state."+ME.key, {}));
+  LS.set("lampara.session", acc.id);
+  applyTheme(S.prefs.theme);
+  WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
+  persist();
+  if(fresh){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
+  else enterApp();
+}
+function renderWelcomeGoal(){ const keep=ME; ME=null; renderWelcome(); ME=keep; }
+function signOut(){ stopSpeech(); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function deleteAccount(){
+  const id = ME.id;
+  saveAccounts(accounts().filter(a=>a.id!==id));
+  delete MEM["lampara.state.acct:"+id]; try{ localStorage.removeItem("lampara.state.acct:"+id); }catch(e){}
+  signOut(); WEL.step=0; render(); toast("Tu cuenta y su progreso se eliminaron de este dispositivo.");
+}
+function needsPlacement(){ return !S.placed && Object.keys(S.progress).length===0; }
+function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
+
+/* ---------- Perfil y ajustes ---------- */
+function viewProfile(){
+  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
+  const act = activeIds(); const learned = act.filter(id=>status(id)==="ok").length;
+  return `
+  <section class="prof-head">
+    <div class="avatar" style="background:${ME.color}">${esc(ME.name.charAt(0).toUpperCase())}</div>
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(ME.name)}</h1><span class="muted">${esc(ME.email||"")}</span>
+      <div class="row" style="gap:6px">${S.placed&&S.placed.level?`<span class="chip acc">Nivel inicial: ${esc(S.placed.level)}</span>`:""}<span class="chip ok">${learned} aprendidos</span><span class="chip none">racha ${streak()} ${streak()===1?"día":"días"}</span></div></div>
+  </section>
+  <section class="panel">
+    <h3 style="margin-bottom:6px">Práctica</h3>
+    <div class="set-group">
+      <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>Define cuántos versículos entran</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20"],[30,"30 min"]])}</div>
+      <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto incluye los tres tipos</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["write","Escribir"],["recite","Recitar"]])}</div>
+    </div>
+  </section>
+  <section class="panel">
+    <h3 style="margin-bottom:6px">Apariencia</h3>
+    <div class="set-group"><div class="set-row"><div class="lbl"><b>Tema</b><small>Sistema sigue el ajuste de tu teléfono</small></div>${seg("theme",[["system","Sistema"],["light","Claro"],["dark","Oscuro"]])}</div></div>
+  </section>
+  <section class="panel">
+    <h3 style="margin-bottom:6px">Cuenta</h3>
+    <div class="set-group">
+      <div class="set-row"><div class="lbl"><b>Cerrar sesión</b><small>Tu progreso queda guardado en esta cuenta</small></div><button class="btn" data-act="logout">${I.logout} Cerrar sesión</button></div>
+      <div class="set-row"><div class="lbl"><b>Eliminar cuenta</b><small>Borra la cuenta y todo su progreso. No se puede deshacer.</small></div><button class="btn danger" data-act="delete-account">${I.trash} Eliminar cuenta</button></div>
+    </div>
+  </section>`;
+}
+
+/* =========================================================
+   EVENTOS
+   ========================================================= */
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-go],[data-list],[data-act],[data-login],[data-mode],[data-grade]");
+  if(!t) return;
+  if(t.closest(".modal") && !t.dataset.act) return;
+
+  if(t.dataset.mode){ SESSION.mode = t.dataset.mode; S.prefs.mode = t.dataset.mode; persist(); render(); return; }
+  if(t.dataset.grade){ gradeText(parseFloat(t.dataset.grade)); return; }
+  if(t.dataset.go){ go(t.dataset.go); return; }
+  const a = t.dataset.act;
+  if(!a && t.dataset.list){ go(t.dataset.list==="rev"?"review":"list",{list:t.dataset.list}); return; }
+  const id = t.dataset.id;
+  switch(a){
+    case "logout": signOut(); break;
+    case "do-signup": onSignup().catch(()=>formErr("No se pudo crear la cuenta. Inténtalo de nuevo.")); break;
+    case "do-login": onLogin().catch(()=>formErr("No se pudo iniciar sesión. Inténtalo de nuevo.")); break;
+    case "delete-account": confirmBox("¿Eliminar tu cuenta?", `Se borrarán la cuenta de ${ME.email} y todo su progreso, racha y listas. No se puede deshacer.`, "Eliminar definitivamente", deleteAccount); break;
+    case "pref": { const k=t.dataset.k; let v=t.dataset.v; if(k==="minutes"){ v=+v; S.prefs.size=versesFor(v); } S.prefs[k]=v; if(k==="theme") applyTheme(v); persist(); render(); break; }
+    case "wel-next": WEL.step++; render(); break;
+    case "wel-skip": WEL.step=SLIDES.length-1; render(); break;
+    case "wel-signup": WEL.step="signup"; WEL.migrate=null; WEL.err=""; render(); break;
+    case "wel-login": WEL.step="login"; WEL.err=""; render(); break;
+    case "wel-back": WEL.step = WEL.step==="signup"||WEL.step==="login" ? SLIDES.length-1 : 0; render(); break;
+    case "toggle-pw": { const inp=$("#"+t.dataset.for); const show=inp.type==="password"; inp.type=show?"text":"password"; t.textContent=show?"Ocultar":"Mostrar"; break; }
+    case "pick-acc": WEL.prefill=t.dataset.email; render(); break;
+    case "migrate": WEL.step="signup"; WEL.migrate=t.dataset.name; WEL.err=""; render(); break;
+    case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
+    case "wel-finish": case "wel-finish-skip": {
+      S.prefs.minutes=WEL.goal; S.prefs.size=versesFor(WEL.goal); persist();
+      if(a==="wel-finish") startPlacement(); else { S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); }
+      break;
+    }
+    case "new-list": newListModal(); break;
+    case "add-verse": addVerseModal(); break;
+    case "add-to-this": addToListModal(t.dataset.list); break;
+    case "to-list": toListModal(id); break;
+    case "speak": { const v=verse(id); if(v) speak(v.ref+". "+v.text); break; }
+    case "fav": {
+      e.stopPropagation();
+      const v = verse(id);
+      if(S.favs.includes(id)){ S.favs = S.favs.filter(x=>x!==id); toast(`${v.ref} volvió a Sugeridos.`); }
+      else { S.favs.unshift(id); toast(`${v.ref} se movió a Mis versículos.`); }
+      persist();
+      if(VIEW.name==="session"){ const btn=t; const fav=S.favs.includes(id); btn.innerHTML=`${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"Agregar a Mis versículos"}`; btn.style.color=fav?"var(--accent)":""; btn.classList.toggle("ghost",!fav); }
+      else render();
+      break;
+    }
+    case "rm-from-list": { const l=S.lists.find(x=>x.id===t.dataset.list); if(l){ l.ids=l.ids.filter(x=>x!==id); persist(); render(); } break; }
+    case "del-verse": {
+      const v=verse(id);
+      confirmBox("¿Eliminar este versículo?", `${v.ref} y su progreso se borrarán de tu cuenta.`, "Eliminar", ()=>{
+        S.custom=S.custom.filter(x=>x.id!==id); S.favs=S.favs.filter(x=>x!==id); delete S.progress[id]; S.lists.forEach(l=>l.ids=l.ids.filter(x=>x!==id)); persist(); render(); toast("Versículo eliminado.");
+      }); break;
+    }
+    case "del-list": {
+      const l=S.lists.find(x=>x.id===t.dataset.list);
+      confirmBox("¿Eliminar esta lista?", `Se borrará “${l.name}”. Los versículos y tu progreso se conservan.`, "Eliminar lista", ()=>{ S.lists=S.lists.filter(x=>x.id!==l.id); persist(); go("library"); });
+      break;
+    }
+    case "unlock-more": { const add=SUGGESTED.map(r=>r[0]).filter(id=>SUG_MAP[id].order>=S.unlocked && !(S.extraActive||[]).includes(id)).slice(0,3); S.extraActive=(S.extraActive||[]).concat(add); persist(); render(); toast(`${add.length} versículos agregados a tu plan.`); break; }
+    case "unlock-now": { S.extraActive=(S.extraActive||[]).concat(id); persist(); render(); toast("Versículo agregado a tu plan."); break; }
+    case "start-due": case "start-extra": { startSession(pickFor("active"),{title:a==="start-due"?"Práctica de hoy":"Práctica extra", source:"active"}); break; }
+    case "play-list": {
+      const l=getList(t.dataset.list); const q=pickFor(l.id, l.id);
+      startSession(q,{title:l.name, listId:l.id, source:l.id}); break;
+    }
+    case "start-review": {
+      startSession(pickFor("rev"),{title:"Repaso de memorizados", review:true, source:"rev"}); break;
+    }
+    case "quit": stopSpeech(); SESSION=null; go("home"); break;
+    case "pl-start": PLACE.phase="q"; PLACE.i=0; PLACE.answered=false; render(); break;
+    case "pl-skip": S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); PLACE=null; go("home"); break;
+    case "pl-check": placementCheck(); break;
+    case "pl-unknown": { const it=PLACE.items[PLACE.i]; placementAnswer(0, `<p class="muted" style="font-size:13px">${esc(verse(it.id).ref)}</p><p class="verse-text" style="font-size:19px">${esc(verse(it.id).text)}</p>`); break; }
+    case "pl-opt": {
+      const it=PLACE.items[PLACE.i]; if(PLACE.answered) break;
+      const pick=it.opts[+t.dataset.k], right=pick===verse(it.id).ref;
+      root.querySelectorAll(".opt").forEach(b=>{ b.disabled=true; const o=it.opts[+b.dataset.k]; if(o===verse(it.id).ref) b.classList.add("right"); else if(b===t) b.classList.add("wrong"); });
+      placementAnswer(right?1:0, `<div class="result-bar ${right?"ok":"bad"}" style="padding:10px 16px"><span>${right?"¡Correcto!":"La cita correcta es "+esc(verse(it.id).ref)}</span></div>`);
+      break;
+    }
+    case "pl-next": if(PLACE.i<PLACE.items.length-1){ PLACE.i++; PLACE.answered=false; render(); window.scrollTo({top:0}); } else finishPlacement(); break;
+    case "pl-finish": PLACE=null; go("home"); break;
+    case "begin-cards": rememberSession(SESSION.ids); SESSION.started=Date.now(); SESSION.cardIds=cardIdsFor(SESSION.ids); SESSION.phase="cards"; SESSION.i=0; SESSION.flipped=false; render(); break;
+    case "dur": { const m=+t.dataset.m; S.prefs.minutes=m; S.prefs.size=versesFor(m); const ids=pickFor(SESSION.source, SESSION.listId); if(ids.length) SESSION.ids=ids; if(GROWN){ toast(`Agregamos ${GROWN} versículos nuevos para completar el tiempo.`); GROWN=0; } persist(); render(); break; }
+    case "skip-cards": rememberSession(SESSION.ids); SESSION.started=Date.now(); startQuiz(); render(); break;
+    case "flip": SESSION.flipped=!SESSION.flipped; $(".flash").classList.toggle("flipped",SESSION.flipped); break;
+    case "card-prev": SESSION.i--; SESSION.flipped=false; stopSpeech(); render(); break;
+    case "card-next":
+      stopSpeech();
+      if(SESSION.i<SESSION.cardIds.length-1){ SESSION.i++; SESSION.flipped=false; }
+      else { startQuiz(); }
+      render(); break;
+    case "check": checkAnswer(); break;
+    case "giveup": gradeText(0); break;
+        case "check-ref": checkRef(); break;
+    case "giveup-ref": checkRef(true); break;
+    case "hint": {
+      const q=SESSION.q, v=verse(q.id);
+      if(q.mode==="blanks"){ const el=[...root.querySelectorAll("[data-blank]")].find(x=>!x.value.trim()); if(el){ const i=+el.dataset.blank; el.value=norm(q.toks[i]).charAt(0); el.focus(); } }
+      else if(q.mode==="write"){ const w=$("#writeBox"); const tw=v.text.split(/\s+/); const have=words(w.value).length; w.value=tw.slice(0,Math.min(tw.length,have+2)).join(" ")+" "; w.focus(); toast("Te mostramos las siguientes palabras."); }
+      else { $("#micMsg").textContent = "Empieza así: “"+v.text.split(/\s+/).slice(0,3).join(" ")+"…”"; }
+      break;
+    }
+    case "mic": startMic(); break;
+    case "reveal": reveal(); break;
+    case "next-q":
+      stopSpeech();
+      if(SESSION.t<SESSION.tasks.length-1){ SESSION.t++; prepQuestion(); render(); }
+      else { SESSION.unlocked = SESSION.review ? 0 : maybeUnlock(); rememberSession(SESSION.ids, SESSION.results.filter(x=>x.outcome==="bad").map(x=>x.id)); persist(); SESSION.phase="done"; render(); }
+      break;
+    case "end-home": SESSION=null; go("home"); break;
+    case "again": {
+      const s=SESSION;
+      startSession(pickFor(s.source, s.listId),{title:s.title, review:s.review, listId:s.listId, source:s.source});
+      break;
+    }
+  }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && e.target && e.target.tagName==="INPUT"){ const f=e.target.closest("[data-enter]"); if(f){ e.preventDefault(); const b=f.querySelector(`[data-act="${f.dataset.enter}"]`); if(b) b.click(); return; } }
+  if((e.key==="Enter"||e.key===" ") && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("side-foot")){ e.preventDefault(); go("profile"); return; }
+  if(!SESSION || VIEW.name!=="session") return;
+  if(SESSION.phase==="cards" && (e.key===" "||e.key==="Enter") && document.activeElement.classList.contains("flash")){ e.preventDefault(); SESSION.flipped=!SESSION.flipped; $(".flash").classList.toggle("flipped",SESSION.flipped); }
+  if(SESSION.phase==="quiz" && SESSION.q && SESSION.q.mode==="write" && e.key==="Enter" && (e.metaKey||e.ctrlKey)){ e.preventDefault(); checkAnswer(); }
+});
+
+/* =========================================================
+   ARRANQUE
+   ========================================================= */
+(function boot(){
+  const sid = LS.get("lampara.session", null);
+  const acc = sid && accounts().find(a=>a.id===sid);
+  if(acc){ ME = { mode:"account", id:acc.id, name:acc.name, email:acc.email, color:acc.color, key:"acct:"+acc.id }; S = Object.assign(freshState(), LS.get("lampara.state."+ME.key, {})); applyTheme(S.prefs.theme); }
+  if(!acc && (accounts().length || localProfiles().length)) WEL.step = "login";
+  if(acc) enterApp(); else render();
+})();
+if("speechSynthesis" in window){ try{ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }catch(e){} }
+</script>
+
+</body>
+</html>
