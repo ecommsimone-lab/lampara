@@ -1976,6 +1976,7 @@ async function ensureProfile(){
     if(!p){ p = { user_id: ME.id, display_name: ME.name, avatar_url: null }; await API.saveProfile(p); }
     if(!p.username){ try{ p.username = await API.ensureUsername(slugName(ME.name)); }catch(e){} }
     COMM.profile = p; if(VIEW.name!=="welcome-goal" && VIEW.name!=="placement") render();
+    if(WEL && WEL.step==="username" && !WEL.unTouched && p.username){ WEL.uname = p.username; const el = $("#unInput"); if(el){ el.value = p.username; unCheck(); WEL.unTouched = false; } }
     loadCommunity();
   }catch(e){ /* tabla aún no creada o sin conexión: se usa el nombre de la cuenta */ }
 }
@@ -2720,6 +2721,39 @@ async function handlePendingLink(){
   }catch(e){ toast(commError(e)); }
 }
 
+/* Paso "Elige tu usuario" al crear la cuenta */
+let unTimer = null, unSeq = 0;
+function unValid(v){ return /^[a-z0-9_.]{3,20}$/.test(v); }
+function unCheck(){
+  const el = $("#unInput"), msg = $("#unMsg"); if(!el || !msg) return;
+  const v = el.value.trim().replace(/^@/,"").toLowerCase(); WEL.uname = v; WEL.unTouched = true;
+  const fe = $("#formErr"); if(fe) fe.textContent = "";
+  clearTimeout(unTimer);
+  if(!unValid(v)){ msg.style.color = "var(--bad)"; msg.textContent = v.length<3 ? "Debe tener al menos 3 caracteres." : "Solo letras sin tildes, números, punto o guion bajo."; return; }
+  if(v === myUsername()){ msg.style.color = "var(--ok)"; msg.textContent = "✓ Disponible"; return; }
+  msg.style.color = "var(--muted)"; msg.textContent = "Revisando…";
+  const seq = ++unSeq;
+  unTimer = setTimeout(async ()=>{
+    try{ const u = await API.findUser("@"+v); if(seq!==unSeq) return;
+      msg.style.color = u ? "var(--bad)" : "var(--ok)"; msg.textContent = u ? "Ese usuario ya lo tiene otra persona." : "✓ Disponible"; }
+    catch(e){ if(seq===unSeq){ msg.style.color = "var(--muted)"; msg.textContent = ""; } }
+  }, 400);
+}
+document.addEventListener("input", e=>{ if(e.target && e.target.id==="unInput") unCheck(); });
+async function saveWelcomeUsername(skip){
+  const el = $("#unInput"), err = $("#formErr"), btn = root.querySelector('[data-act="wel-username"]');
+  const v = skip ? null : (el.value||"").trim().replace(/^@/,"").toLowerCase();
+  if(v !== null){
+    if(!unValid(v)){ err.textContent = commError("usuario_invalido"); return; }
+    if(v !== myUsername()){
+      btn.disabled = true; btn.textContent = "Guardando…";
+      try{ await ensureProfile(); const u = await API.setUsername(v); COMM.profile = Object.assign({}, COMM.profile, { username:u }); }
+      catch(e){ btn.disabled = false; btn.textContent = "Continuar"; err.textContent = commError(e); return; }
+    }
+  }
+  WEL.err = ""; WEL.hadUser = true; WEL.step = "goal"; renderWelcomeGoal();
+}
+
 /* ?ir=avisos (al tocar un aviso del celular) */
 function handlePendingGo(){
   if(PENDING_GO!=="avisos" || !cloudOn()) return;
@@ -3040,9 +3074,23 @@ function renderWelcome(){
       </div>
       <p class="note">${SB?"Tu progreso se guarda en la nube: entra con tu correo desde cualquier celular o computador.":"Sin conexión con la nube: la cuenta se guarda solo en este celular o navegador."}</p>
       <button class="linkbtn" data-act="wel-login">Ya tengo una cuenta</button>`;
+  } else if(st==="username"){
+    const sug = WEL.uname || myUsername() || (slugName(WEL.name||"")||"lector") + String(Math.floor(1000+Math.random()*9000));
+    WEL.uname = sug;
+    main = `
+      <div class="spread"><span></span><span class="eyebrow">Paso 2 de 3</span></div>
+      <h1>Elige tu <em>usuario</em></h1>
+      <p class="lead">Con él tus amigos te encuentran para practicar juntos y retarte. Puedes cambiarlo después en tu perfil.</p>
+      <div class="form" data-enter="wel-username">
+        <div class="field"><label for="unInput">Tu usuario</label>
+          <div class="row" style="flex-wrap:nowrap;gap:8px"><span style="font-size:20px;font-weight:800;color:var(--muted)">@</span><input class="input" id="unInput" value="${esc(sug)}" maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false" style="font-size:18px;font-weight:700;text-transform:lowercase"></div>
+          <small id="unMsg" class="muted" style="min-height:1.3em;font-weight:600">De 3 a 20 letras sin tildes, números, punto o guion bajo.</small></div>
+        <p class="err" id="formErr" role="alert">${esc(WEL.err||"")}</p>
+      </div>
+      <div class="wel-actions"><button class="btn primary lg" data-act="wel-username">Continuar</button><button class="linkbtn" data-act="wel-username-skip">Usar la sugerencia y seguir</button></div>`;
   } else if(st==="goal"){
     main = `
-      <div class="spread"><span></span><span class="eyebrow">Paso 2 de 2</span></div>
+      <div class="spread"><span></span><span class="eyebrow">Paso ${WEL.hadUser?"3 de 3":"2 de 2"}</span></div>
       <h1>¿Cuánto tiempo <em>al día?</em></h1>
       <p class="lead">Con esto armamos cada sesión. Puedes cambiarlo cuando quieras en tu perfil.</p>
       <div class="goal-grid">
@@ -3190,7 +3238,7 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
   COMM.profile = null; COMM.loaded = false; ensureProfile();
   NOTIF.items = []; NOTIF.loaded = false; NOTIF.prefs = null; startNotifs();
-  if(fresh && !seeded){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
+  if(fresh && !seeded){ WEL.step="username"; WEL.uname=""; WEL.unTouched=false; WEL.name=ME.name; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
   else { enterApp(); if(!PLACE){ handlePendingLink(); handlePendingGo(); } }
 }
 async function localSignup(){
@@ -3380,6 +3428,8 @@ document.addEventListener("click", e=>{
     case "signup-with": WEL.step="signup"; WEL.migrate=null; WEL.err=""; WEL.prefillEmail=t.dataset.email; render(); break;
     case "migrate-acc": { const acc=accounts().find(a=>a.id===t.dataset.id); if(acc){ WEL.step="signup"; WEL.migrate=null; WEL.err=""; WEL.seedFrom=acc.id; WEL.prefillEmail=acc.email; WEL.prefillName=acc.name; render(); } break; }
     case "migrate": WEL.step="signup"; WEL.migrate=t.dataset.name; WEL.err=""; render(); break;
+    case "wel-username": saveWelcomeUsername(false); break;
+    case "wel-username-skip": saveWelcomeUsername(true); break;
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
       S.prefs.minutes=WEL.goal; S.prefs.size=versesFor(WEL.goal); persist();
