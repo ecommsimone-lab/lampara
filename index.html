@@ -474,25 +474,26 @@ a.btn:not(.primary){color:var(--ink)}
 @font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url("fonts/fraunces-600.woff2") format("woff2")}
 @font-face{font-family:"Fraunces";font-weight:900;font-display:swap;src:url("fonts/fraunces-900.woff2") format("woff2")}
 /* ---- Recuerda esto: banner en el inicio (≈2 cm) ---- */
-.hb{position:relative;overflow:hidden;width:100%;min-height:76px;border:0;border-radius:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px 10px 20px;cursor:pointer;color:#fff;text-align:left;font:inherit;background:radial-gradient(120% 170% at 42% 50%,var(--c-deep) 0%,var(--c-mid) 58%,var(--c-light) 100%);box-shadow:0 10px 26px -14px var(--c-deep)}
-:root[data-theme="dark"] .hb{box-shadow:0 0 0 1px rgba(255,255,255,.12),0 10px 26px -14px #000}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hb{box-shadow:0 0 0 1px rgba(255,255,255,.12),0 10px 26px -14px #000}}
+.hb{position:relative;overflow:hidden;width:100%;min-height:76px;border:0;border-radius:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px 10px 20px;cursor:pointer;color:#fff;text-align:left;font:inherit;background:radial-gradient(75% 170% at 28% 50%,var(--c-mid) 0%,var(--c-light) 90%);box-shadow:0 10px 24px -12px var(--c-mid)}
+:root[data-theme="dark"] .hb{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 10px 24px -14px #000}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hb{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 10px 24px -14px #000}}
 .hb:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.hb>*{position:relative;z-index:1}
 .hb.closed{animation:hbBreath 3.4s ease-in-out infinite}
-.hb.closed::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.32) 50%,transparent 65%);transform:translateX(-120%);animation:hbShine 3.4s ease-in-out infinite;pointer-events:none}
-.hb-txt{min-width:0;display:flex;flex-direction:column}
-.hb-t1{font-family:"Playfair Display",Georgia,serif;font-weight:500;letter-spacing:.16em;font-size:12.5px;text-transform:uppercase;opacity:.92}
-.hb-t2{font-family:"Yellowtail","Brush Script MT",cursive;font-size:27px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:.2em}
-.hb-tap{width:48px;height:48px;flex:none;position:relative;display:grid;place-items:center}
-.hb-tap svg{width:28px;height:28px;position:relative;z-index:1}
-.hb-tap::before,.hb-tap::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(255,255,255,.55)}
-.hb.closed .hb-tap::after{animation:hbRing 1.7s ease-out infinite}
-.hb.closed .hb-tap svg{animation:hbTap 1.7s ease-in-out infinite}
-.hb:not(.closed) .hb-tap::after{display:none}
+.hb.closed::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.32) 50%,transparent 65%);transform:translateX(-120%);animation:hbShine 3.4s ease-in-out infinite;pointer-events:none}
+.hb-txt{min-width:0;display:flex;flex-direction:column;gap:5px}
+.hb-ey{font:700 10.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;opacity:.92}
+.hb-wave{font-family:"Fraunces",Georgia,serif;font-weight:900;font-size:27px;line-height:1;white-space:nowrap;text-shadow:0 1px 10px rgba(0,0,0,.12)}
+.hb-wave .lt{display:inline-block}
+.hb-pill{flex:none;display:flex;align-items:center;gap:6px;background:#fff;color:var(--c-ink);border-radius:999px;padding:8px 13px;font:700 13px/1 Inter,system-ui,sans-serif;box-shadow:0 4px 14px -6px rgba(0,0,0,.25)}
+.hb-pill svg{width:16px;height:16px}
+.hb.closed .hb-pill svg{animation:hbTap 1.7s ease-in-out infinite}
+.hb .spk{position:absolute;z-index:1;color:#fff;line-height:1;pointer-events:none}
+.hb.closed .spk{animation:hbTwinkle 2.6s ease-in-out infinite}.hb.closed .spk.k2{animation-delay:1.1s}
 @keyframes hbBreath{0%,100%{transform:none}50%{transform:translateY(-2px) scale(1.012)}}
 @keyframes hbShine{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
-@keyframes hbRing{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.45);opacity:0}}
-@keyframes hbTap{0%,100%{transform:none}40%{transform:translateY(2px) scale(.92)}}
+@keyframes hbTap{0%,100%{transform:none}40%{transform:translateY(2px) scale(.88)}}
+@keyframes hbTwinkle{0%,100%{opacity:.95;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 /* ---- Recuerda esto: abierta ---- */
 #heartx{position:fixed;inset:0;z-index:90;overflow:auto;overflow-x:hidden;display:flex;justify-content:center;animation:hxIn .35s ease both}
 #heartx.lay-noche{background:radial-gradient(95% 70% at 50% 38%,var(--c-deep) 0%,var(--c-mid) 58%,var(--c-light) 100%);color:#fff}
@@ -540,7 +541,9 @@ a.btn:not(.primary){color:var(--ink)}
 @keyframes hxWord{to{opacity:1;transform:none}}
 @keyframes hxPen{to{-webkit-mask-position:0 0;mask-position:0 0}}
 @keyframes hxFade{to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.hb.closed,.hb.closed::after,.hb-tap::after,.hb-tap svg{animation:none!important}#heartx .w,#heartx .fd,#heartx .hx-ring.rg::before{animation:none;opacity:1;transform:none}#heartx .wr{animation:none;-webkit-mask-image:none;mask-image:none}}
+@media (prefers-reduced-motion:reduce){.hb.closed,.hb.closed::after,.hb-pill svg,.hb .spk{animation:none!important}#heartx .w,#heartx .fd,#heartx .hx-ring.rg::before{animation:none;opacity:1;transform:none}#heartx .wr{animation:none;-webkit-mask-image:none;mask-image:none}}
+.shield-chip{display:inline-flex;align-self:flex-start;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--gold-text);background:var(--gold-soft);border-radius:999px;padding:2px 8px}
+.cal .d.sh{background:var(--gold-soft);font-size:13px}
 .medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
 .medals.one{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));column-gap:6px;grid-template-rows:auto;grid-auto-rows:0;row-gap:0;overflow:hidden}
 .fbubbles{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -867,11 +870,81 @@ function maybeUnlock(){
   }
   return 0;
 }
+/* Un día cuenta para la racha si practicaste o si un escudo lo protegió */
+const shieldDay = k => (S.shieldDays||[]).includes(k);
+const streakDay = k => !!(S.log[k] && S.log[k].n) || shieldDay(k);
 function streak(){
   let d = new Date(); let n = 0;
-  if(!S.log[todayKey(d)]) d = new Date(Date.now()-DAY);
-  while(S.log[todayKey(d)]){ n++; d = new Date(d.getTime()-DAY); }
+  if(!streakDay(todayKey(d))) d = new Date(Date.now()-DAY);
+  while(streakDay(todayKey(d))){ n++; d = new Date(d.getTime()-DAY); }
   return n;
+}
+/* ESCUDOS DE RACHA: ganas uno cada 7 días seguidos (máximo 2) y se usan solos si un día no practicas */
+const SHIELD_MAX = 2;
+function checkShields(){
+  if(!S) return;
+  S.shields = S.shields || 0; S.shieldDays = S.shieldDays || [];
+  let changed = false, used = 0;
+  // 1) proteger los días que faltaron (desde ayer hacia atrás) si alcanzan los escudos
+  if(S.shields > 0){
+    const gap = []; let d = new Date(Date.now()-DAY), guard = 0;
+    while(!streakDay(todayKey(d)) && guard < 3){ gap.push(todayKey(d)); d = new Date(d.getTime()-DAY); guard++; }
+    if(gap.length && gap.length <= S.shields && streakDay(todayKey(d))){
+      S.shieldDays = S.shieldDays.concat(gap).slice(-60); S.shields -= gap.length; used = gap.length; changed = true;
+    }
+  }
+  // 2) ganar un escudo al completar 7, 14, 21… días seguidos
+  const st = streak(), k = todayKey();
+  if(practicedToday() && st > 0 && st % 7 === 0 && S.shieldAward !== k){
+    S.shieldAward = k; changed = true;
+    if(S.shields < SHIELD_MAX){ S.shields++; setTimeout(()=>shieldModal("earned"), 600); }
+  }
+  if(changed){ persist(); }
+  if(used) setTimeout(()=>shieldModal("used", used), 500);
+}
+function shieldModal(kind, n){
+  if($("#scrim") || $("#heartx") || $("#intro")){ setTimeout(()=>shieldModal(kind, n), 1500); return; }
+  const used = kind === "used";
+  modal(`<div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:6px 0">
+    <div style="font-size:54px;line-height:1" aria-hidden="true">🛡️</div>
+    <h2 style="font-size:23px">${used ? "Tu escudo protegió tu racha" : "¡Ganaste un escudo de racha!"}</h2>
+    <p class="muted" style="max-width:34ch;margin:0">${used ? `No practicaste ${n===1?"ayer":`${n} días`}, pero ${n===1?"un escudo cuidó":"tus escudos cuidaron"} tu racha de ${streak()} días. Practica hoy para seguir.` : `Llevas ${streak()} días seguidos. Si un día no alcanzas a practicar, el escudo se usará solo. También puedes regalarlo a un amigo.`}</p>
+    <span class="chip gold">${S.shields} de ${SHIELD_MAX} escudos</span>
+    <button class="btn primary" data-close>${used ? "Practicar ahora" : "¡Amén!"}</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>{ closeModal(); if(used){ const b = document.querySelector('[data-act="start-due"]'); if(b) b.click(); } }));
+}
+function shieldsPanel(){
+  const n = S.shields || 0, fr = cloudOn() ? friendsAccepted() : [];
+  return `<section class="panel" style="display:flex;flex-direction:column;gap:12px">
+    <div class="spread"><h3>Escudos de racha</h3><span class="chip gold">${n} de ${SHIELD_MAX}</span></div>
+    <div class="row" style="gap:8px;font-size:30px" aria-hidden="true">${Array.from({length:SHIELD_MAX},(_,i)=>`<span style="${i<n?"":"filter:grayscale(1);opacity:.3"}">🛡️</span>`).join("")}</div>
+    <p class="muted" style="margin:0;font-size:14px">Ganas un escudo cada 7 días seguidos. Si un día no practicas, se usa solo y tu racha sigue.</p>
+    ${n && fr.length ? `<button class="btn" data-act="shield-pick" style="align-self:flex-start">🛡️ Regalar un escudo a un amigo</button>` : ""}
+  </section>`;
+}
+function shieldPickModal(){
+  const fr = friendsAccepted();
+  if(!(S.shields > 0)){ toast("No tienes escudos para regalar."); return; }
+  if(!fr.length){ toast("Primero agrega a un amigo."); return; }
+  modal(`<div style="display:flex;flex-direction:column;gap:12px"><h2 style="font-size:22px">🛡️ ¿A quién le regalas un escudo?</h2><p class="muted" style="margin:0">Le protegerá la racha un día que no alcance a practicar. Te quedarán ${S.shields-1}.</p>
+    <div class="vlist" style="max-height:50vh;overflow:auto">${fr.map(f=>`<div class="drow">${personAvatar(f.user_id,40)}<div style="min-width:0">${personLine(f)}</div><button class="btn primary" data-act="shield-send" data-id="${f.user_id}" style="padding:6px 14px">Regalar</button></div>`).join("")}</div>
+    <button class="btn ghost" data-close>Cancelar</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=closeModal));
+}
+async function sendShield(uid, btn){
+  if(!(S.shields > 0)){ toast("No tienes escudos para regalar."); return; }
+  if(btn) btn.disabled = true;
+  try{ await NAPI.shield(uid); S.shields--; S.shieldsGiven = (S.shieldsGiven||0)+1; persist(); closeModal(); toast(`Le regalaste un escudo a ${personLabel(uid).split(" ")[0]}. 🛡️`); render(); }
+  catch(e){ if(btn) btn.disabled = false; const m = String((e && e.message) || e);
+    toast(/escudo_reciente/.test(m) ? "Ya le regalaste un escudo esta semana." : /demasiados_escudos/.test(m) ? "Ya regalaste varios escudos hoy." : /function .*send_shield|Could not find the function/i.test(m) ? "Falta activar los escudos en Supabase (SQL 09)." : commError(e)); }
+}
+/* Escudos recibidos: se guardan al ver el aviso (si tienes espacio) */
+function claimShields(){
+  if(!S || !NOTIF.items) return;
+  S.shieldClaims = S.shieldClaims || []; S.shields = S.shields || 0;
+  let got = [];
+  NOTIF.items.filter(n=>n.type==="shield" && !S.shieldClaims.includes(n.id)).reverse().forEach(n=>{
+    if(S.shields < SHIELD_MAX){ S.shields++; S.shieldClaims.push(n.id); got.push(n); }
+  });
+  if(got.length){ S.shieldClaims = S.shieldClaims.slice(-80); persist(); toast(`${personLabel(got[0].actor).split(" ")[0] || "Un amigo"} te regaló un escudo de racha 🛡️`); checkShields(); if(["home","racha","avisos"].includes(VIEW.name)) render(); }
 }
 function practicedToday(){ return !!S.log[todayKey()]; }
 function accuracy(days=30){
@@ -1007,7 +1080,7 @@ function render(){
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
   const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
-  clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)) checkBadges(); }, 400);
+  clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)){ checkShields(); checkBadges(); } }, 400);
 }
 
 /* ---------- Para tu corazón: una frase y un versículo cada día ----------
@@ -1057,13 +1130,17 @@ function heartOfDay(date){
 }
 const palVars = p => `--c-deep:${p.deep};--c-mid:${p.mid};--c-light:${p.light};--c-ink:${p.ink}`;
 function heartOpenedToday(){ try{ return localStorage.getItem("lampara.heartOpen") === todayKey(); }catch(e){ return false; } }
+const HAND_PILL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.6-2.2L4.4 15a1.5 1.5 0 0 1 2.2-2L9 15"/></svg>`;
+const REPLAY_PILL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`;
 const HAND_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.6-2.2L4.4 15a1.5 1.5 0 0 1 2.2-2L9 15"/></svg>`;
 const REPLAY_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`;
+function waveLetters(txt, amp, step){ let k = 0; return [...txt].map(c=>{ const y = Math.sin(k*step)*amp, r = Math.cos(k*step)*amp*.9; k++; return c === " " ? " " : `<span class="lt" style="transform:translateY(${y.toFixed(1)}px) rotate(${r.toFixed(1)}deg)">${esc(c)}</span>`; }).join(""); }
 function heartCard(){
-  const { h, pal } = heartOfDay(), opened = heartOpenedToday();
-  return `<button class="hb ${opened ? "" : "closed"}" data-act="heart-open" style="${palVars(pal)}" aria-label="${opened ? `Recuerda esto: ${esc(heartPhrase(h))}. Ver de nuevo` : "Recuerda esto. Toca para abrir"}">
-    <span class="hb-txt"><span class="hb-t1">Recuerda esto${opened ? " · hoy" : ""}</span><span class="hb-t2">${esc(opened ? h.snip : "toca para abrir")}</span></span>
-    <span class="hb-tap" aria-hidden="true">${opened ? REPLAY_SVG : HAND_SVG}</span></button>`;
+  const { pal } = heartOfDay(), opened = heartOpenedToday();
+  return `<button class="hb ${opened ? "" : "closed"}" data-act="heart-open" style="${palVars(pal)}" aria-label="${opened ? "Recuerda esto: ya la abriste hoy. Ver de nuevo" : "Tu palabra de hoy. Recuerda esto: toca aquí"}">
+    <span class="spk k1" style="left:56%;top:12px;font-size:15px" aria-hidden="true">✦</span><span class="spk k2" style="left:63%;bottom:12px;font-size:10px" aria-hidden="true">✦</span>
+    <span class="hb-txt"><span class="hb-ey">${opened ? "Ya la abriste hoy" : "Tu palabra de hoy"}</span><span class="hb-wave" aria-hidden="true">${waveLetters("recuerda esto.", 2.6, .55)}</span></span>
+    <span class="hb-pill" aria-hidden="true">${opened ? `${REPLAY_PILL} Ver de nuevo` : `${HAND_PILL} Toca aquí`}</span></button>`;
 }
 // La frase: palabra por palabra de arriba abajo; la cursiva se escribe con una pluma de izquierda a derecha
 function heartArt(h, animate){
@@ -1246,7 +1323,7 @@ function viewHome(){
       ${first?`<p class="verse-peek">“${esc(first.text.length>130?first.text.slice(0,130)+"…":first.text)}” <b style="font-size:13px;opacity:.85;white-space:nowrap">— ${esc(first.ref)}</b></p>`:""}
       <div class="row">
         ${dueAll.length?`<button class="btn primary lg" data-act="start-due">${I.play} Practicar ahora</button>`:`<button class="btn primary lg" data-act="start-extra">${I.play} Práctica extra</button>`}
-        <button class="btn" data-go="review">${I.review} Repasar memorizados</button>
+        ${counts.ok && (!dueAll.length || Math.floor(Date.now()/DAY) % 3 === 0) ? `<button class="btn" data-go="review">${I.review} Repasar memorizados</button>` : ""}
       </div>
       <div style="font-size:13px;font-weight:600;opacity:.8;position:relative;z-index:1">${dueReview} ${dueReview===1?"repaso":"repasos"} · ${dueNew} ${dueNew===1?"nuevo":"nuevos"}</div>
     </div>
@@ -1256,6 +1333,7 @@ function viewHome(){
         <div class="eyebrow">Racha</div>
         <div class="row" style="gap:6px;flex-wrap:nowrap"><span class="flame" style="${practicedToday()?'':'opacity:.35'}">${I.flame}</span><span class="big">${st}<small>${st===1?"día":"días"}</small></span></div>
         <small class="muted">${practicedToday()?"Ya practicaste hoy":"Practica hoy para mantenerla"}</small>
+        ${S.shields ? `<small class="shield-chip" title="Escudos de racha">🛡️ ${S.shields} ${S.shields===1?"escudo":"escudos"}</small>` : ""}
       </button>
       <button class="stat" data-go="camino" aria-label="Ver mi nivel y el camino">
         <span class="go" aria-hidden="true">›</span>
@@ -1266,7 +1344,7 @@ function viewHome(){
       <div class="stat">
         <div class="eyebrow">Aprendido</div>
         <div class="ring-wrap">${ring(pct,76,9)}</div>
-        <small class="muted">${counts.ok} de ${act.length} versículos</small>
+        <small class="muted">${!counts.ok && counts.mid ? `${counts.mid} en proceso · 0 aprendidos` : `${counts.ok} de ${act.length} versículos`}</small>
       </div>
       <div class="stat">
         <div class="eyebrow">Acierto · 30 días</div>
@@ -2668,7 +2746,7 @@ function viewFriend(uid){
     ${f.streak==="accepted"?"":`<div class="stat" style="justify-content:space-between"><div class="eyebrow">Racha juntos</div>${f.streak==="pending"&&!f.streak_mine?`<div class="row" style="gap:6px"><button class="btn primary" data-act="streak-accept" data-id="${f.id}" style="padding:6px 12px">Aceptar</button><button class="btn ghost" data-act="streak-reject" data-id="${f.id}" style="padding:6px 10px">Ahora no</button></div>`:f.streak==="pending"?`<small class="muted">Invitación enviada</small>`:`<button class="btn" data-act="streak-invite" data-id="${f.id}" style="padding:6px 12px">${I.flame} Invitar</button>`}</div>`}
   </div>
   ${(()=>{ COMM.fbadges = COMM.fbadges || {}; if(!(uid in COMM.fbadges)){ COMM.fbadges[uid] = null; friendBadges(uid).then(l=>{ COMM.fbadges[uid] = l===null ? null : l; if(l!==null && VIEW.name==="friend") render(); }); } return COMM.fbadges[uid] ? friendBadgesHTML(COMM.fbadges[uid], uid) : ""; })()}
-  <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn" data-act="cheer-open" data-id="${uid}">${I.heart} Enviar mensaje</button></div>
+  <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn" data-act="cheer-open" data-id="${uid}">${I.heart} Enviar mensaje</button>${S.shields>0?`<button class="btn" data-act="shield-send-ask" data-id="${uid}">🛡️ Regalar escudo</button>`:""}</div>
   <div class="row" style="gap:14px">${f.streak==="accepted"?`<button class="linkbtn" data-act="streak-end" data-id="${f.id}" style="padding:0">Terminar racha juntos</button>`:""}<button class="linkbtn" data-act="friend-remove" data-id="${f.id}" style="padding:0;color:var(--bad)">Eliminar amigo</button></div>
   ${HEART_MINI}`;
 }
@@ -2701,6 +2779,7 @@ const NAPI = {
   respondStreak(id, ok){ return API.rpc("respond_streak", { p_id:id, p_accept:ok }); },
   endStreak(id){ return API.rpc("end_streak", { p_id:id }); },
   cheer(uid, k){ return API.rpc("send_cheer", { p_user:uid, p_msg:k }); },
+  shield(uid){ return API.rpc("send_shield", { p_user:uid }); },
   message(uid, msg, note, vid, vref){ return API.rpc("send_message", { p_user:uid, p_msg:msg||0, p_note:note||null, p_verse_id:vid||null, p_verse_ref:vref||null }); }
 };
 function notifError(e){
@@ -2723,6 +2802,7 @@ async function loadNotifs(){
   try{ NOTIF.items = (await NAPI.list()).sort((a,b)=>a.created_at<b.created_at?1:-1); NOTIF.err = ""; NOTIF.loaded = true; }
   catch(e){ NOTIF.err = notifError(e); NOTIF.loaded = true; }
   NOTIF.loading = false;
+  claimShields();
   const changed = unreadCount()!==before || (NOTIF.items[0] && NOTIF.items[0].id)!==beforeTop;
   if(changed && NOTIF.items.some(n=>!n.read_at && ["friend_request","friend_accepted","streak_invite","streak_accepted","duel_challenge","duel_result"].includes(n.type))) COMM.loaded = false;
   if(changed && ["home","library","books","community","friend","profile","avisos","list","review","topic"].includes(VIEW.name)){
@@ -2824,7 +2904,7 @@ function notifPrefsPanel(){
 }
 
 /* ----- Lista de avisos ----- */
-const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell" };
+const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
 function timeAgo(iso){
   const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime())/1000));
   if(s < 60) return "ahora"; const m = Math.round(s/60); if(m < 60) return `hace ${m} min`;
@@ -2853,6 +2933,7 @@ function notifActions(n){
     case "duel_challenge": case "duel_result":
       if(duel && myDuelTurn(duel)) return btn("duel-play","Jugar",duel.id,true);
       return duel ? btn("duel-view","Ver resultado",duel.id) : "";
+    case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
     case "cheer": {
       const vid = n.data && n.data.verse && SUG_MAP[n.data.verse] ? n.data.verse : null;
       return (vid ? (S.favs.includes(vid) ? done("♡ En Mis versículos") : btn("verse-save","Guardar en Mis versículos",vid,true)) + btn("verse-practice","Practicar",vid) : "")
@@ -3175,7 +3256,7 @@ function viewCamino(){
    RACHA: calendario, racha personal y rachas con amigos
    ========================================================= */
 function bestStreak(){
-  const keys = Object.keys(S.log||{}).filter(k=>S.log[k] && S.log[k].n).sort();
+  const keys = [...new Set(Object.keys(S.log||{}).filter(k=>S.log[k] && S.log[k].n).concat(S.shieldDays||[]))].sort();
   let best = 0, run = 0, prev = null;
   keys.forEach(k=>{ const d = new Date(k+"T12:00:00"); run = prev && Math.round((d-prev)/DAY)===1 ? run+1 : 1; best = Math.max(best, run); prev = d; });
   return best;
@@ -3191,16 +3272,16 @@ function calendarHTML(offset){
   let count = 0;
   for(let d=1; d<=days; d++){
     const k = todayKey(new Date(first.getFullYear(), first.getMonth(), d));
-    const on = !!(S.log[k] && S.log[k].n); if(on) count++;
-    cells += `<span class="d${on?" on":""}${k===today?" is-today":""}${k>today?" fut":""}" title="${k}${on?": practicaste":""}">${d}</span>`;
+    const on = !!(S.log[k] && S.log[k].n), sh = !on && shieldDay(k); if(on) count++;
+    cells += `<span class="d${on?" on":""}${sh?" sh":""}${k===today?" is-today":""}${k>today?" fut":""}" title="${k}${on?": practicaste":sh?": protegido con escudo":""}">${sh?"🛡️":d}</span>`;
   }
   return { html: cells, label: `${MONTHS[first.getMonth()]} ${first.getFullYear()}`, count };
 }
 function weekStrip(){
   const now = new Date(), mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay()+6)%7));
   const names = ["L","M","M","J","V","S","D"], today = todayKey();
-  return `<div class="week">${names.map((n,i)=>{ const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i), k = todayKey(d), on = !!(S.log[k]&&S.log[k].n);
-    return `<div><span>${n}</span><i class="${on?"on":""}${k===today?" is-today":""}">${on?I.flame:""}</i></div>`; }).join("")}</div>`;
+  return `<div class="week">${names.map((n,i)=>{ const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i), k = todayKey(d), on = !!(S.log[k]&&S.log[k].n), sh = !on && shieldDay(k);
+    return `<div><span>${n}</span><i class="${on||sh?"on":""}${k===today?" is-today":""}">${on?I.flame:sh?"🛡️":""}</i></div>`; }).join("")}</div>`;
 }
 function viewRacha(){
   const st = streak(), best = Math.max(bestStreak(), st), off = VIEW.month || 0;
@@ -3225,10 +3306,11 @@ function viewRacha(){
   </section>
   ${practicedToday()?"":`<div class="row"><button class="btn primary lg" data-act="path-play">${I.play} Practicar ahora</button></div>`}
   <section class="mstats"><div><b>${best}</b><span>Mejor racha</span></div><div><b>${total}</b><span>Días practicados</span></div><div><b>${cal.count}</b><span>Días este mes</span></div></section>
+  ${shieldsPanel()}
   <section class="panel" style="display:flex;flex-direction:column;gap:14px">
     <div class="spread" style="flex-wrap:nowrap"><button class="icon-btn" data-act="cal-prev" aria-label="Mes anterior">‹</button><h3 style="text-transform:capitalize">${cal.label}</h3><button class="icon-btn" data-act="cal-next" aria-label="Mes siguiente" ${off>=0?"disabled style=\"opacity:.3\"":""}>›</button></div>
     <div class="cal">${cal.html}</div>
-    <div class="row" style="gap:14px;font-size:12.5px;color:var(--muted);font-weight:600"><span class="row" style="gap:6px"><i class="dot" style="background:var(--gold);width:12px;height:12px"></i> Practicaste</span><span class="row" style="gap:6px"><i class="dot" style="box-shadow:inset 0 0 0 2px var(--accent);width:12px;height:12px"></i> Hoy</span></div>
+    <div class="row" style="gap:14px;font-size:12.5px;color:var(--muted);font-weight:600"><span class="row" style="gap:6px"><i class="dot" style="background:var(--gold);width:12px;height:12px"></i> Practicaste</span><span class="row" style="gap:6px"><i class="dot" style="box-shadow:inset 0 0 0 2px var(--accent);width:12px;height:12px"></i> Hoy</span>${(S.shieldDays||[]).length?`<span class="row" style="gap:4px">🛡️ Protegido con escudo</span>`:""}</div>
   </section>
   <section style="display:flex;flex-direction:column;gap:10px"><h3>Rachas con amigos</h3><div class="panel" style="padding:10px"><div class="vlist">${friendsHTML}</div></div></section>
   ${HEART_NOTE}`;
@@ -4194,6 +4276,9 @@ document.addEventListener("click", e=>{
     case "cal-next": VIEW.month=Math.min(0,(VIEW.month||0)+1); render(); break;
     case "verse-open": verseModal(t.dataset.id); break;
     case "heart-open": openHeart(); break;
+    case "shield-pick": shieldPickModal(); break;
+    case "shield-send": sendShield(t.dataset.id, t); break;
+    case "shield-send-ask": { const uid = t.dataset.id; confirmBox("Regalar un escudo", `Le darás uno de tus escudos a ${personLabel(uid).split(" ")[0]}. Te quedarán ${(S.shields||1)-1}.`, "Regalar", ()=>sendShield(uid)); break; }
     case "heart-close": closeHeart(); break;
     case "heart-practice": { const hid = t.dataset.id, v = verse(hid); closeHeart(); if(v) startSession([hid], { title:v.ref }); break; }
     case "heart-fav": { const hid = t.dataset.id; if(S.favs.includes(hid)) S.favs = S.favs.filter(x=>x!==hid); else S.favs.unshift(hid); persist(); t.innerHTML = heartFavBtn(hid); toast(S.favs.includes(hid) ? "Guardado en Mis versículos." : "Lo quitaste de Mis versículos."); break; }
