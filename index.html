@@ -480,21 +480,25 @@ a.btn:not(.primary){color:var(--ink)}
 .medal-wrap[data-prog]::after{content:attr(data-prog);font-size:10.5px;font-weight:700;color:var(--muted)}
 /* ---------- Animación de apertura ---------- */
 #intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
-#intro .lampx{position:relative;width:120px;height:120px;z-index:2;animation:lampIn .55s cubic-bezier(.2,.8,.2,1) both}
+#intro .lampx{position:relative;width:120px;height:120px;z-index:2;}
 #intro .lampx svg{width:100%;height:100%;overflow:visible}
-#intro .base{fill:var(--gold-dark)}
-#intro .flame{fill:#FFB020;transform-origin:12px 11px;transform:scale(0);animation:flameOn .6s .45s cubic-bezier(.3,1.6,.5,1) forwards, flicker 1.2s 1.05s ease-in-out infinite}
-#intro .core{fill:#FFF3C4;transform-origin:12px 9.5px;transform:scale(0);animation:flameOn .5s .6s cubic-bezier(.3,1.6,.5,1) forwards}
-#intro .glow{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-62px 0 0 -20px;border-radius:50%;background:radial-gradient(circle,#FFE08A 0%,#FFB020 45%,rgba(255,176,32,0) 70%);transform:scale(0);opacity:0;z-index:1;animation:glowUp .9s 1s cubic-bezier(.5,0,.3,1) forwards}
-#intro .fill{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-72px 0 0 -30px;border-radius:50%;background:radial-gradient(circle,#FFE7A3 0%,#FFB020 55%,#FF9A10 100%);transform:scale(0);z-index:3;animation:fillUp .75s 1.35s cubic-bezier(.6,0,.3,1) forwards}
-#intro .word{position:absolute;left:0;right:0;top:calc(50% + 78px);text-align:center;font-weight:800;font-size:26px;letter-spacing:-.03em;color:var(--ink);opacity:0;z-index:2;animation:wordIn .5s .7s ease forwards}
+#intro .base{fill:var(--gold-dark);transform-box:fill-box;transform-origin:50% 100%;opacity:0;animation:partIn .45s cubic-bezier(.2,.8,.2,1) forwards}
+#intro .base.b1{animation-delay:.75s}
+#intro .base.b2{animation-delay:1.1s}
+#intro .flame{fill:#FFB020;transform-origin:12px 11px;transform:scale(0);animation:flameOn .6s 1.5s cubic-bezier(.3,1.6,.5,1) forwards, flicker 1.2s 2.1s ease-in-out infinite}
+#intro .core{fill:#FFF3C4;transform-origin:12px 9.5px;transform:scale(0);animation:flameOn .5s 1.65s cubic-bezier(.3,1.6,.5,1) forwards}
+#intro .glow{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-62px 0 0 -20px;border-radius:50%;background:radial-gradient(circle,#FFE08A 0%,#FFB020 45%,rgba(255,176,32,0) 70%);transform:scale(0);opacity:0;z-index:1;animation:glowUp .9s 1.95s cubic-bezier(.5,0,.3,1) forwards}
+#intro .fill{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-72px 0 0 -30px;border-radius:50%;background:radial-gradient(circle,#FFC94D 0%,#FFB020 45%,#FF9A10 100%);transform:scale(0);z-index:3;animation:fillUp .9s 2.3s cubic-bezier(.6,0,.3,1) forwards}
+#intro .word{position:absolute;left:0;right:0;top:calc(50% + 78px);text-align:center;font-weight:800;font-size:26px;letter-spacing:-.03em;color:var(--ink);opacity:0;z-index:4;animation:wordIn .5s .1s ease forwards, wordUp .9s 2.4s cubic-bezier(.5,0,.3,1) forwards}
 #intro.out{animation:introOut .45s ease forwards}
 @keyframes lampIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:none}}
 @keyframes flameOn{to{transform:scale(1)}}
 @keyframes flicker{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.04,.97) rotate(-2deg)}60%{transform:scale(.97,1.05) rotate(2deg)}}
 @keyframes glowUp{to{transform:scale(4.5);opacity:1}}
 @keyframes fillUp{to{transform:scale(60)}}
-@keyframes wordIn{to{opacity:1}}
+@keyframes wordIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes wordUp{from{opacity:1;transform:none}to{opacity:1;color:#fff;transform:translateY(-104px) scale(1.15);text-shadow:0 1px 2px rgba(140,70,0,.35),0 3px 16px rgba(140,70,0,.45)}}
+@keyframes partIn{from{opacity:0;transform:translateY(8px) scaleX(.6)}to{opacity:1;transform:none}}
 @keyframes introOut{to{opacity:0;visibility:hidden}}
 @media (prefers-reduced-motion:reduce){#intro *{animation-duration:.01s!important;animation-delay:0s!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -4024,13 +4028,13 @@ function introSound(){
       // "fuu": soplo suave al encenderse la llama
       const len = ctx.sampleRate * .5, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
       for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2);
-      const n = ctx.createBufferSource(); n.buffer = buf; const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.setValueAtTime(400, t+.45); f.frequency.exponentialRampToValueAtTime(1600, t+.9); f.Q.value = .8;
-      const ng = ctx.createGain(); ng.gain.setValueAtTime(0, t+.45); ng.gain.linearRampToValueAtTime(.5, t+.55); ng.gain.exponentialRampToValueAtTime(.001, t+1.0);
-      n.connect(f); f.connect(ng); ng.connect(out); n.start(t+.45); n.stop(t+1.05);
+      const n = ctx.createBufferSource(); n.buffer = buf; const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.setValueAtTime(400, t+1.5); f.frequency.exponentialRampToValueAtTime(1600, t+1.95); f.Q.value = .8;
+      const ng = ctx.createGain(); ng.gain.setValueAtTime(0, t+1.5); ng.gain.linearRampToValueAtTime(.5, t+1.6); ng.gain.exponentialRampToValueAtTime(.001, t+2.05);
+      n.connect(f); f.connect(ng); ng.connect(out); n.start(t+1.5); n.stop(t+2.1);
       // campanita cálida al llenarse de luz
-      [[659.25,1.35],[987.77,1.47],[1318.5,1.6]].forEach(([hz,at])=>{ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = hz;
+      [[659.25,2.35],[987.77,2.47],[1318.5,2.6]].forEach(([hz,at])=>{ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = hz;
         g.gain.setValueAtTime(0, t+at); g.gain.linearRampToValueAtTime(.35, t+at+.02); g.gain.exponentialRampToValueAtTime(.001, t+at+1.4); o.connect(g); g.connect(out); o.start(t+at); o.stop(t+at+1.5); });
-      setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 3500);
+      setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 4500);
     };
     if(ctx.state === "running") go();
     else ctx.resume().then(()=>{ if(ctx.state === "running") go(); }).catch(()=>{});   // si el navegador no deja sonar sin un toque, se omite
@@ -4042,14 +4046,14 @@ function playIntro(force){
   if(!force && (seen || !introEnabled())) return;
   const old = $("#intro"); if(old) old.remove();
   const el = document.createElement("div"); el.id = "intro"; el.setAttribute("aria-hidden","true");
-  el.innerHTML = `<div class="glow"></div><div class="lampx"><svg viewBox="0 0 24 24"><path class="base" d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z"/><path class="flame" d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path class="core" d="M12 6.4c.6 1 1.4 1.6 1.4 2.6a1.4 1.4 0 0 1-2.8 0c0-1 .8-1.6 1.4-2.6z"/></svg></div><div class="word">Lámpara</div><div class="fill"></div>`;
+  el.innerHTML = `<div class="glow"></div><div class="lampx"><svg viewBox="0 0 24 24"><path class="base b2" d="M4 14h16l-2 3H6z"/><path class="base b1" d="M8 18h8l-1 3H9z"/><path class="flame" d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path class="core" d="M12 6.4c.6 1 1.4 1.6 1.4 2.6a1.4 1.4 0 0 1-2.8 0c0-1 .8-1.6 1.4-2.6z"/></svg></div><div class="word">Lámpara</div><div class="fill"></div>`;
   document.body.appendChild(el);
   introSound();
   let done = false;
   const finish = ()=>{ if(done) return; done = true; el.classList.add("out"); setTimeout(()=>el.remove(), 460); };
   el.addEventListener("click", finish);
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  setTimeout(finish, reduce ? 500 : 2150);
+  setTimeout(finish, reduce ? 500 : 4300);
 }
 playIntro();
 
