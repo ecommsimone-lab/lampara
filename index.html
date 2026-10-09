@@ -470,6 +470,21 @@ a.btn:not(.primary){color:var(--ink)}
 .zoom{width:100%;accent-color:var(--accent)}
 /* ---------- Logros ---------- */
 .medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+.medals.one{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));column-gap:6px;grid-template-rows:auto;grid-auto-rows:0;row-gap:0;overflow:hidden}
+.fbubbles{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.fbubbles::-webkit-scrollbar{display:none}
+.fbub{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;width:70px;flex:none;text-align:center}
+.fbub:focus-visible{outline:2px solid var(--accent);border-radius:12px}
+.fbub .ring{position:relative;padding:3px;border-radius:50%;background:var(--surface-2)}
+.fbub .ring.on{background:linear-gradient(135deg,#FFC94D,#FF8A1A)}
+.fbub .ring>.avatar{box-shadow:0 0 0 2px var(--surface)}
+.fbub .fl{position:absolute;right:-6px;bottom:-4px;background:var(--surface);border-radius:999px;padding:1px 6px 1px 4px;font-size:11px;font-weight:800;color:var(--gold-text);box-shadow:var(--shadow);display:flex;align-items:center;gap:1px}
+.fbub .fl svg{width:12px;height:12px}
+.fbub small{font-size:12px;font-weight:600;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fbub .add{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;border:2px dashed var(--line);color:var(--accent)}
+.fbub .add svg{width:22px;height:22px}
+.duel-hero{display:flex;gap:14px;align-items:center}
+.duel-hero .ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:26px;background:var(--accent-soft);flex:none}
 .medal-wrap{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 2px;border-radius:14px;position:relative;text-align:center}
 .medal-wrap:hover{background:var(--surface-2)}
 .medal-wrap:focus-visible{outline:2px solid var(--accent)}
@@ -862,7 +877,7 @@ function render(){
   if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
   const badge = commBadge();
   const unread = unreadCount();
-  const navItem = (id,label,icon) => { const n = id==="community" ? badge : id==="avisos" ? unread : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && VIEW.name==="friend")}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
+  const navItem = (id,label,icon) => { const n = id==="community" ? badge : id==="avisos" ? unread : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="profile" && (VIEW.name==="logros" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
   const lists = listDefs();
   root.innerHTML = `
   <div class="app">
@@ -910,10 +925,13 @@ function render(){
   else if(VIEW.name==="topic") v.innerHTML = mtop + viewTopic(VIEW.topic);
   else if(VIEW.name==="community") v.innerHTML = mtop + viewCommunity();
   else if(VIEW.name==="friend") v.innerHTML = mtop + viewFriend(VIEW.uid);
+  else if(VIEW.name==="amigos") v.innerHTML = mtop + viewAmigos(VIEW.uid);
+  else if(VIEW.name==="logros") v.innerHTML = mtop + viewLogros();
   else if(VIEW.name==="avisos") v.innerHTML = mtop + viewAvisos();
   else if(VIEW.name==="racha") v.innerHTML = mtop + viewRacha();
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
+  const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
   const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
   clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)) checkBadges(); }, 400);
 }
@@ -2163,6 +2181,7 @@ const API = {
   removeFriend(id){ return API.rpc("remove_friend", { p_id: id }); },
   async myFriends(){ return (await API.rpc("my_friends")) || []; },
   friendCount(uid){ return API.rpc("friend_count", { p_uid: uid }); },
+  friendList(uid){ return API.rpc("friend_list", { p_uid: uid }); },
   async createDuel(questions, opponent){ const row = { code: shortCode(), creator: ME.id, questions }; if(opponent) row.opponent = opponent; const { data, error } = await SB.from("duels").insert(row).select("*").single(); if(error) throw error; return data; },
   async joinDuel(code){ const { data, error } = await SB.rpc("join_duel", { p_code: code }); if(error) throw error; return data; },
   async getDuel(id){ const { data, error } = await SB.from("duels").select("*").eq("id", id).maybeSingle(); if(error) throw error; return data; },
@@ -2234,7 +2253,7 @@ async function loadCommunity(){
     COMM.loaded = true;
   }catch(e){ COMM.err = commError(e); }
   COMM.loading = false;
-  if(["community","friend","profile","home","library","books","avisos"].includes(VIEW.name)) render();
+  if(["community","friend","amigos","profile","home","library","books","avisos"].includes(VIEW.name)) render();
 }
 function reloadCommunity(){ COMM.loaded = false; COMM.counts = {}; return loadCommunity(); }
 function personLabel(uid){ const p = COMM.profiles[uid]; return p ? (p.display_name || "Alguien") : "Alguien"; }
@@ -2277,48 +2296,100 @@ function friendRow(f){
     <div><button class="btn" data-act="duel-friend" data-id="${f.user_id}" style="padding:6px 14px">Retar</button></div></div>`;
 }
 
+const HEART_MINI = `<p class="muted" style="font-size:13px;text-align:center;margin:4px 0 0;line-height:1.5">♡ Ni la racha ni los puntos miden tu fe. Lo que importa es que la Palabra transforme tu corazón (1 Corintios 13:1–3).</p>`;
+function normQ(q){ return String(q||"").trim().replace(/^@/,"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
+function friendBubble(f){
+  const today = (COMM.days[f.user_id] || new Set()).has(todayKey()), st = f.streak==="accepted" ? streakDays(f) : 0;
+  const first = String(f.display_name || "Alguien").split(" ")[0];
+  return `<button class="fbub" data-act="friend-open" data-id="${f.user_id}" aria-label="${esc(f.display_name||"Alguien")}${today?", practicó hoy":""}${st?`, ${st} días de racha juntos`:""}">
+    <span class="ring ${today?"on":""}">${personAvatar(f.user_id,58)}${st?`<span class="fl">${I.flame}${st}</span>`:""}</span><small>${esc(first)}</small></button>`;
+}
+function duelRow(d){
+  const iAmCreator = d.creator===ME.id, other = iAmCreator ? d.opponent : d.creator;
+  const my = iAmCreator ? d.creator_score : d.opponent_score, their = iAmCreator ? d.opponent_score : d.creator_score;
+  const myMs = iAmCreator ? d.creator_ms : d.opponent_ms, theirMs = iAmCreator ? d.opponent_ms : d.creator_ms;
+  let state, act = "";
+  if(my==null){ state = `<span class="chip acc">Te toca</span>`; act = `<button class="btn primary" data-act="duel-play" data-id="${d.id}" style="padding:6px 14px">Jugar</button>`; }
+  else if(!other){ state = `<span class="chip none">Sin rival</span>`; }
+  else if(their==null){ state = `<span class="chip none">Esperando su turno</span>`; }
+  else { const win = my>their || (my===their && myMs<theirMs), tie = my===their && myMs===theirMs; state = `<span class="chip ${tie?"none":win?"ok":"bad"}">${tie?"Empate":win?"Ganaste":"Perdiste"} · ${my}–${their}</span>`; act = `<button class="btn ghost" data-act="duel-view" data-id="${d.id}" style="padding:6px 14px">Ver</button>`; }
+  return `<div class="drow"><span>${other?personAvatar(other,36):`<span class="avatar" style="width:36px;height:36px;background:var(--surface-2);color:var(--muted)">?</span>`}</span><div style="min-width:0"><b>${other?esc(personLabel(other)):"Reto sin rival"}</b><div style="margin-top:4px">${state}</div></div><div>${act}</div></div>`;
+}
+function duelOrder(d){ const me = d.creator===ME.id, my = me?d.creator_score:d.opponent_score, th = me?d.opponent_score:d.creator_score; return my==null ? 0 : th==null ? 1 : 2; }
+
 function viewCommunity(){
   if(!cloudOn()) return `<div class="empty"><b>Comunidad necesita conexión con la nube</b><span>Entra con tu cuenta para agregar amigos y retarlos.</span></div>`;
-  if(!COMM.loaded && !COMM.err){ setTimeout(loadCommunity, 0); return `<section><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1></section><div class="empty"><b>Cargando…</b></div>`; }
-  const acc = friendsAccepted(), inc = friendsIncoming(), out = friendsOutgoing(), me = myUsername();
-  const duelRow = d => {
-    const iAmCreator = d.creator===ME.id, other = iAmCreator ? d.opponent : d.creator;
-    const my = iAmCreator ? d.creator_score : d.opponent_score, their = iAmCreator ? d.opponent_score : d.creator_score;
-    const myMs = iAmCreator ? d.creator_ms : d.opponent_ms, theirMs = iAmCreator ? d.opponent_ms : d.creator_ms;
-    let state, act = "";
-    if(my==null){ state = `<span class="chip acc">Te toca jugar</span>`; act = `<button class="btn primary" data-act="duel-play" data-id="${d.id}" style="padding:6px 14px">Jugar</button>`; }
-    else if(!other){ state = `<span class="chip none">Esperando rival</span>`; act = `<button class="btn" data-act="duel-share" data-id="${d.id}" style="padding:6px 14px">Compartir</button>`; }
-    else if(their==null){ state = `<span class="chip none">Esperando a ${esc(personLabel(other))}</span>`; }
-    else { const win = my>their || (my===their && myMs<theirMs), tie = my===their && myMs===theirMs; state = `<span class="chip ${tie?"none":win?"ok":"bad"}">${tie?"Empate":win?"Ganaste":"Perdiste"} · ${my}–${their}</span>`; act = `<button class="btn ghost" data-act="duel-view" data-id="${d.id}" style="padding:6px 14px">Ver</button>`; }
-    return `<div class="drow"><span>${other?personAvatar(other,32):`<span class="avatar" style="width:32px;height:32px;background:var(--surface-2);color:var(--muted)">?</span>`}</span><div style="min-width:0"><b>${other?esc(personLabel(other)):"Reto abierto"}</b><div style="margin-top:4px">${state}</div></div><div>${act}</div></div>`;
-  };
-  return `
-  <section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1><p class="muted">Agrega amigos, anímense cada día y aprendan la Palabra en comunidad.</p></section>
+  const head = `<section><span class="eyebrow">Comunidad</span><h1 style="font-size:clamp(30px,5vw,46px)">Crecer juntos</h1></section>`;
+  if(!COMM.loaded && !COMM.err){ setTimeout(loadCommunity, 0); return head + `<div class="empty"><b>Cargando…</b></div>`; }
+  const acc = friendsAccepted(), inc = friendsIncoming(), me = myUsername();
+  const streakInv = acc.filter(f=>f.streak==="pending" && !f.streak_mine);
+  const sorted = [...acc].sort((a,b)=>((COMM.days[b.user_id]||new Set()).has(todayKey()) - (COMM.days[a.user_id]||new Set()).has(todayKey())) || (streakDays(b) - streakDays(a)));
+  const duels = [...COMM.duels].sort((a,b)=>duelOrder(a)-duelOrder(b) || String(b.created_at).localeCompare(String(a.created_at)));
+  const shown = COMM.allDuels ? duels : duels.slice(0,4);
+  const pend = inc.length + streakInv.length;
+  return `${head}
   ${COMM.err?`<div class="result-bar bad"><span>${esc(COMM.err)}</span></div>`:""}
-  ${HEART_NOTE}
-  ${inc.length?`<section style="display:flex;flex-direction:column;gap:10px"><h3>Solicitudes de amistad <span class="chip acc">${inc.length}</span></h3><div class="panel" style="padding:10px"><div class="vlist">${inc.map(f=>`<div class="drow">${personAvatar(f.user_id,36)}<div style="min-width:0">${personLine(f)}</div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn primary" data-act="friend-accept" data-id="${f.id}" style="padding:6px 14px">Aceptar</button><button class="btn ghost" data-act="friend-reject" data-id="${f.id}" style="padding:6px 12px">Rechazar</button></div></div>`).join("")}</div></div></section>`:""}
-  <section class="split">
-    <div class="panel" style="display:flex;flex-direction:column;gap:14px">
-      <h3>Agregar amigos</h3>
-      <p class="muted" style="font-size:14px">Escribe el correo completo o el @usuario de la persona. Le llegará una solicitud y, cuando la acepte, serán amigos.</p>
-      <div class="row" style="flex-wrap:nowrap" data-enter="friend-search"><input class="input" id="friendQuery" placeholder="correo@ejemplo.com o @usuario" autocapitalize="none" autocomplete="off" spellcheck="false" value="${esc(COMM.searchQ||"")}"><button class="btn primary" data-act="friend-search">Buscar</button></div>
-      <div id="friendResult">${searchResultHTML()}</div>
-      ${me?`<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px"><span class="muted" style="font-size:13px">Tu usuario es <b class="mono" style="color:var(--ink)">@${esc(me)}</b>. También puedes invitar con un enlace:</span>${shareButtons("friend", me)}</div>`:""}
+  ${pend?`<section class="panel" style="display:flex;flex-direction:column;gap:8px;padding:14px"><h3>Para ti <span class="chip acc">${pend}</span></h3><div class="vlist">
+    ${inc.map(f=>`<div class="drow">${personAvatar(f.user_id,40)}<div style="min-width:0">${personLine(f)}<small class="muted" style="font-size:12px">Quiere ser tu amigo</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn primary" data-act="friend-accept" data-id="${f.id}" style="padding:6px 14px">Aceptar</button><button class="icon-btn" data-act="friend-reject" data-id="${f.id}" aria-label="Rechazar" title="Rechazar">✕</button></div></div>`).join("")}
+    ${streakInv.map(f=>`<div class="drow">${personAvatar(f.user_id,40)}<div style="min-width:0"><b>${esc(f.display_name||"Alguien")}</b><small class="muted" style="display:block;font-size:12px">Te invita a una racha juntos</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn primary" data-act="streak-accept" data-id="${f.id}" style="padding:6px 14px">${I.flame} Aceptar</button><button class="icon-btn" data-act="streak-reject" data-id="${f.id}" aria-label="Ahora no" title="Ahora no">✕</button></div></div>`).join("")}
+  </div></section>`:""}
+  <section class="panel" style="display:flex;flex-direction:column;gap:10px;padding:16px">
+    <div class="spread"><h3>Amigos <span class="chip none">${acc.length}</span></h3>${acc.length?`<button class="linkbtn" data-act="amigos-open" data-id="${ME.id}" style="padding:4px 0">Ver todos ›</button>`:""}</div>
+    <div class="fbubbles">
+      <button class="fbub" data-act="amigos-open" data-id="${ME.id}" aria-label="Agregar amigos"><span class="add">${I.plus}</span><small style="color:var(--accent)">Agregar</small></button>
+      ${sorted.map(friendBubble).join("")}
     </div>
-    <div class="panel" style="display:flex;flex-direction:column;gap:14px">
-      <h3>Esgrima bíblico</h3>
-      <p class="muted" style="font-size:14px">Los dos responden las mismas 10 preguntas sobre libros, citas e historias. Gana quien acierte más; si empatan, quien lo haga más rápido. Reta a un amigo desde tu lista o crea un reto abierto para compartir.</p>
-      <div class="row"><button class="btn" data-act="duel-new">${I.play} Crear reto abierto</button></div>
-      <div class="row" style="flex-wrap:nowrap" data-enter="duel-join"><input class="input" id="duelCode" placeholder="¿Te retaron? Escribe el código" maxlength="8" autocapitalize="characters" style="max-width:240px;text-transform:uppercase"><button class="btn" data-act="duel-join">Aceptar</button></div>
-    </div>
+    ${acc.length?"":`<p class="muted" style="font-size:14px;margin:0">Agrega a tus amigos para retarlos y llevar rachas juntos.</p>${me?`<div>${shareButtons("friend", me)}</div>`:""}`}
   </section>
-  <section style="display:flex;flex-direction:column;gap:10px"><h3>Mis amigos <span class="chip none">${acc.length}</span></h3>
-    <div class="panel" style="padding:10px">${acc.length?`<div class="vlist">${acc.map(friendRow).join("")}</div>`:`<div class="empty"><b>Aún no tienes amigos aquí</b><span>Busca a alguien por su correo o @usuario. Con cada amigo llevas una racha juntos: sube los días en que los dos practican.</span></div>`}
-    ${out.length?`<div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px"><span class="eyebrow" style="padding:0 12px">Solicitudes enviadas</span><div class="vlist">${out.map(f=>`<div class="drow">${personAvatar(f.user_id,32)}<div style="min-width:0">${personLine(f)}</div><button class="btn ghost" data-act="friend-cancel" data-id="${f.id}" style="padding:6px 12px">Cancelar</button></div>`).join("")}</div></div>`:""}</div>
+  <section class="panel" style="display:flex;flex-direction:column;gap:12px;padding:16px">
+    <div class="duel-hero"><span class="ic" aria-hidden="true">⚔️</span><div style="min-width:0;flex:1"><h3>Esgrima bíblico</h3><small class="muted" style="font-size:13px">10 preguntas · gana quien acierte más</small></div><button class="btn primary" data-act="duel-pick">Retar</button></div>
+    ${duels.length?`<div class="vlist" style="border-top:1px solid var(--line);padding-top:6px">${shown.map(duelRow).join("")}</div>${duels.length>4?`<button class="linkbtn" data-act="duels-more" style="align-self:center">${COMM.allDuels?"Ver menos":`Ver todos (${duels.length})`}</button>`:""}`:""}
   </section>
-  <section style="display:flex;flex-direction:column;gap:10px"><h3>Mis retos</h3>
-    <div class="panel" style="padding:10px">${COMM.duels.length?`<div class="vlist">${COMM.duels.map(duelRow).join("")}</div>`:`<div class="empty"><b>Aún no tienes retos</b><span>Reta a un amigo o crea un reto abierto.</span></div>`}</div>
-  </section>`;
+  ${HEART_MINI}`;
+}
+function duelPickModal(){
+  const acc = friendsAccepted();
+  if(!acc.length){ toast("Primero agrega a un amigo para retarlo."); go("amigos", { uid: ME.id }); return; }
+  modal(`<div style="display:flex;flex-direction:column;gap:12px"><div class="duel-hero"><span class="ic" aria-hidden="true">⚔️</span><div><h2 style="font-size:22px">¿A quién quieres retar?</h2><small class="muted">Responderán las mismas 10 preguntas</small></div></div>
+    <div class="vlist" style="max-height:52vh;overflow:auto">${acc.map(f=>`<div class="drow">${personAvatar(f.user_id,40)}<div style="min-width:0">${personLine(f)}</div><button class="btn primary" data-act="duel-friend" data-id="${f.user_id}" style="padding:6px 14px">Retar</button></div>`).join("")}</div>
+    <button class="btn ghost" data-close>Cancelar</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=closeModal));
+}
+
+/* Lista de amigos de un perfil: solo la lista y una barra para buscar o agregar */
+function personAction(p){
+  if(p.user_id===ME.id) return `<span class="chip none">Tú</span>`;
+  const f = COMM.friends.find(x=>x.user_id===p.user_id);
+  if(f && f.status==="accepted") return `<span class="muted" aria-hidden="true" style="font-size:20px;padding:0 6px">›</span>`;
+  if(f && f.incoming) return `<button class="btn primary" data-act="friend-accept" data-id="${f.id}" style="padding:6px 14px">Aceptar</button>`;
+  if(f) return `<span class="chip none">Enviada</span>`;
+  return `<button class="btn primary" data-act="friend-add" data-id="${p.user_id}" style="padding:6px 12px">${I.plus} Agregar</button>`;
+}
+function viewAmigos(uid){
+  if(!cloudOn()) return `<div class="empty"><b>Necesitas entrar con tu cuenta</b></div>`;
+  const mine = uid===ME.id;
+  if(!COMM.loaded && !COMM.err) setTimeout(loadCommunity, 0);
+  let list;
+  if(mine) list = COMM.loaded ? friendsAccepted() : "loading";
+  else {
+    COMM.flists = COMM.flists || {};
+    if(!(uid in COMM.flists)){ COMM.flists[uid] = "loading"; API.friendList(uid).then(r=>{ COMM.flists[uid] = r || []; (r||[]).forEach(x=>{ if(!COMM.profiles[x.user_id]) COMM.profiles[x.user_id] = x; }); if(VIEW.name==="amigos") render(); }).catch(e=>{ COMM.flists[uid] = { err: commError(e) }; if(VIEW.name==="amigos") render(); }); }
+    list = COMM.flists[uid];
+  }
+  const owner = mine ? null : (COMM.profiles[uid] || COMM.friends.find(x=>x.user_id===uid) || {});
+  const title = mine ? "Tus amigos" : `Amigos de ${esc(String(owner.display_name||"tu amigo").split(" ")[0])}`;
+  const rows = Array.isArray(list) ? list : [];
+  const body = list==="loading" ? `<div class="empty"><b>Cargando…</b></div>`
+    : (list && list.err) ? `<div class="empty"><b>No se pudo cargar la lista</b><span>${esc(/Falta activar/.test(list.err) ? "Falta correr el SQL 08 en Supabase." : list.err)}</span></div>`
+    : !rows.length ? `<div class="empty"><b>${mine?"Aún no tienes amigos":"Aún no tiene amigos"}</b>${mine?`<span>Búscalos arriba por su @usuario o correo.</span>`:""}</div>`
+    : `<div class="vlist" id="amigosList">${rows.map(p=>{ const fr = COMM.friends.find(x=>x.user_id===p.user_id && x.status==="accepted");
+        return `<div class="drow" data-name="${esc(normQ((p.display_name||"")+" "+(p.username||"")))}" ${fr?`data-act="friend-open" data-id="${p.user_id}" role="button" tabindex="0" style="cursor:pointer"`:""}>${avatarHTML(p.display_name, colorFor(p.user_id), p.avatar_url, 44)}<div style="min-width:0">${personLine(p)}</div><div>${personAction(p)}</div></div>`; }).join("")}
+        <p class="muted" id="amigosNone" hidden style="font-size:14px;padding:8px 12px;margin:0">Nadie en la lista con ese nombre. ${mine?"Toca <b>Buscar</b> para encontrarlo por su @usuario o correo.":""}</p></div>`;
+  return `
+  <button class="linkbtn" ${mine?`data-go="profile"`:`data-act="friend-open" data-id="${uid}"`} style="align-self:flex-start;padding:0">← ${mine?"Perfil":"Volver"}</button>
+  <section style="display:flex;align-items:baseline;gap:10px"><h1 style="font-size:clamp(28px,5vw,40px)">${title}</h1>${rows.length?`<span class="chip none">${rows.length}</span>`:""}</section>
+  <div class="row" style="flex-wrap:nowrap" data-enter="friend-search"><input class="input" id="friendQuery" placeholder="Nombre, @usuario o correo" aria-label="Buscar en la lista o agregar por @usuario o correo" autocapitalize="none" autocomplete="off" spellcheck="false" value="${esc(COMM.searchQ||"")}"><button class="btn primary" data-act="friend-search">Buscar</button></div>
+  <div id="friendResult">${searchResultHTML()}</div>
+  <div class="panel" style="padding:10px">${body}</div>`;
 }
 
 function viewFriend(uid){
@@ -2338,16 +2409,16 @@ function viewFriend(uid){
   <section class="pstats">
     <div class="gold"><b>${I.flame}${soloStreak(theirs)}</b><span>Su racha</span></div>
     <div class="blue"><b>${daysInLast(theirs,30)}</b><span>Días (30)</span></div>
-    <div><b>${n==null?"…":n}</b><span>${n===1?"Amigo":"Amigos"}</span></div>
+    <button data-act="amigos-open" data-id="${uid}"><b>${n==null?"…":n}</b><span>${n===1?"Amigo":"Amigos"}</span></button>
     <div class="green"><b>${f.streak==="accepted"?st:"—"}</b><span>Juntos</span></div>
   </section>
   <div class="stats" style="grid-template-columns:1fr">
     ${f.streak==="accepted"?"":`<div class="stat" style="justify-content:space-between"><div class="eyebrow">Racha juntos</div>${f.streak==="pending"&&!f.streak_mine?`<div class="row" style="gap:6px"><button class="btn primary" data-act="streak-accept" data-id="${f.id}" style="padding:6px 12px">Aceptar</button><button class="btn ghost" data-act="streak-reject" data-id="${f.id}" style="padding:6px 10px">Ahora no</button></div>`:f.streak==="pending"?`<small class="muted">Invitación enviada</small>`:`<button class="btn" data-act="streak-invite" data-id="${f.id}" style="padding:6px 12px">${I.flame} Invitar</button>`}</div>`}
   </div>
-  ${(()=>{ COMM.fbadges = COMM.fbadges || {}; if(!(uid in COMM.fbadges)){ COMM.fbadges[uid] = null; friendBadges(uid).then(l=>{ COMM.fbadges[uid] = l===null ? null : l; if(l!==null && VIEW.name==="friend") render(); }); } return COMM.fbadges[uid] ? friendBadgesHTML(COMM.fbadges[uid]) : ""; })()}
-  ${HEART_NOTE}
+  ${(()=>{ COMM.fbadges = COMM.fbadges || {}; if(!(uid in COMM.fbadges)){ COMM.fbadges[uid] = null; friendBadges(uid).then(l=>{ COMM.fbadges[uid] = l===null ? null : l; if(l!==null && VIEW.name==="friend") render(); }); } return COMM.fbadges[uid] ? friendBadgesHTML(COMM.fbadges[uid], uid) : ""; })()}
   <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn" data-act="cheer-open" data-id="${uid}">${I.heart} Enviar mensaje</button></div>
-  <div class="row" style="gap:14px">${f.streak==="accepted"?`<button class="linkbtn" data-act="streak-end" data-id="${f.id}" style="padding:0">Terminar racha juntos</button>`:""}<button class="linkbtn" data-act="friend-remove" data-id="${f.id}" style="padding:0;color:var(--bad)">Eliminar amigo</button></div>`;
+  <div class="row" style="gap:14px">${f.streak==="accepted"?`<button class="linkbtn" data-act="streak-end" data-id="${f.id}" style="padding:0">Terminar racha juntos</button>`:""}<button class="linkbtn" data-act="friend-remove" data-id="${f.id}" style="padding:0;color:var(--bad)">Eliminar amigo</button></div>
+  ${HEART_MINI}`;
 }
 
 
@@ -3089,21 +3160,39 @@ function badgeProg(b, st){
   if(b.metric==="phases"){ const i = b.goal-1; let n = 0; for(let k=i*3;k<i*3+3 && k<stageCount();k++) if(stageDone(k)) n++; return `${n}/3 etapas`; }
   return `${Math.min(b.goal, badgeValue(b,st))}/${b.goal}`;
 }
-function badgesSection(){
+function badgesFull(){
   const st = badgeStats(), got = S.badges||{};
   const n = Object.keys(got).filter(id=>BADGE_MAP[id]).length;
-  return `<section class="panel" style="display:flex;flex-direction:column;gap:14px" id="logros">
-    <div class="spread"><h3>Logros</h3><span class="chip gold">${n} de ${BADGES.length}</span></div>
+  return `<section class="panel" style="display:flex;flex-direction:column;gap:14px" id="logros-todos">
+    <div class="spread"><h3>Todos los logros</h3><span class="chip gold">${n} de ${BADGES.length}</span></div>
     ${BADGE_CATS.map(([cat,label])=>{ const list = BADGES.filter(b=>b.cat===cat);
       return `<div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${label}</span>
         <div class="medals">${list.map(b=>medalHTML(b, !!got[b.id], !got[b.id] ? `data-prog="${badgeProg(b,st)}"` : "")).join("")}</div></div>`; }).join("")}
   </section>`;
 }
-function friendBadgesHTML(list){
+function badgesSection(){
+  const st = badgeStats(), got = S.badges||{};
+  const earned = BADGES.filter(b=>got[b.id]).sort((a,b)=>String(got[b.id]).localeCompare(String(got[a.id])));
+  const near = BADGES.filter(b=>!got[b.id]).map(b=>({ b, p: Math.min(1, badgeValue(b,st)/b.goal) })).sort((x,y)=>y.p-x.p).map(x=>x.b);
+  const row = [...earned, ...near].slice(0, 8);
+  return `<section class="panel" id="logros" style="display:flex;flex-direction:column;gap:10px;padding:16px">
+    <div class="spread"><h3>Logros <span class="chip gold">${earned.length} de ${BADGES.length}</span></h3><button class="linkbtn" data-go="logros" style="padding:4px 0">Ver todos ›</button></div>
+    <div class="medals one">${row.map(b=>medalHTML(b, !!got[b.id], !got[b.id] ? `data-prog="${badgeProg(b,st)}"` : "")).join("")}</div>
+  </section>`;
+}
+function viewLogros(){ return `<button class="linkbtn" data-go="profile" style="align-self:flex-start;padding:0">← Perfil</button>${badgesFull()}`; }
+function friendBadgesHTML(list, uid){
   if(list===null) return "";
-  const ids = (list||[]).map(x=>x && x.id).filter(id=>BADGE_MAP[id]);
-  return `<section class="panel" style="display:flex;flex-direction:column;gap:12px"><div class="spread"><h3>Logros</h3><span class="chip gold">${ids.length} de ${BADGES.length}</span></div>
-    ${ids.length ? `<div class="medals">${ids.map(id=>medalHTML(BADGE_MAP[id], true, 'data-friend="1"')).join("")}</div>` : `<p class="muted" style="margin:0">Aún no tiene logros. ¡Envíale ánimo!</p>`}</section>`;
+  const ids = (list||[]).filter(x=>x && BADGE_MAP[x.id]).sort((a,b)=>String(b.at||"").localeCompare(String(a.at||""))).map(x=>x.id);
+  return `<section class="panel" style="display:flex;flex-direction:column;gap:10px;padding:16px"><div class="spread"><h3>Logros <span class="chip gold">${ids.length} de ${BADGES.length}</span></h3>${ids.length>4?`<button class="linkbtn" data-act="fbadges-all" data-id="${uid}" style="padding:4px 0">Ver todos ›</button>`:""}</div>
+    ${ids.length ? `<div class="medals one">${ids.slice(0,8).map(id=>medalHTML(BADGE_MAP[id], true, 'data-friend="1"')).join("")}</div>` : `<p class="muted" style="margin:0">Aún no tiene logros. ¡Envíale ánimo!</p>`}</section>`;
+}
+function friendBadgesModal(uid){
+  const list = (COMM.fbadges && COMM.fbadges[uid]) || [];
+  const ids = list.filter(x=>x && BADGE_MAP[x.id]).map(x=>x.id);
+  modal(`<div style="display:flex;flex-direction:column;gap:12px"><h2 style="font-size:22px">Logros de ${esc(String(personLabel(uid)).split(" ")[0])}</h2>
+    ${BADGE_CATS.map(([cat,label])=>{ const l = ids.filter(id=>BADGE_MAP[id].cat===cat); return l.length ? `<div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">${label}</span><div class="medals">${l.map(id=>medalHTML(BADGE_MAP[id], true, 'data-friend="1"')).join("")}</div></div>` : ""; }).join("")}
+    <button class="btn" data-close>Cerrar</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=closeModal));
 }
 function badgeModal(id, friend){
   const b = BADGE_MAP[id]; if(!b) return;
@@ -3226,7 +3315,7 @@ function handlePendingGo(){
 async function friendAction(act, id, btn){
   if(btn) btn.disabled = true;
   try{
-    if(act==="add"){ const r = await API.sendRequest(id); const name = (COMM.search && COMM.search.display_name) || "esa persona"; if(COMM.search && COMM.search.user_id===id) COMM.search = Object.assign({}, COMM.search, { status: r, incoming:false }); toast(r==="accepted" ? `¡Ahora eres amigo de ${name}!` : `Solicitud enviada a ${name}.`); }
+    if(act==="add"){ const r = await API.sendRequest(id); const name = (COMM.search && COMM.search.user_id===id && COMM.search.display_name) || (COMM.profiles[id] && COMM.profiles[id].display_name) || "esa persona"; if(COMM.search && COMM.search.user_id===id) COMM.search = Object.assign({}, COMM.search, { status: r, incoming:false }); toast(r==="accepted" ? `¡Ahora eres amigo de ${name}!` : `Solicitud enviada a ${name}.`); }
     else if(act==="accept"){ await API.respond(id, true); toast("¡Ahora son amigos!"); }
     else if(act==="reject"){ await API.respond(id, false); }
     else if(act==="cancel" || act==="remove"){ await API.removeFriend(id); }
@@ -3284,7 +3373,7 @@ function profileCommunityPanel(){
       <div class="set-row"><div class="lbl"><b>Usuario</b><small>Con él te pueden buscar y agregar como amigo</small></div>
         <div class="row" style="flex-wrap:nowrap" data-enter="save-username"><span class="muted mono">@</span><input class="input mono" id="username" value="${esc(myUsername()||"")}" maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false" style="max-width:200px;text-transform:lowercase"><button class="btn" data-act="save-username">Guardar</button></div></div>
     </div>
-    <p class="muted" style="font-size:12px;margin-top:8px">Usa una foto apropiada. Tus amigos ven tu nombre, tu foto, tu racha, los días que practicas y cuántos amigos tienes; tu correo nunca se muestra.</p>
+    <p class="muted" style="font-size:12px;margin-top:8px">Usa una foto apropiada. Tus amigos ven tu nombre, tu foto, tu racha, los días que practicas, tus logros y quiénes son tus amigos; tu correo nunca se muestra.</p>
   </section>`;
 }
 
@@ -3790,7 +3879,7 @@ function viewProfile(){
       <button class="blue" data-go="camino"><b>${x.lv}</b><span>Nivel</span></button>
       <button class="gold" data-go="racha"><b>${I.flame}${st}</b><span>Racha</span></button>
       <button class="green" data-go="review"><b>${learned}</b><span>Aprendidos</span></button>
-      ${cloudOn()?`<button data-go="community"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
+      ${cloudOn()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
   ${badgesSection()}
   ${profileCommunityPanel()}
@@ -3870,8 +3959,12 @@ document.addEventListener("click", e=>{
     case "friend-reject": friendAction("reject", t.dataset.id, t); break;
     case "friend-cancel": friendAction("cancel", t.dataset.id, t); break;
     case "friend-remove": confirmBox("¿Eliminar a este amigo?", "Dejarán de ver su racha y actividad. Cada uno conserva su propio progreso.", "Eliminar", ()=>friendAction("remove", t.dataset.id)); break;
-    case "friend-open": go("friend", { uid: t.dataset.id }); break;
-    case "duel-friend": { t.disabled=true; API.createDuel(makeDuelQuestions(), t.dataset.id).then(d=>{ COMM.loaded=false; startDuelPlay(d); }).catch(e=>{ t.disabled=false; toast(commError(e)); }); break; }
+    case "friend-open": closeModal(); go("friend", { uid: t.dataset.id }); break;
+    case "amigos-open": COMM.search = null; COMM.searchQ = ""; if(COMM.flists && t.dataset.id!==ME.id) delete COMM.flists[t.dataset.id]; go("amigos", { uid: t.dataset.id }); break;
+    case "duel-pick": duelPickModal(); break;
+    case "duels-more": COMM.allDuels = !COMM.allDuels; render(); break;
+    case "fbadges-all": friendBadgesModal(t.dataset.id); break;
+    case "duel-friend": { t.disabled=true; if(t.closest(".modal")) closeModal(); API.createDuel(makeDuelQuestions(), t.dataset.id).then(d=>{ COMM.loaded=false; startDuelPlay(d); }).catch(e=>{ t.disabled=false; toast(commError(e)); }); break; }
     case "save-username": { const v=($("#username").value||"").trim().replace(/^@/,"").toLowerCase(); if(!/^[a-z0-9_.]{3,20}$/.test(v)){ toast(commError("usuario_invalido")); break; } API.setUsername(v).then(u=>{ COMM.profile=Object.assign({},COMM.profile,{username:u}); render(); toast("Usuario actualizado: @"+u); }).catch(e=>toast(commError(e))); break; }
     case "duel-new": { t.disabled=true; API.createDuel(makeDuelQuestions()).then(d=>{ COMM.loaded=false; startDuelPlay(d); }).catch(e=>{ t.disabled=false; toast(commError(e)); }); break; }
     case "duel-join": { const c=($("#duelCode").value||"").trim().toUpperCase(); if(c.length<4){ toast("Escribe el código del reto."); break; } PENDING_LINK={type:"duel",code:c}; handlePendingLink(); break; }
