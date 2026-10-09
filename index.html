@@ -820,7 +820,8 @@ function buildQueue(ids, {grow=false, size=S.prefs.size}={}){
   let fresh = ids.filter(id=>!avoid(id) && !resting(id));
   const want = Math.ceil(size*0.6);
   const need = Math.max(want-fresh.length, size-ids.length);
-  if(grow && need>0 && S.unlocked<SUGGESTED.length){
+  fresh = limitNew(fresh, Math.min(3, fresh.length));
+  if(grow && need>0 && S.unlocked<SUGGESTED.length && newBudget()>0){
     const before = S.unlocked;
     S.unlocked = Math.min(SUGGESTED.length, S.unlocked + Math.min(10, need));
     const added = SUGGESTED.slice(before, S.unlocked).map(r=>r[0]);
@@ -1219,7 +1220,17 @@ function startQuiz(){
   const s = SESSION;
   s.phase = "quiz"; s.tasks = buildTasks(shuffle(s.ids)); s.t = 0; s.pending = {}; s.spoken = {};
   s.modes = {};
-  if(s.mode==="mixto"){
+  if(s.mode==="mixto" && ritmo()==="tranquilo"){
+    // Ritmo tranquilo: casi todo es completar espacios; cada 2 días aparece un reto de escribir o recitar un versículo completo
+    s.ids.forEach(id=>s.modes[id] = "blanks");
+    const daysSince = S.lastChallenge ? Math.round((new Date(todayKey()) - new Date(S.lastChallenge))/DAY) : 99;
+    const cand = s.ids.filter(id=>(prog(id)||{box:0}).box>=1);
+    if(daysSince>=2 && cand.length){                       // solo con versículos que ya practicaste
+      const id = cand[Math.floor(Math.random()*cand.length)];
+      const kind = S.challengeKind==="write" ? "recite" : "write";
+      s.modes[id] = kind; s.challenge = id; S.challengeKind = kind; S.lastChallenge = todayKey();
+    }
+  } else if(s.mode==="mixto"){
     // Reparte los tres tipos en la sesión: espacios para los de menor nivel, escribir en el medio, recitar para los más avanzados (con algo de azar)
     const sorted = s.ids.map(id=>({ id, k:((prog(id)||{box:0}).box) + Math.random()*1.5 })).sort((a,b)=>a.k-b.k).map(x=>x.id);
     // La proporción depende de la fase del camino: al principio más espacios, después más escribir y recitar
@@ -1293,7 +1304,7 @@ function quizBody(){
     else actions = `<div class="row"><button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
   }
   return `
-  <div class="spread"><div class="phase-tag"><span class="chip acc">${modeName}</span><span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
+  <div class="spread"><div class="phase-tag">${s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
   <div class="q-card">
     <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
     ${inner}
@@ -1334,13 +1345,14 @@ function refMatch(target, ans){
 }
 
 /* ---------- Corrección ---------- */
-function lcsAlign(target, answer){
+function lcsAlign(target, answer, eq){
+  eq = eq || ((t,a)=>close(a,t));
   const n=target.length, m=answer.length;
   const dp = Array.from({length:n+1},()=>new Array(m+1).fill(0));
-  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) dp[i][j] = close(answer[j],target[i]) ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j],dp[i][j+1]);
+  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) dp[i][j] = eq(target[i],answer[j]) ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j],dp[i][j+1]);
   const ops=[]; let i=0,j=0;
   while(i<n && j<m){
-    if(close(answer[j],target[i])){ ops.push({t:"ok",w:i,a:j}); i++; j++; }
+    if(eq(target[i],answer[j])){ ops.push({t:"ok",w:i,a:j}); i++; j++; }
     else if(dp[i+1][j]>=dp[i][j+1]){ ops.push({t:"miss",w:i}); i++; }
     else { ops.push({t:"extra",a:j}); j++; }
   }
@@ -1355,6 +1367,46 @@ function scoreFreeText(text, attempt){
   const score = (2*lcs)/(tw.length+aw.length);
   const disp = text.split(/\s+/);   // palabras originales para mostrar
   const html = ops.map(o=> o.t==="extra" ? `<span class="extra">${esc(attempt.split(/\s+/).filter(x=>norm(x))[o.a]||"")}</span>` : `<span class="${o.t}">${esc(disp[o.w]||"")}</span>`).join(" ");
+  return { score, html };
+}
+/* Recitación: el reconocimiento de voz "moderniza" el español de la RVR1960
+   (pedid → pedí/pedir, hallaréis → allá reís/hallarás, os → los/nos, buscad → buscar).
+   Aceptamos esas formas para no marcar como error lo que sí dijiste bien. */
+const OS_LIKE = ["os","los","nos","o","vos","us","hos","oz","dos"];
+function spokenVariants(w){
+  const v = new Set([w]); let m;
+  if(w==="os") OS_LIKE.forEach(x=>v.add(x));
+  if(w==="vosotros") ["ustedes","nosotros","vosotras"].forEach(x=>v.add(x));
+  if((m = w.match(/^(.{2,})([aei])d$/))){ const s0 = m[1], vw = m[2]; [vw+"r", vw, vw+"n", vw+"s", "en", "an", "a", "e"].forEach(e=>v.add(s0+e)); }      // pedid, buscad, llamad
+  if((m = w.match(/^(.{2,})reis$/))){ ["ras","ran","rais","re","res","ren"].forEach(e=>v.add(m[1]+e)); }                                                  // hallaréis, seréis
+  else if((m = w.match(/^(.{2,})([aei])is$/))){ [m[2]+"s", m[2]+"n", "es", "as", "an", "en"].forEach(e=>v.add(m[1]+e)); }                               // estáis, sabéis
+  if((m = w.match(/^(.{2,})os$/)) && /(aos|eos|ios)$/.test(w)){ v.add(m[1]+"se"); }                                                                        // amaos → amarse
+  if(w.startsWith("h")) v.add(w.slice(1));                                                                                                                 // la h no suena
+  return v;
+}
+function spokenEq(t, a){
+  if(t===a) return true;
+  if(spokenVariants(t).has(a)) return true;
+  if(t.length>=7 && lev(t,a)<=2) return true;
+  if(t.length>=4 && lev(t,a)<=1) return true;
+  return false;
+}
+function scoreSpoken(text, attempt){
+  const tw = words(text);
+  let aw = words(attempt);
+  if(!aw.length) return { score:0, html:"" };
+  // unir palabras que el reconocimiento partió en dos ("allá reís" → "allareis")
+  const merged = [];
+  for(let i=0;i<aw.length;i++){
+    const j = aw[i] + (aw[i+1]||"");
+    if(aw[i+1] && !tw.some(t=>spokenEq(t,aw[i])) && tw.some(t=>spokenEq(t,j))){ merged.push(j); i++; }
+    else merged.push(aw[i]);
+  }
+  aw = merged;
+  const { lcs, ops } = lcsAlign(tw, aw, spokenEq);
+  const score = (2*lcs)/(tw.length+aw.length);
+  const disp = text.split(/\s+/);
+  const html = ops.map(o=> o.t==="extra" ? `<span class="extra">${esc(aw[o.a]||"")}</span>` : `<span class="${o.t}">${esc(disp[o.w]||"")}</span>`).join(" ");
   return { score, html };
 }
 /* Escritura estricta: cuentan tildes y signos de puntuación (no las mayúsculas).
@@ -1477,7 +1529,7 @@ function startMic(){
   if(!SR){ msg.textContent = "Tu navegador no ofrece reconocimiento de voz aquí. Recita en voz alta y luego toca “Mostrar y evaluarme”."; return; }
   if(REC){ try{REC.stop();}catch(e){} return; }
   try{
-    REC = new SR(); REC.lang = "es-CO"; REC.continuous = true; REC.interimResults = true;
+    REC = new SR(); REC.lang = "es-ES";   // el español de España usa "vosotros/os/pedid", como la RVR1960 REC.continuous = true; REC.interimResults = true;
     let finalText = "";
     REC.onresult = e => { let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalText += r[0].transcript+" "; else interim += r[0].transcript; } SESSION.q.transcript = finalText+interim; tr.textContent = SESSION.q.transcript; };
     REC.onerror = e => { msg.textContent = (e.error==="not-allowed"||e.error==="service-not-allowed") ? "No hay permiso para el micrófono. Permítelo en el navegador (ícono junto a la dirección) o recita en voz alta y toca “Mostrar y evaluarme”." : e.error==="no-speech" ? "No se escuchó nada. Toca el micrófono e inténtalo otra vez." : "No se pudo escuchar bien. Puedes intentarlo de nuevo o evaluarte tú."; };
@@ -1492,9 +1544,9 @@ function reveal(){
   $("#hv").classList.add("shown");
   if(q.transcript && q.transcript.trim()){
     const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
-    const r = scoreFreeText(v.text, tx);
+    const r = scoreSpoken(v.text, tx);
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p></div>`);
+    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p><p class="muted" style="font-size:12.5px;margin-top:6px">Aceptamos cuando el micrófono entiende “pedí” por <i>pedid</i> o “los” por <i>os</i>. Si aun así marcó mal algo que dijiste bien, usa “Me evalúo yo”.</p><button class="linkbtn" data-act="self-grade" style="padding:4px 0">Me evalúo yo</button></div>`);
     return;
   }
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
@@ -1655,7 +1707,7 @@ function finishPlacement(){
     else if(sc>=1){ box=1; refs++; }
     if(box){
       known++; maxIdx = Math.max(maxIdx, SUG_MAP[it.id].order);
-      S.progress[it.id] = { box, due: now + INTERVAL_DAYS[box]*DAY, reps:1, lapses:0, last:now, introduced:now, hist:[Math.round(sc*100)] };
+      S.progress[it.id] = { box, due: now + INTERVAL_DAYS[box]*DAY, reps:1, lapses:0, last:now, introduced:now, hist:[Math.round(sc*100)], placed:true };
     }
   });
   S.unlocked = Math.min(SUGGESTED.length, level.unlock);
@@ -2660,7 +2712,25 @@ function verseCleared(id){ const p = prog(id); return !!p && (p.box>=2 || (p.his
 function stageDone(k){ return stageIds(k).every(verseCleared); }
 function currentStage(){ const n = stageCount(); for(let k=0;k<n;k++) if(!stageDone(k)) return k; return n; }
 /* La dificultad de toda la app sigue la fase del camino en la que vas */
-function diffTier(){ return tierOf(Math.min(currentStage(), stageCount()-1)); }
+/* Ritmo elegido por la persona: tiempo diario, versículos nuevos por semana y dificultad */
+const RITMOS = {
+  tranquilo:{ label:"Tranquilo", em:"🌱", min:5,  week:2, off:-1, desc:"5 min al día · 1 o 2 versículos nuevos por semana · más tarjetas y pistas, con un reto de vez en cuando" },
+  constante:{ label:"Constante", em:"🔥", min:10, week:4, off:0,  desc:"10 min al día · 3 o 4 versículos nuevos por semana · la dificultad normal del camino" },
+  intensivo:{ label:"Intensivo", em:"⚡", min:20, week:7, off:1,  desc:"20 min al día · 1 versículo nuevo por día · más escribir y recitar de memoria" }
+};
+const ritmo = () => (S && S.prefs && RITMOS[S.prefs.ritmo]) ? S.prefs.ritmo : "constante";
+function diffTier(){ return Math.max(0, Math.min(TIERS.length-1, tierOf(Math.min(currentStage(), stageCount()-1)) + RITMOS[ritmo()].off)); }
+/* Cuántos versículos nuevos puedes empezar aún esta semana según tu ritmo */
+function newBudget(){
+  const since = Date.now() - 7*DAY;
+  const started = Object.values(S.progress||{}).filter(p=>p && !p.placed && p.introduced && p.introduced >= since && p.reps>0).length;   // los que ya sabías en la prueba de nivel no cuentan
+  return Math.max(0, RITMOS[ritmo()].week - started);
+}
+function limitNew(ids, keepAtLeast){
+  let left = newBudget();
+  const out = ids.filter(id=>{ if(prog(id)) return true; if(left>0){ left--; return true; } return false; });
+  return out.length >= (keepAtLeast||1) ? out : ids.slice(0, Math.max(keepAtLeast||1, out.length));
+}
 /* Asegura que los versículos de la etapa actual estén en tu plan */
 function syncPath(){
   if(!S) return;
@@ -2682,7 +2752,7 @@ function pathQueue(size){
   const nRev = Math.max(1, Math.round(size/4));
   const learned = activeIds().filter(id=>!stage.includes(id) && (verseCleared(id) || status(id)==="ok"));
   const rev = weightedSample(learned.filter(id=>isDue(id,now)).concat(learned.filter(id=>!isDue(id,now))), Math.min(nRev, learned.length), now);
-  const pending = stage.filter(id=>!verseCleared(id)), cleared = stage.filter(verseCleared);
+  const pending = limitNew(stage.filter(id=>!verseCleared(id)), Math.min(2, stage.length)), cleared = stage.filter(verseCleared);
   let main = weightedSample(pending, Math.min(pending.length, size-rev.length), now);
   if(main.length < size-rev.length) main = main.concat(weightedSample(cleared, size-rev.length-main.length, now));
   return shuffle(main.concat(rev));
@@ -3478,10 +3548,10 @@ function renderWelcome(){
   } else if(st==="goal"){
     main = `
       <div class="spread"><span></span><span class="eyebrow">Paso ${WEL.hadUser?"3 de 3":"2 de 2"}</span></div>
-      <h1>¿Cuánto tiempo <em>al día?</em></h1>
-      <p class="lead">Con esto armamos cada sesión. Puedes cambiarlo cuando quieras en tu perfil.</p>
-      <div class="goal-grid">
-        ${[[5,"Ligero","3 versículos"],[10,"Constante","6 versículos"],[15,"Dedicado","9 versículos"],[20,"Intenso","13 versículos"]].map(([m,t,d])=>`<button class="goal" data-act="wel-goal" data-m="${m}" aria-pressed="${WEL.goal===m}"><b>${m} min</b><small>${t} · ${d}</small></button>`).join("")}
+      <h1>¿Cómo quieres <em>avanzar?</em></h1>
+      <p class="lead">Elige tu ritmo. Con esto armamos tus prácticas, cuántos versículos nuevos ves y qué tan difícil se pone. Puedes cambiarlo cuando quieras en tu perfil.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${Object.entries(RITMOS).map(([k,r])=>`<button class="goal" data-act="wel-ritmo" data-k="${k}" aria-pressed="${(WEL.ritmo||"constante")===k}" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;text-align:left"><span style="font-size:28px">${r.em}</span><span style="display:flex;flex-direction:column;gap:2px"><b>${r.label}</b><small>${r.desc}</small></span></button>`).join("")}
       </div>
       <div class="wel-actions"><button class="btn primary lg" data-act="wel-finish">Hacer la prueba de nivel</button><button class="linkbtn" data-act="wel-finish-skip">Empezar desde cero</button></div>`;
   } else if(st==="forgot"){
@@ -3703,7 +3773,7 @@ function privacyHTML(){
 const RVR_NOTICE = "Texto bíblico tomado de la versión Reina-Valera © 1960 Sociedades Bíblicas en América Latina; © renovado 1988 Sociedades Bíblicas Unidas. Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas.";
 function noticeHTML(){ return `<p class="muted" style="font-size:11.5px;line-height:1.5;max-width:80ch">${esc(RVR_NOTICE)}</p>`; }
 function viewProfile(){
-  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
+  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):key==="ritmo"?ritmo():(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
   const act = activeIds(); const learned = act.filter(id=>status(id)==="ok").length;
   return `
   <section class="prof-head">
@@ -3724,6 +3794,7 @@ function viewProfile(){
   <section class="panel">
     <h3 style="margin-bottom:6px">Práctica</h3>
     <div class="set-group">
+      <div class="set-row"><div class="lbl"><b>Tu ritmo</b><small>${esc(RITMOS[ritmo()].desc)}</small></div>${seg("ritmo",[["tranquilo","🌱 Tranquilo"],["constante","🔥 Constante"],["intensivo","⚡ Intensivo"]])}</div>
       <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>Define cuántos versículos entran</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20"],[30,"30 min"]])}</div>
       <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto incluye los tres tipos</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["write","Escribir"],["recite","Recitar"]])}</div>
     </div>
@@ -3755,6 +3826,9 @@ document.addEventListener("click", e=>{
 
   if(t.dataset.mode){ SESSION.mode = t.dataset.mode; S.prefs.mode = t.dataset.mode; persist(); render(); return; }
   if(t.dataset.grade){ gradeText(parseFloat(t.dataset.grade)); return; }
+  if(t.dataset.act==="self-grade"){ const q = SESSION && SESSION.q; if(!q || q.done) return; q.textDone = false; delete SESSION.pending[q.id];
+    $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:10px"><p style="font-weight:600">¿Qué tan bien lo recitaste?</p>
+      <div class="grade"><button data-grade="0.2">No lo recordé<small>Volver a practicar</small></button><button data-grade="0.7">Con errores<small>Varias palabras mal</small></button><button data-grade="0.9">Bien<small>Detalles menores</small></button><button data-grade="1">Perfecto<small>Palabra por palabra</small></button></div></div>`; return; }
   if(t.dataset.go){ if(t.dataset.go==="avisos") openAvisos(); else go(t.dataset.go); return; }
   const a = t.dataset.act;
   if(!a && t.dataset.list){ go(t.dataset.list==="rev"?"review":"list",{list:t.dataset.list}); return; }
@@ -3810,7 +3884,8 @@ document.addEventListener("click", e=>{
     case "privacy": go("privacy"); break;
     case "do-login": onLogin().catch(()=>formErr("No se pudo iniciar sesión. Inténtalo de nuevo.")); break;
     case "delete-account": confirmBox("¿Eliminar tu cuenta?", `Se borrarán la cuenta de ${ME.email} y todo su progreso, racha y listas${ME.mode==="cloud"?", también en la nube":""}. No se puede deshacer.`, "Eliminar definitivamente", deleteAccount); break;
-    case "pref": { const k=t.dataset.k; let v=t.dataset.v; if(k==="minutes"){ v=+v; S.prefs.size=versesFor(v); } S.prefs[k]=v; if(k==="theme") applyTheme(v); persist(); render(); break; }
+    case "pref": { const k=t.dataset.k; let v=t.dataset.v; if(k==="minutes"){ v=+v; S.prefs.size=versesFor(v); }
+      if(k==="ritmo"){ S.prefs.minutes = RITMOS[v].min; S.prefs.size = versesFor(RITMOS[v].min); toast(`Ritmo ${RITMOS[v].label.toLowerCase()}: ${RITMOS[v].min} minutos al día.`); } S.prefs[k]=v; if(k==="theme") applyTheme(v); persist(); render(); break; }
     case "wel-next": WEL.step++; render(); break;
     case "wel-skip": WEL.step=SLIDES.length-1; render(); break;
     case "wel-signup": WEL.step="signup"; WEL.migrate=null; WEL.seedFrom=null; WEL.err=""; render(); break;
@@ -3823,9 +3898,10 @@ document.addEventListener("click", e=>{
     case "migrate": WEL.step="signup"; WEL.migrate=t.dataset.name; WEL.err=""; render(); break;
     case "wel-username": saveWelcomeUsername(false); break;
     case "wel-username-skip": saveWelcomeUsername(true); break;
+    case "wel-ritmo": WEL.ritmo=t.dataset.k; WEL.goal=RITMOS[t.dataset.k].min; root.querySelectorAll('[data-act="wel-ritmo"]').forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
-      S.prefs.minutes=WEL.goal; S.prefs.size=versesFor(WEL.goal); persist();
+      S.prefs.ritmo = WEL.ritmo || "constante"; S.prefs.minutes = RITMOS[S.prefs.ritmo].min; S.prefs.size = versesFor(S.prefs.minutes); persist();
       if(a==="wel-finish") startPlacement(); else { S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); handlePendingLink(); }
       break;
     }
