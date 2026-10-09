@@ -3,14 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#16152B">
+<meta name="theme-color" content="#F5F7FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Lámpara">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="icon" type="image/png" href="icons/icon-192-v2.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-v2.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-v2.png">
 <title>Lámpara Bíblica</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -466,6 +468,35 @@ a.btn:not(.primary){color:var(--ink)}
 .crop img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none}
 .crop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.55);pointer-events:none;outline:2px solid rgba(255,255,255,.8);outline-offset:-2px}
 .zoom{width:100%;accent-color:var(--accent)}
+/* ---------- Logros ---------- */
+.medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+.medal-wrap{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 2px;border-radius:14px;position:relative;text-align:center}
+.medal-wrap:hover{background:var(--surface-2)}
+.medal-wrap:focus-visible{outline:2px solid var(--accent)}
+.medal{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:27px;background:var(--surface-2);filter:grayscale(1);opacity:.45;box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}
+.medal.on{filter:none;opacity:1;background:radial-gradient(circle at 35% 30%,#FFE7A3,var(--gold) 60%,#E89400);box-shadow:0 4px 0 var(--gold-dark),0 6px 16px rgba(255,176,32,.35)}
+.medal.big{width:96px;height:96px;font-size:46px}
+.medal-name{font-size:11.5px;font-weight:700;line-height:1.25;color:var(--ink)}
+.medal-wrap[data-prog]::after{content:attr(data-prog);font-size:10.5px;font-weight:700;color:var(--muted)}
+/* ---------- Animación de apertura ---------- */
+#intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#intro .lampx{position:relative;width:120px;height:120px;z-index:2;animation:lampIn .55s cubic-bezier(.2,.8,.2,1) both}
+#intro .lampx svg{width:100%;height:100%;overflow:visible}
+#intro .base{fill:var(--gold-dark)}
+#intro .flame{fill:#FFB020;transform-origin:12px 11px;transform:scale(0);animation:flameOn .6s .45s cubic-bezier(.3,1.6,.5,1) forwards, flicker 1.2s 1.05s ease-in-out infinite}
+#intro .core{fill:#FFF3C4;transform-origin:12px 9.5px;transform:scale(0);animation:flameOn .5s .6s cubic-bezier(.3,1.6,.5,1) forwards}
+#intro .glow{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-62px 0 0 -20px;border-radius:50%;background:radial-gradient(circle,#FFE08A 0%,#FFB020 45%,rgba(255,176,32,0) 70%);transform:scale(0);opacity:0;z-index:1;animation:glowUp .9s 1s cubic-bezier(.5,0,.3,1) forwards}
+#intro .fill{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-72px 0 0 -30px;border-radius:50%;background:radial-gradient(circle,#FFE7A3 0%,#FFB020 55%,#FF9A10 100%);transform:scale(0);z-index:3;animation:fillUp .75s 1.35s cubic-bezier(.6,0,.3,1) forwards}
+#intro .word{position:absolute;left:0;right:0;top:calc(50% + 78px);text-align:center;font-weight:800;font-size:26px;letter-spacing:-.03em;color:var(--ink);opacity:0;z-index:2;animation:wordIn .5s .7s ease forwards}
+#intro.out{animation:introOut .45s ease forwards}
+@keyframes lampIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes flameOn{to{transform:scale(1)}}
+@keyframes flicker{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.04,.97) rotate(-2deg)}60%{transform:scale(.97,1.05) rotate(2deg)}}
+@keyframes glowUp{to{transform:scale(4.5);opacity:1}}
+@keyframes fillUp{to{transform:scale(60)}}
+@keyframes wordIn{to{opacity:1}}
+@keyframes introOut{to{opacity:0;visibility:hidden}}
+@media (prefers-reduced-motion:reduce){#intro *{animation-duration:.01s!important;animation-delay:0s!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -879,6 +910,7 @@ function render(){
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
+  clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)) checkBadges(); }, 400);
 }
 
 /* ---------- Inicio / Dashboard ---------- */
@@ -1721,30 +1753,114 @@ function nearbyNames(b, excl, n=3){
   while(pool.length<n){ const x=BOOKS[Math.floor(Math.random()*BOOKS.length)].name; if(!excl.includes(x)&&!pool.includes(x)) pool.push(x); }
   return pool;
 }
-function makeBookQuestion(scope){
-  const pool = scopeBooks(scope);
-  const b = pickBook(pool);
-  const types = ["next","prev","div","gap","chapters","order","next","div"];
-  let type = types[Math.floor(Math.random()*types.length)];
-  if(type==="next" && b.i===65) type="prev";
-  if(type==="prev" && b.i===0) type="next";
-  if(type==="gap" && (b.i<1||b.i>64)) type="div";
-  const d = DIV_MAP[b.div];
-  if(type==="next"){ const a=BOOKS[b.i+1]; return { type, books:[b.name], prompt:`¿Qué libro viene después de <b>${esc(b.name)}</b>?`, answer:a.name, opts:shuffle([a.name, ...nearbyNames(a,[a.name,b.name])]), explain:`Después de ${b.name} viene ${a.name}.` }; }
-  if(type==="prev"){ const a=BOOKS[b.i-1]; return { type, books:[b.name], prompt:`¿Qué libro va antes de <b>${esc(b.name)}</b>?`, answer:a.name, opts:shuffle([a.name, ...nearbyNames(a,[a.name,b.name])]), explain:`Antes de ${b.name} está ${a.name}.` }; }
-  if(type==="gap"){ const p=BOOKS[b.i-1], n=BOOKS[b.i+1]; return { type, books:[b.name], prompt:`Completa el orden: <b>${esc(p.name)}</b> → <b>___</b> → <b>${esc(n.name)}</b>`, answer:b.name, opts:shuffle([b.name, ...nearbyNames(b,[b.name,p.name,n.name])]), explain:`El orden es ${p.name}, ${b.name}, ${n.name}.` }; }
-  if(type==="chapters"){ const wrong=new Set(); while(wrong.size<3){ const delta=[-3,-2,-1,1,2,3,5,-5,10][Math.floor(Math.random()*9)]; const v=b.ch+delta; if(v>0&&v!==b.ch) wrong.add(String(v)); } return { type, books:[b.name], prompt:`¿Cuántos capítulos tiene <b>${esc(b.name)}</b>?`, answer:String(b.ch), opts:shuffle([String(b.ch), ...wrong]), explain:`${b.name} tiene ${b.ch} ${b.ch===1?"capítulo":"capítulos"}.` }; }
-  if(type==="order"){
-    const start = Math.max(0, Math.min(b.i - Math.floor(Math.random()*3), 61));
-    const seq = BOOKS.slice(start, start+5).map(x=>x.name);
-    let mixed = shuffle(seq); if(mixed.join()===seq.join()) mixed = shuffle(seq);
-    return { type, books:seq, prompt:`Toca los libros <b>en el orden</b> en que aparecen en la Biblia`, answer:seq, opts:mixed, picked:[], explain:`El orden es: ${seq.join(", ")}.` };
-  }
-  const sameT = DIVS.filter(x=>x.id!==d.id && x.t===d.t).map(x=>x.name);
-  const other = DIVS.filter(x=>x.id!==d.id && x.t!==d.t).map(x=>x.name);
-  const wrong = shuffle(sameT).slice(0,2).concat(shuffle(other).slice(0,1));
-  return { type:"div", books:[b.name], prompt:`¿A qué grupo pertenece <b>${esc(b.name)}</b>?`, answer:d.name, opts:shuffle([d.name, ...wrong]), explain:`${b.name} está en ${d.name} (${T_NAME[d.t]}).` };
+/* Versículos por capítulo verificados con la RVR1960 de Bible.com (9 oct 2026) */
+const CH_VERSES = {
+  "Génesis":[[1,31],[50,26]], "Éxodo":[[20,26]], "Números":[[6,27]], "Deuteronomio":[[6,25]], "Josué":[[1,18]], "Rut":[[1,22]],
+  "1 Samuel":[[17,58]], "2 Samuel":[[7,29]], "1 Reyes":[[18,46]], "Nehemías":[[8,18]], "Ester":[[4,17]], "Job":[[38,41]],
+  "Salmos":[[1,6],[23,6],[91,16],[117,2],[119,176],[150,6]], "Proverbios":[[31,31]], "Eclesiastés":[[3,22]], "Cantares":[[2,17]],
+  "Isaías":[[40,31],[53,12]], "Jeremías":[[29,32]], "Lamentaciones":[[3,66]], "Ezequiel":[[37,28]], "Daniel":[[3,30],[6,28]],
+  "Jonás":[[1,17],[2,10]], "Miqueas":[[6,16]], "Malaquías":[[3,18]], "Abdías":[[1,21]],
+  "Mateo":[[5,48],[6,34],[28,20]], "Marcos":[[16,20]], "Lucas":[[2,52],[15,32]], "Juan":[[1,51],[3,36],[11,57],[14,31]],
+  "Hechos":[[2,47]], "Romanos":[[8,39],[12,21]], "1 Corintios":[[13,13],[15,58]], "Gálatas":[[5,26]], "Efesios":[[6,24]],
+  "Filipenses":[[4,23]], "Filemón":[[1,25]], "Hebreos":[[11,40]], "Santiago":[[1,27]], "1 Juan":[[4,21]], "2 Juan":[[1,13]],
+  "3 Juan":[[1,15]], "Judas":[[1,25]], "Apocalipsis":[[21,27],[22,21]]
+};
+const BOOK_MAP = Object.fromEntries(BOOKS.map(b=>[b.name,b]));
+/* Opciones numéricas cercanas y distintas (sin repetir y mayores que 0) */
+function numOpts(right, spread){
+  const set = new Set([right]); let guard = 0;
+  const steps = spread || (right<=6 ? [1,2,3,4] : right<=30 ? [2,3,4,5,6,8] : right<=80 ? [4,6,8,10,12,15] : [10,14,20,26,30]);
+  while(set.size<4 && guard++<60){ const d = steps[Math.floor(Math.random()*steps.length)] * (Math.random()<.5?-1:1); const v = right+d; if(v>0) set.add(v); }
+  for(let v=right+1; set.size<4; v++) set.add(v);
+  return shuffle([...set].map(String));
 }
+const DIV_ART = { pent:"el Pentateuco", hist:"los libros históricos", poet:"los libros poéticos", pmay:"los profetas mayores", pmen:"los profetas menores", evan:"los Evangelios", hech:"Hechos", paul:"las cartas de Pablo", gral:"las cartas generales", prof:"Apocalipsis" };
+const dn = d => DIV_ART[d.id] || d.name;                         // "el Pentateuco"
+const deDn = d => ("de " + dn(d)).replace(/^de el /, "del ");      // "del Pentateuco"
+function scopeLabel(scope){ return DIV_MAP[scope] ? DIV_MAP[scope].name : scope==="AT" ? "el Antiguo Testamento" : scope==="NT" ? "el Nuevo Testamento" : "la Biblia"; }
+/* Cada generador devuelve una pregunta con una firma única (para no repetir) o null si no aplica */
+const BOOK_GEN = {
+  next(pool, scope, b){ const a = BOOKS[b.i+1]; if(!a) return null; if(DIV_MAP[scope] && a.div!==scope && pool.length>1) return null;
+    return { sig:"next:"+b.name, books:[b.name], prompt:`¿Qué libro viene después de <b>${esc(b.name)}</b>?`, answer:a.name, opts:shuffle([a.name, ...nearbyNames(a,[a.name,b.name])]), explain:`Después de ${b.name} viene ${a.name}.` }; },
+  prev(pool, scope, b){ const a = BOOKS[b.i-1]; if(!a) return null; if(DIV_MAP[scope] && a.div!==scope && pool.length>1) return null;
+    return { sig:"prev:"+b.name, books:[b.name], prompt:`¿Qué libro va antes de <b>${esc(b.name)}</b>?`, answer:a.name, opts:shuffle([a.name, ...nearbyNames(a,[a.name,b.name])]), explain:`Antes de ${b.name} está ${a.name}.` }; },
+  gap(pool, scope, b){ const p = BOOKS[b.i-1], n = BOOKS[b.i+1]; if(!p || !n) return null; if(DIV_MAP[scope] && (p.div!==scope || n.div!==scope)) return null;
+    return { sig:"gap:"+b.name, books:[b.name], prompt:`Completa el orden: <b>${esc(p.name)}</b> → <b>___</b> → <b>${esc(n.name)}</b>`, answer:b.name, opts:shuffle([b.name, ...nearbyNames(b,[b.name,p.name,n.name])]), explain:`El orden es ${p.name}, ${b.name}, ${n.name}.` }; },
+  chapters(pool, scope, b){
+    return { sig:"ch:"+b.name, books:[b.name], prompt:`¿Cuántos capítulos tiene <b>${esc(b.name)}</b>?`, answer:String(b.ch), opts:numOpts(b.ch), explain:`${b.name} tiene ${b.ch} ${b.ch===1?"capítulo":"capítulos"}.` }; },
+  whichCh(pool, scope, b){
+    const others = shuffle(pool.filter(x=>x.ch!==b.ch)); const used = new Set([b.ch]); const wrong = [];
+    for(const x of others){ if(!used.has(x.ch)){ used.add(x.ch); wrong.push(x.name); } if(wrong.length===3) break; }
+    if(wrong.length<3) return null;
+    return { sig:"whichch:"+b.ch, books:[b.name], prompt:`¿Qué libro tiene <b>${b.ch} ${b.ch===1?"capítulo":"capítulos"}</b>?`, answer:b.name, opts:shuffle([b.name, ...wrong]), explain:`${b.name} tiene ${b.ch} ${b.ch===1?"capítulo":"capítulos"}.` }; },
+  mostCh(pool, scope, b){
+    const four = shuffle(pool).filter((x,i,a)=>a.findIndex(y=>y.ch===x.ch)===i).slice(0,4); if(four.length<4) return null;
+    const top = four.reduce((m,x)=>x.ch>m.ch?x:m, four[0]);
+    const fewest = Math.random()<.5;
+    const pick = fewest ? four.reduce((m,x)=>x.ch<m.ch?x:m, four[0]) : top;
+    return { sig:(fewest?"fewch:":"mostch:")+four.map(x=>x.name).sort().join(","), books:four.map(x=>x.name), prompt:`¿Cuál de estos libros tiene <b>${fewest?"menos":"más"}</b> capítulos?`, answer:pick.name, opts:shuffle(four.map(x=>x.name)), explain:four.slice().sort((a,c)=>c.ch-a.ch).map(x=>`${x.name}: ${x.ch}`).join(" · ") }; },
+  verses(pool, scope, b){
+    const list = CH_VERSES[b.name]; if(!list) return null;
+    const [c, n] = list[Math.floor(Math.random()*list.length)];
+    const one = b.ch===1;
+    return { sig:"vs:"+b.name+":"+c, books:[b.name], prompt: one ? `<b>${esc(b.name)}</b> tiene un solo capítulo. ¿Cuántos versículos tiene?` : `¿Cuántos versículos tiene <b>${esc(b.name)} ${c}</b>?`, answer:String(n), opts:numOpts(n), explain:`${one?b.name:b.name+" "+c} tiene ${n} ${n===1?"versículo":"versículos"}.` }; },
+  position(pool, scope, b){
+    if(DIV_MAP[scope]){ const k = DIV_MAP[scope].books.findIndex(x=>x[0]===b.name); const N = DIV_MAP[scope].books.length; if(N<3) return null;
+      const set = new Set([k+1]); while(set.size<Math.min(4,N)) set.add(1+Math.floor(Math.random()*N));
+      return { sig:"pos:"+b.name, books:[b.name], prompt:`¿Qué lugar ocupa <b>${esc(b.name)}</b> dentro ${esc(deDn(DIV_MAP[scope]))}?`, answer:`${k+1}.º`, opts:shuffle([...set].map(v=>`${v}.º`)), explain:`${b.name} es el libro ${k+1} de ${N} en ${DIV_MAP[scope].name}.` }; }
+    return { sig:"pos:"+b.name, books:[b.name], prompt:`¿Qué número de libro es <b>${esc(b.name)}</b> en la Biblia?`, answer:String(b.i+1), opts:numOpts(b.i+1,[1,2,3,4,5]), explain:`${b.name} es el libro número ${b.i+1} de 66.` }; },
+  div(pool, scope, b){
+    if(DIV_MAP[scope]) return null;                       // si practicas una sola sección, la respuesta sería obvia
+    const d = DIV_MAP[b.div];
+    const cands = DIVS.filter(x=>x.id!==d.id && (scope==="all" || x.t===d.t)).map(x=>x.name);
+    const wrong = shuffle(cands).slice(0,3); if(wrong.length<2) return null;
+    return { sig:"div:"+b.name, books:[b.name], prompt:`¿A qué grupo pertenece <b>${esc(b.name)}</b>?`, answer:d.name, opts:shuffle([d.name, ...wrong]), explain:`${b.name} está en ${d.name} (${T_NAME[d.t]}).` }; },
+  edge(pool, scope, b){
+    const divs = DIV_MAP[scope] ? [DIV_MAP[scope]] : DIVS.filter(d=>d.books.length>=3 && (scope==="all" || d.t===scope));
+    const d = divs[Math.floor(Math.random()*divs.length)]; if(!d || d.books.length<3) return null;
+    const last = Math.random()<.5; const ans = last ? d.books[d.books.length-1][0] : d.books[0][0];
+    const wrong = shuffle(d.books.map(x=>x[0]).filter(x=>x!==ans)).slice(0,3);
+    return { sig:(last?"last:":"first:")+d.id, books:[ans], prompt:`¿Cuál es el <b>${last?"último":"primer"}</b> libro ${esc(deDn(d))}?`, answer:ans, opts:shuffle([ans, ...wrong]), explain:`${d.name}: ${d.books.map(x=>x[0]).join(", ")}.` }; },
+  count(pool, scope, b){
+    if(DIV_MAP[scope]) return null;
+    const d = DIVS.filter(x=>scope==="all" || x.t===scope)[Math.floor(Math.random()*DIVS.filter(x=>scope==="all"||x.t===scope).length)];
+    const n = d.books.length; if(n<2) return null;
+    return { sig:"count:"+d.id, books:[], prompt:`¿Cuántos libros tienen <b>${esc(dn(d))}</b>?`.replace("tienen <b>el ","tiene <b>el "), answer:String(n), opts:numOpts(n,[1,2,3,4]), explain:`${d.name} tiene ${n} libros: ${d.books.map(x=>x[0]).join(", ")}.` }; },
+  order(pool, scope, b){
+    // siempre la sección completa (nunca libros sueltos de dos secciones)
+    const divs = DIV_MAP[scope] ? [DIV_MAP[scope]] : DIVS.filter(d=>d.books.length>=3 && (scope==="all" || d.t===scope));
+    const d = divs[Math.floor(Math.random()*divs.length)]; if(!d || d.books.length<3) return null;
+    const seq = d.books.map(x=>x[0]);
+    let mixed = shuffle(seq), g = 0; while(mixed.join()===seq.join() && g++<5) mixed = shuffle(seq);
+    return { type:"order", sig:"order:"+d.id, books:seq, prompt:`Ordena los <b>${seq.length} libros ${esc(deDn(d))}</b>: tócalos en el orden en que aparecen en la Biblia`, answer:seq, opts:mixed, picked:[], explain:`${d.name}: ${seq.join(", ")}.` }; }
+};
+const BOOK_WEIGHTS = { next:3, prev:2, gap:2, chapters:4, whichCh:2, mostCh:2, verses:4, position:2, div:2, edge:2, count:1 };
+/* Máximo por ronda de cada tipo, para que ninguna pregunta se sienta repetida */
+const BOOK_MAX = { next:2, prev:2, gap:1, chapters:3, whichCh:1, mostCh:1, verses:3, position:1, div:2, edge:1, count:1 };
+/* Arma una ronda sin preguntas repetidas y sin repetir el mismo libro, con un ejercicio de ordenar la sección completa */
+function makeBookSession(scope, n, { noOrder=false } = {}){
+  const pool = scopeBooks(scope);
+  const out = [], sigs = new Set(), usedBooks = new Map();
+  const typesUsed = {};
+  const weighted = Object.entries(BOOK_WEIGHTS).flatMap(([t,w])=>Array(w).fill(t));
+  let guard = 0;
+  while(out.length < (noOrder ? n : n-1) && guard++ < 400){
+    const type = weighted[Math.floor(Math.random()*weighted.length)];
+    if((typesUsed[type]||0) >= BOOK_MAX[type]) continue;                    // variedad: ningún tipo se repite de más
+    const b = pickBook(pool);
+    if((usedBooks.get(b.name)||0) >= (pool.length<=5 ? 2 : 1) && guard < 300) continue;
+    const q = BOOK_GEN[type](pool, scope, b);
+    if(!q || sigs.has(q.sig)) continue;
+    sigs.add(q.sig); typesUsed[type] = (typesUsed[type]||0)+1;
+    q.books.forEach(x=>usedBooks.set(x, (usedBooks.get(x)||0)+1));
+    out.push(Object.assign({ type }, q));
+  }
+  if(!noOrder){ const o = BOOK_GEN.order(pool, scope, null); if(o) out.splice(1+Math.floor(Math.random()*(out.length)), 0, o); }
+  // secciones de un solo libro (Hechos, Apocalipsis) tienen pocos datos: la ronda es más corta en lugar de repetir
+  return out.slice(0, n);
+}
+function makeBookQuestion(scope){ return makeBookSession(scope, 1, { noOrder:true })[0]; }
+
 function makeTriviaSession(n){
   const order = shuffle(TRIVIA.map((_,i)=>i));
   const recent = new Set(S.triviaRecent||[]);
@@ -1753,7 +1869,7 @@ function makeTriviaSession(n){
 }
 function startBooks(kind, scope){
   const n = 10;
-  const qs = kind==="trivia" ? makeTriviaSession(n) : Array.from({length:n},()=>makeBookQuestion(scope||"all"));
+  const qs = kind==="trivia" ? makeTriviaSession(n) : makeBookSession(scope||"all", n);
   BQ = { kind, scope:scope||"all", qs, i:0, answered:false, score:0, results:[] };
   VIEW = { name:"bquiz" }; render(); window.scrollTo({top:0});
 }
@@ -2172,6 +2288,7 @@ function viewFriend(uid){
   <div class="stats" style="grid-template-columns:1fr">
     ${f.streak==="accepted"?"":`<div class="stat" style="justify-content:space-between"><div class="eyebrow">Racha juntos</div>${f.streak==="pending"&&!f.streak_mine?`<div class="row" style="gap:6px"><button class="btn primary" data-act="streak-accept" data-id="${f.id}" style="padding:6px 12px">Aceptar</button><button class="btn ghost" data-act="streak-reject" data-id="${f.id}" style="padding:6px 10px">Ahora no</button></div>`:f.streak==="pending"?`<small class="muted">Invitación enviada</small>`:`<button class="btn" data-act="streak-invite" data-id="${f.id}" style="padding:6px 12px">${I.flame} Invitar</button>`}</div>`}
   </div>
+  ${(()=>{ COMM.fbadges = COMM.fbadges || {}; if(!(uid in COMM.fbadges)){ COMM.fbadges[uid] = null; friendBadges(uid).then(l=>{ COMM.fbadges[uid] = l===null ? null : l; if(l!==null && VIEW.name==="friend") render(); }); } return COMM.fbadges[uid] ? friendBadgesHTML(COMM.fbadges[uid]) : ""; })()}
   ${HEART_NOTE}
   <div class="row"><button class="btn primary" data-act="duel-friend" data-id="${uid}">${I.play} Retar a esgrima</button><button class="btn" data-act="cheer-open" data-id="${uid}">${I.heart} Enviar mensaje</button></div>
   <div class="row" style="gap:14px">${f.streak==="accepted"?`<button class="linkbtn" data-act="streak-end" data-id="${f.id}" style="padding:0">Terminar racha juntos</button>`:""}<button class="linkbtn" data-act="friend-remove" data-id="${f.id}" style="padding:0;color:var(--bad)">Eliminar amigo</button></div>`;
@@ -2476,7 +2593,7 @@ function cheerModal(uid, opts={}){
         if(!note && !msg && !CM.verse){ err.textContent = CM.custom ? "Escribe tu nota o elige un versículo." : "Elige un mensaje, escribe el tuyo o agrega un versículo."; return; }
         btn.disabled = true; btn.textContent = "Enviando…";
         const v = CM.verse && SUG_MAP[CM.verse];
-        try{ await NAPI.message(uid, msg, note, v ? v.id : null, v ? v.ref : null); CM = null; closeModal(); toast(`Le enviaste ${v?"un versículo":"tu mensaje"} a ${name}.`); }
+        try{ await NAPI.message(uid, msg, note, v ? v.id : null, v ? v.ref : null); S.sent = (S.sent||0)+1; persist(); CM = null; closeModal(); toast(`Le enviaste ${v?"un versículo":"tu mensaje"} a ${name}.`); }
         catch(e){ btn.disabled = false; btn.textContent = "Enviar"; err.textContent = notifError(e); }
       };
       cmRender();
@@ -2791,10 +2908,144 @@ function cropModal(file){
   img.src = url;
 }
 
+
+/* =========================================================
+   LOGROS: medallas acumulativas en tu perfil y en el de tus amigos
+   ========================================================= */
+const BADGE_CATS = [
+  ["versiculos","Versículos aprendidos"], ["racha","Constancia"], ["camino","El camino"],
+  ["libros","Libros de la Biblia"], ["comunidad","Comunidad"], ["practica","Práctica"]
+];
+const B_ = (id, cat, em, name, desc, metric, goal) => ({ id, cat, em, name, desc, metric, goal });
+const BADGES = [
+  B_("v1","versiculos","🌱","Primer versículo","Aprendiste tu primer versículo de memoria.","learned",1),
+  B_("v5","versiculos","🌿","Cinco en el corazón","Aprendiste 5 versículos.","learned",5),
+  B_("v10","versiculos","🪔","Lámpara encendida","Aprendiste 10 versículos.","learned",10),
+  B_("v25","versiculos","📜","Tesoro guardado","Aprendiste 25 versículos. «En mi corazón he guardado tus dichos» (Salmos 119:11).","learned",25),
+  B_("v50","versiculos","🏺","Medio centenar","Aprendiste 50 versículos.","learned",50),
+  B_("v100","versiculos","👑","Cien versículos","Aprendiste 100 versículos.","learned",100),
+  B_("r3","racha","🔥","Tres días seguidos","Practicaste 3 días seguidos.","streak",3),
+  B_("r7","racha","📅","Una semana","Racha de 7 días.","streak",7),
+  B_("r14","racha","⭐","Dos semanas","Racha de 14 días.","streak",14),
+  B_("r30","racha","🏅","Un mes con la Palabra","Racha de 30 días.","streak",30),
+  B_("r100","racha","💎","Cien días","Racha de 100 días.","streak",100),
+  B_("d30","racha","📖","30 días practicados","Practicaste 30 días en total.","days",30),
+  ...TIERS.map((t,i)=>B_("fase"+(i+1),"camino",t.em,`Fase ${t.name}`,`Completaste la fase ${t.name} del camino.`,"phases",i+1)),
+  B_("lv5","camino","🎖️","Nivel 5","Llegaste al nivel 5.","level",5),
+  B_("lv10","camino","🏆","Nivel 10","Llegaste al nivel 10.","level",10),
+  B_("b1","libros","📕","Primer libro","Dominaste tu primer libro de la Biblia.","books",1),
+  B_("bpent","libros","⛰️","Pentateuco","Dominaste los 5 libros del Pentateuco.","div:pent",5),
+  B_("bevan","libros","✝️","Evangelios","Dominaste los 4 Evangelios.","div:evan",4),
+  B_("bpaul","libros","✉️","Cartas de Pablo","Dominaste las 13 cartas de Pablo.","div:paul",13),
+  B_("bAT","libros","📚","Antiguo Testamento","Dominaste los 39 libros del Antiguo Testamento.","t:AT",39),
+  B_("bNT","libros","📘","Nuevo Testamento","Dominaste los 27 libros del Nuevo Testamento.","t:NT",27),
+  B_("b66","libros","🌍","Los 66 libros","Dominaste todos los libros de la Biblia.","books",66),
+  B_("f1","comunidad","🤝","Primer amigo","Agregaste a tu primer amigo.","friends",1),
+  B_("f5","comunidad","👥","Comunidad","Tienes 5 amigos.","friends",5),
+  B_("duel1","comunidad","⚔️","Primer esgrima","Ganaste tu primer esgrima bíblico.","duelWins",1),
+  B_("duel10","comunidad","🛡️","Esgrimista","Ganaste 10 esgrimas.","duelWins",10),
+  B_("sent1","comunidad","💌","Palabra compartida","Enviaste tu primer mensaje o versículo a un amigo.","sent",1),
+  B_("fs7","comunidad","🔗","Una semana juntos","Llegaron a 7 días de racha con un amigo.","friendStreak",7),
+  B_("perf1","practica","💯","Sesión perfecta","Respondiste todo bien en una práctica.","perfect",1),
+  B_("perf10","practica","🎯","Precisión","10 sesiones perfectas.","perfect",10),
+  B_("xp1000","practica","⚡","Mil puntos","Juntaste 1.000 XP.","xp",1000)
+];
+const BADGE_MAP = Object.fromEntries(BADGES.map(b=>[b.id,b]));
+function badgeStats(){
+  const learned = Object.keys(S.progress||{}).filter(id=>status(id)==="ok").length;
+  const mastered = BOOKS.filter(b=>bookMastered(b.name));
+  const x = xpInfo();
+  let phases = 0; for(let t=0;t<TIERS.length;t++){ const ks = Array.from({length:3},(_,j)=>t*3+j).filter(k=>k<stageCount()); if(ks.length && ks.every(stageDone)) phases = t+1; else break; }
+  const duelWins = (COMM.duels||[]).filter(d=>{ const me = d.creator===ME.id; const my = me?d.creator_score:d.opponent_score, th = me?d.opponent_score:d.creator_score, mm = me?d.creator_ms:d.opponent_ms, tm = me?d.opponent_ms:d.creator_ms; return my!=null && th!=null && (my>th || (my===th && mm<tm)); }).length;
+  const fr = cloudOn() ? friendsAccepted() : [];
+  return {
+    learned, streak: Math.max(bestStreak(), streak()), days: Object.values(S.log||{}).filter(L=>L&&L.n).length,
+    phases, level: x.lv, xp: x.xp, books: mastered.length,
+    div: id => mastered.filter(b=>b.div===id).length, t: t => mastered.filter(b=>b.t===t).length,
+    friends: COMM.loaded ? fr.length : (S._friendsSeen||0), duelWins: Math.max(duelWins, S._duelWinsSeen||0), sent: S.sent||0,
+    friendStreak: Math.max(0, ...fr.map(f=>streakDays(f)), S._friendStreakSeen||0), perfect: S.perfect||0
+  };
+}
+function badgeValue(b, st){ const [m, arg] = b.metric.split(":"); return arg ? st[m](arg) : st[m]; }
+let BADGE_QUEUE = [];
+function checkBadges(){
+  if(!S || !ME) return;
+  const first = !S.badges;
+  S.badges = S.badges || {};
+  const st = badgeStats();
+  // recordar valores de comunidad para no perder logros cuando la lista aún no carga
+  if(COMM.loaded){ S._friendsSeen = Math.max(S._friendsSeen||0, st.friends); S._duelWinsSeen = Math.max(S._duelWinsSeen||0, st.duelWins); S._friendStreakSeen = Math.max(S._friendStreakSeen||0, st.friendStreak); }
+  const now = new Date().toISOString(), fresh = [];
+  BADGES.forEach(b=>{ if(!S.badges[b.id] && badgeValue(b, st) >= b.goal){ S.badges[b.id] = now; fresh.push(b); } });
+  if(!fresh.length){ if(first) persist(); return; }      // guardar la marca para que los próximos logros sí se celebren
+  persist(); publishBadges();
+  if(first) return;                                  // la primera vez se guardan sin avisar (logros que ya tenías)
+  BADGE_QUEUE.push(...fresh); showNextBadge();
+}
+function showNextBadge(){
+  if(!BADGE_QUEUE.length || $("#scrim")) return;
+  const b = BADGE_QUEUE.shift();
+  modal(`<div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:8px 0">
+      <span class="eyebrow">Logro desbloqueado</span>
+      <div class="medal big on" aria-hidden="true">${b.em}</div>
+      <h2 style="font-size:24px">${esc(b.name)}</h2><p class="muted" style="max-width:36ch">${esc(b.desc)}</p>
+      <p style="font-size:13px;line-height:1.5;margin:0;max-width:40ch">♡ Que cada logro te recuerde para qué memorizas: conocer más a Dios y vivir su Palabra.</p>
+      <button class="btn primary lg" data-close style="margin-top:6px">¡Amén!</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>{ closeModal(); setTimeout(showNextBadge, 250); });
+  });
+}
+let badgeTimer = null;
+function publishBadges(){
+  if(!cloudOn()) return;
+  clearTimeout(badgeTimer);
+  badgeTimer = setTimeout(async ()=>{
+    const list = Object.entries(S.badges||{}).map(([id,at])=>({ id, at }));
+    try{ await SB.from("profiles").update({ badges:list }).eq("user_id", ME.id); }catch(e){}
+  }, 1500);
+}
+async function friendBadges(uid){
+  try{ const { data, error } = await SB.from("profiles").select("badges").eq("user_id", uid).maybeSingle(); if(error) throw error; return (data && Array.isArray(data.badges)) ? data.badges : []; }
+  catch(e){ return null; }                           // sin el SQL 06 todavía: no se muestran
+}
+function medalHTML(b, on, extra){
+  return `<button type="button" class="medal-wrap" data-act="badge-open" data-id="${b.id}" ${extra||""} aria-label="${esc(b.name)}${on?"":" (bloqueado)"}">
+    <span class="medal ${on?"on":""}" aria-hidden="true">${b.em}</span><span class="medal-name">${esc(b.name)}</span></button>`;
+}
+function badgeProg(b, st){
+  if(b.metric==="phases"){ const i = b.goal-1; let n = 0; for(let k=i*3;k<i*3+3 && k<stageCount();k++) if(stageDone(k)) n++; return `${n}/3 etapas`; }
+  return `${Math.min(b.goal, badgeValue(b,st))}/${b.goal}`;
+}
+function badgesSection(){
+  const st = badgeStats(), got = S.badges||{};
+  const n = Object.keys(got).filter(id=>BADGE_MAP[id]).length;
+  return `<section class="panel" style="display:flex;flex-direction:column;gap:14px" id="logros">
+    <div class="spread"><h3>Logros</h3><span class="chip gold">${n} de ${BADGES.length}</span></div>
+    ${BADGE_CATS.map(([cat,label])=>{ const list = BADGES.filter(b=>b.cat===cat);
+      return `<div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${label}</span>
+        <div class="medals">${list.map(b=>medalHTML(b, !!got[b.id], !got[b.id] ? `data-prog="${badgeProg(b,st)}"` : "")).join("")}</div></div>`; }).join("")}
+  </section>`;
+}
+function friendBadgesHTML(list){
+  if(list===null) return "";
+  const ids = (list||[]).map(x=>x && x.id).filter(id=>BADGE_MAP[id]);
+  return `<section class="panel" style="display:flex;flex-direction:column;gap:12px"><div class="spread"><h3>Logros</h3><span class="chip gold">${ids.length} de ${BADGES.length}</span></div>
+    ${ids.length ? `<div class="medals">${ids.map(id=>medalHTML(BADGE_MAP[id], true, 'data-friend="1"')).join("")}</div>` : `<p class="muted" style="margin:0">Aún no tiene logros. ¡Envíale ánimo!</p>`}</section>`;
+}
+function badgeModal(id, friend){
+  const b = BADGE_MAP[id]; if(!b) return;
+  const at = !friend && S.badges && S.badges[id];
+  const on = friend || !!at;
+  const st = badgeStats(), val = Math.min(b.goal, badgeValue(b, st));
+  modal(`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+    <div class="medal big ${on?"on":""}" aria-hidden="true">${b.em}</div><h2 style="font-size:22px">${esc(b.name)}</h2><p class="muted" style="max-width:36ch;margin:0">${esc(b.desc)}</p>
+    ${at?`<span class="chip ok">Ganado el ${new Date(at).toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"})}</span>`:friend?"":`<div style="width:100%;max-width:260px;display:flex;flex-direction:column;gap:6px"><div class="xpbar" style="height:10px"><i style="width:${Math.round(val/b.goal*100)}%"></i></div><small class="muted" style="font-weight:600">${val} de ${b.goal}</small></div>`}
+    <button class="btn" data-close>Cerrar</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=closeModal));
+}
+
 /* Preguntas del esgrima: libros, citas de versículos e historias */
 function makeDuelQuestions(){
   const qs = [];
-  for(let k=0;k<4;k++){ let q; do{ q = makeBookQuestion("all"); }while(q.type==="order"); qs.push({ prompt:q.prompt, opts:q.opts, answer:q.answer, explain:q.explain }); }
+  makeBookSession("all", 4, { noOrder:true }).forEach(q=>qs.push({ prompt:q.prompt, opts:q.opts, answer:q.answer, explain:q.explain }));
   shuffle(SUGGESTED).slice(0,3).forEach(([id,ref,text])=>{
     const others = shuffle(SUGGESTED.filter(r=>r[0]!==id)).slice(0,3).map(r=>r[1]);
     qs.push({ prompt:`¿De qué cita es este versículo?<br><span style="font-family:var(--f-verse);font-weight:400;font-size:.95em">“${esc(text)}”</span>`, opts:shuffle([ref, ...others]), answer:ref, explain:`Es ${ref}.` });
@@ -3422,7 +3673,7 @@ async function signOut(){
   if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} await detachPushOnSignOut(); try{ await SB.auth.signOut(); }catch(e){} }
   localSignOut();
 }
-function localSignOut(){ stopNotifs(); Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function localSignOut(){ stopNotifs(); BADGE_QUEUE = []; Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
 async function deleteAccount(){
   if(ME.mode==="cloud" && SB){
     await API.removeAvatar();
@@ -3467,6 +3718,7 @@ function viewProfile(){
       <button class="green" data-go="review"><b>${learned}</b><span>Aprendidos</span></button>
       ${cloudOn()?`<button data-go="community"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
+  ${badgesSection()}
   ${profileCommunityPanel()}
   ${notifPrefsPanel()}
   <section class="panel">
@@ -3478,7 +3730,8 @@ function viewProfile(){
   </section>
   <section class="panel">
     <h3 style="margin-bottom:6px">Apariencia</h3>
-    <div class="set-group"><div class="set-row"><div class="lbl"><b>Tema</b><small>Sistema sigue el ajuste de tu teléfono</small></div>${seg("theme",[["system","Sistema"],["light","Claro"],["dark","Oscuro"]])}</div></div>
+    <div class="set-group"><div class="set-row"><div class="lbl"><b>Tema</b><small>Sistema sigue el ajuste de tu teléfono</small></div>${seg("theme",[["system","Sistema"],["light","Claro"],["dark","Oscuro"]])}</div>
+      <div class="set-row"><div class="lbl"><b>Animación al abrir</b><small>La lámpara se enciende al abrir la app. El sonido suena solo si tu celular lo permite</small></div><div class="row" style="gap:8px;flex-wrap:nowrap"><button class="btn ghost" data-act="intro-preview" style="padding:6px 10px">Ver</button><label class="switch"><input type="checkbox" id="introToggle" ${introEnabled()?"checked":""}><span></span></label></div></div></div>
   </section>
   <section class="panel">
     <h3 style="margin-bottom:6px">Cuenta</h3>
@@ -3521,6 +3774,8 @@ document.addEventListener("click", e=>{
     case "cal-prev": VIEW.month=(VIEW.month||0)-1; render(); break;
     case "cal-next": VIEW.month=Math.min(0,(VIEW.month||0)+1); render(); break;
     case "verse-open": verseModal(t.dataset.id); break;
+    case "intro-preview": { try{ sessionStorage.removeItem("lampara.introSeen"); }catch(e){} const was = introEnabled(); try{ localStorage.removeItem("lampara.intro"); }catch(e){} replayIntro(); if(!was){ try{ localStorage.setItem("lampara.intro","off"); }catch(e){} } break; }
+    case "badge-open": badgeModal(t.dataset.id, !!t.dataset.friend); break;
     case "practice-hard": { const ids=hardestIds(activeIds()); startSession(shuffle(ids),{title:"Los que más te cuestan", source:ids.slice()}); break; }
     case "push-off": disablePush(); break;
     case "notif-clear": confirmBox("¿Borrar todos los avisos?", "Se borran de la lista. No afecta a tus amigos ni a tus retos.", "Borrar", ()=>NAPI.clear().then(()=>{ NOTIF.items=[]; render(); }).catch(e=>toast(notifError(e)))); break;
@@ -3659,7 +3914,7 @@ document.addEventListener("click", e=>{
     case "next-q":
       stopSpeech();
       if(SESSION.t<SESSION.tasks.length-1){ SESSION.t++; prepQuestion(); render(); }
-      else { SESSION.unlocked = SESSION.review ? 0 : maybeUnlock(); SESSION.advanced = checkStageAdvance(SESSION.stageBefore); rememberSession(SESSION.ids, SESSION.results.filter(x=>x.outcome==="bad").map(x=>x.id)); persist(); SESSION.phase="done"; render(); }
+      else { SESSION.unlocked = SESSION.review ? 0 : maybeUnlock(); SESSION.advanced = checkStageAdvance(SESSION.stageBefore); if(SESSION.results.length>=3 && SESSION.results.every(x=>x.score>=0.999)) S.perfect = (S.perfect||0)+1; rememberSession(SESSION.ids, SESSION.results.filter(x=>x.outcome==="bad").map(x=>x.id)); persist(); SESSION.phase="done"; render(); }
       break;
     case "end-home": SESSION=null; go("home"); break;
     case "again": {
@@ -3670,7 +3925,7 @@ document.addEventListener("click", e=>{
     }
   }
 });
-document.addEventListener("change", e=>{ if(e.target && e.target.id==="avatarInput") onAvatarPicked(e.target); if(e.target && e.target.dataset && e.target.dataset.pref){ const k=e.target.dataset.pref; savePref(k, k==="hora" ? Number(e.target.value) : e.target.checked); } });
+document.addEventListener("change", e=>{ if(e.target && e.target.id==="introToggle"){ try{ localStorage.setItem("lampara.intro", e.target.checked ? "on" : "off"); }catch(err){} toast(e.target.checked ? "La lámpara se encenderá al abrir la app." : "Animación desactivada."); return; } if(e.target && e.target.id==="avatarInput") onAvatarPicked(e.target); if(e.target && e.target.dataset && e.target.dataset.pref){ const k=e.target.dataset.pref; savePref(k, k==="hora" ? Number(e.target.value) : e.target.checked); } });
 document.addEventListener("keydown", e=>{
   if(e.key==="Enter" && e.target && e.target.tagName==="INPUT"){ const f=e.target.closest("[data-enter]"); if(f){ e.preventDefault(); const b=f.querySelector(`[data-act="${f.dataset.enter}"]`); if(b) b.click(); return; } }
   if((e.key==="Enter"||e.key===" ") && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("side-foot")){ e.preventDefault(); go("profile"); return; }
@@ -3678,6 +3933,49 @@ document.addEventListener("keydown", e=>{
   if(SESSION.phase==="cards" && (e.key===" "||e.key==="Enter") && document.activeElement.classList.contains("flash")){ e.preventDefault(); SESSION.flipped=!SESSION.flipped; $(".flash").classList.toggle("flipped",SESSION.flipped); }
   if(SESSION.phase==="quiz" && SESSION.q && SESSION.q.mode==="write" && e.key==="Enter" && (e.metaKey||e.ctrlKey)){ e.preventDefault(); checkAnswer(); }
 });
+
+/* =========================================================
+   ANIMACIÓN DE APERTURA: la lámpara se enciende y la luz llena la pantalla
+   (una vez por apertura de la app; se puede desactivar en Perfil)
+   ========================================================= */
+function introEnabled(){ try{ return localStorage.getItem("lampara.intro") !== "off"; }catch(e){ return true; } }
+function introSound(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    const ctx = new AC();
+    const go = ()=>{
+      const t = ctx.currentTime, out = ctx.createGain(); out.gain.value = .22; out.connect(ctx.destination);
+      // "fuu": soplo suave al encenderse la llama
+      const len = ctx.sampleRate * .5, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2);
+      const n = ctx.createBufferSource(); n.buffer = buf; const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.setValueAtTime(400, t+.45); f.frequency.exponentialRampToValueAtTime(1600, t+.9); f.Q.value = .8;
+      const ng = ctx.createGain(); ng.gain.setValueAtTime(0, t+.45); ng.gain.linearRampToValueAtTime(.5, t+.55); ng.gain.exponentialRampToValueAtTime(.001, t+1.0);
+      n.connect(f); f.connect(ng); ng.connect(out); n.start(t+.45); n.stop(t+1.05);
+      // campanita cálida al llenarse de luz
+      [[659.25,1.35],[987.77,1.47],[1318.5,1.6]].forEach(([hz,at])=>{ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = hz;
+        g.gain.setValueAtTime(0, t+at); g.gain.linearRampToValueAtTime(.35, t+at+.02); g.gain.exponentialRampToValueAtTime(.001, t+at+1.4); o.connect(g); g.connect(out); o.start(t+at); o.stop(t+at+1.5); });
+      setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 3500);
+    };
+    if(ctx.state === "running") go();
+    else ctx.resume().then(()=>{ if(ctx.state === "running") go(); }).catch(()=>{});   // si el navegador no deja sonar sin un toque, se omite
+  }catch(e){}
+}
+function replayIntro(){ playIntro(true); }
+function playIntro(force){
+  let seen = false; try{ seen = sessionStorage.getItem("lampara.introSeen") === "1"; sessionStorage.setItem("lampara.introSeen","1"); }catch(e){}
+  if(!force && (seen || !introEnabled())) return;
+  const old = $("#intro"); if(old) old.remove();
+  const el = document.createElement("div"); el.id = "intro"; el.setAttribute("aria-hidden","true");
+  el.innerHTML = `<div class="glow"></div><div class="lampx"><svg viewBox="0 0 24 24"><path class="base" d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z"/><path class="flame" d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path class="core" d="M12 6.4c.6 1 1.4 1.6 1.4 2.6a1.4 1.4 0 0 1-2.8 0c0-1 .8-1.6 1.4-2.6z"/></svg></div><div class="word">Lámpara</div><div class="fill"></div>`;
+  document.body.appendChild(el);
+  introSound();
+  let done = false;
+  const finish = ()=>{ if(done) return; done = true; el.classList.add("out"); setTimeout(()=>el.remove(), 460); };
+  el.addEventListener("click", finish);
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setTimeout(finish, reduce ? 500 : 2150);
+}
+playIntro();
 
 /* =========================================================
    ARRANQUE
