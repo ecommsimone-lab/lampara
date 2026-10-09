@@ -469,6 +469,28 @@ a.btn:not(.primary){color:var(--ink)}
 .crop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.55);pointer-events:none;outline:2px solid rgba(255,255,255,.8);outline-offset:-2px}
 .zoom{width:100%;accent-color:var(--accent)}
 /* ---------- Logros ---------- */
+.heart{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:20px 20px 18px;border-radius:22px;background:var(--h-soft);border:1px solid var(--card-border);box-shadow:var(--shadow)}
+.heart::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--h)}
+.heart.h-coral{--h:var(--bad);--h-soft:var(--bad-soft);--h-text:var(--bad)}
+.heart.h-gold{--h:var(--gold);--h-soft:var(--gold-soft);--h-text:var(--gold-text)}
+.heart.h-green{--h:var(--ok);--h-soft:var(--ok-soft);--h-text:var(--ok)}
+.heart-top{display:flex;align-items:center;gap:12px}
+.heart-em{width:48px;height:48px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:24px;background:var(--surface);box-shadow:0 0 0 3px var(--h)}
+.heart-top .eyebrow{color:var(--h-text)}
+.heart-title{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em}
+.heart-phrase{margin:0;font-size:clamp(19px,2.6vw,23px);font-weight:800;letter-spacing:-.02em;line-height:1.3;color:var(--ink)}
+.heart-verse{all:unset;box-sizing:border-box;cursor:pointer;display:block;padding:14px 16px;border-radius:16px;background:var(--surface);font-size:15.5px;line-height:1.55;font-style:italic;color:var(--ink)}
+.heart-verse:hover{box-shadow:0 0 0 2px var(--h)}
+.heart-verse:focus-visible{outline:2px solid var(--accent)}
+.heart-verse b{display:block;margin-top:6px;font-style:normal;font-size:13px;font-weight:700;color:var(--h-text)}
+.heart.glow{animation:heartPop .7s cubic-bezier(.2,.9,.3,1.3) both, heartGlow 1.6s .5s ease-in-out 2}
+.heart.glow::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:heartShine 1.4s .6s ease forwards;pointer-events:none}
+.heart.glow .heart-em{animation:heartBeat 1s .4s ease-in-out 2}
+@keyframes heartPop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes heartGlow{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 0 4px var(--h),0 10px 30px -6px var(--h)}}
+@keyframes heartShine{to{transform:translateX(120%)}}
+@keyframes heartBeat{0%,100%{transform:scale(1)}25%{transform:scale(1.15)}50%{transform:scale(.97)}}
+@media (prefers-reduced-motion:reduce){.heart.glow,.heart.glow::after,.heart.glow .heart-em{animation:none}}
 .medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
 .medals.one{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));column-gap:6px;grid-template-rows:auto;grid-auto-rows:0;row-gap:0;overflow:hidden}
 .fbubbles{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -720,6 +742,7 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
 /* ---------- Acceso a versículos ---------- */
 function verse(id){
   if(SUG_MAP[id]) return SUG_MAP[id];
+  if(HEART_MAP[id]) return HEART_MAP[id];
   const c = S.custom.find(v=>v.id===id);
   return c ? {...c, sug:false} : null;
 }
@@ -936,6 +959,52 @@ function render(){
   clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)) checkBadges(); }, 400);
 }
 
+/* ---------- Para tu corazón: una frase y un versículo cada día ----------
+   Textos de los versículos verificados palabra por palabra con la RVR1960 de Bible.com el 9 de octubre de 2026. */
+const HEART_VERSES = [
+  ["1co-13-2","1 Corintios 13:2","Y si tuviese profecía, y entendiese todos los misterios y toda ciencia, y si tuviese toda la fe, de tal manera que trasladase los montes, y no tengo amor, nada soy."],
+  ["ez-36-26","Ezequiel 36:26","Os daré corazón nuevo, y pondré espíritu nuevo dentro de vosotros; y quitaré de vuestra carne el corazón de piedra, y os daré un corazón de carne."],
+  ["sal-51-10","Salmos 51:10","Crea en mí, oh Dios, un corazón limpio, Y renueva un espíritu recto dentro de mí."],
+  ["1s-16-7","1 Samuel 16:7","Y Jehová respondió a Samuel: No mires a su parecer, ni a lo grande de su estatura, porque yo lo desecho; porque Jehová no mira lo que mira el hombre; pues el hombre mira lo que está delante de sus ojos, pero Jehová mira el corazón."],
+  ["ef-3-19","Efesios 3:19","y de conocer el amor de Cristo, que excede a todo conocimiento, para que seáis llenos de toda la plenitud de Dios."],
+  ["rom-5-5","Romanos 5:5","y la esperanza no avergüenza; porque el amor de Dios ha sido derramado en nuestros corazones por el Espíritu Santo que nos fue dado."],
+  ["jn-13-35","Juan 13:35","En esto conocerán todos que sois mis discípulos, si tuviereis amor los unos con los otros."],
+  ["stg-1-22","Santiago 1:22","Pero sed hacedores de la palabra, y no tan solamente oidores, engañándoos a vosotros mismos."],
+  ["mt-7-24","Mateo 7:24","Cualquiera, pues, que me oye estas palabras, y las hace, le compararé a un hombre prudente, que edificó su casa sobre la roca."],
+  ["lc-11-28","Lucas 11:28","Y él dijo: Antes bienaventurados los que oyen la palabra de Dios, y la guardan."],
+  ["1jn-3-18","1 Juan 3:18","Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad."],
+  ["jn-14-15","Juan 14:15","Si me amáis, guardad mis mandamientos."]
+];
+const HEART_MAP = Object.fromEntries(HEART_VERSES.map(([id,ref,text])=>[id,{ id, ref, text, theme:"Corazón", sug:true, heart:true }]));
+const HEART = [
+  { cls:"h-coral", em:"❤️", title:"Corazón nuevo", phrase:"Memorizar mil versículos no sirve de nada si la Palabra no transforma tu corazón.",
+    verses:["1co-13-2","ez-36-26","sal-51-10","rom-12-2"] },
+  { cls:"h-gold", em:"✝️", title:"El amor de Cristo", phrase:"Tu racha y tus puntos no miden tu fe. Lo que de verdad importa es que el amor de Cristo viva en tu corazón.",
+    verses:[["1s-16-7","…porque Jehová no mira lo que mira el hombre; pues el hombre mira lo que está delante de sus ojos, pero Jehová mira el corazón."],"ef-3-19","rom-5-5","1jn-4-19","jn-13-35"] },
+  { cls:"h-green", em:"🙌", title:"Hacedor de la Palabra", phrase:"No te quedes en recitar la Palabra: vívela. Que se note en cómo amas, hablas y actúas.",
+    verses:["stg-1-22","mt-7-24","lc-11-28","1jn-3-18","jn-14-15"] }
+];
+function heartOfDay(date){
+  const d = date || new Date(), n = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY);
+  const h = HEART[n % HEART.length], pick = h.verses[Math.floor(n / HEART.length) % h.verses.length];
+  const [id, shown] = Array.isArray(pick) ? pick : [pick, null];
+  const v = verse(id);
+  return { h, id, ref: v ? v.ref : "", text: shown || (v ? v.text : "") };
+}
+function heartCard(){
+  const { h, id, ref, text } = heartOfDay();
+  // brilla la primera vez que la ves cada día (y durante esos primeros segundos, aunque la pantalla se redibuje)
+  let glow = false;
+  try{ const k = todayKey(), seen = JSON.parse(localStorage.getItem("lampara.heartSeen") || "null");
+    if(!seen || seen.day !== k){ localStorage.setItem("lampara.heartSeen", JSON.stringify({ day:k, at:Date.now() })); glow = true; }
+    else glow = Date.now() - seen.at < 2500; }catch(e){}
+  return `<section class="heart ${h.cls} ${glow?"glow":""}" aria-label="Para tu corazón hoy">
+    <div class="heart-top"><span class="heart-em" aria-hidden="true">${h.em}</span><div><span class="eyebrow">Para tu corazón · hoy</span><b class="heart-title">${esc(h.title)}</b></div></div>
+    <p class="heart-phrase">${esc(h.phrase)}</p>
+    <button class="heart-verse" data-act="verse-open" data-id="${id}" aria-label="Abrir ${esc(ref)}">“${esc(text)}”<b>${esc(ref)} · RVR1960</b></button>
+  </section>`;
+}
+
 /* ---------- Inicio / Dashboard ---------- */
 function ring(pct, size=92, stroke=10){
   const r=(size-stroke)/2, c=2*Math.PI*r, off=c*(1-pct/100);
@@ -1025,6 +1094,8 @@ function viewHome(){
       </div>
     </div>
   </section>
+
+  ${heartCard()}
 
   ${pathCard()}
 
