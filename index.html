@@ -575,14 +575,14 @@ a.btn:not(.primary){color:var(--ink)}
 #intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #intro .lampx{position:relative;width:120px;height:120px;z-index:2;}
 #intro .lampx svg{width:100%;height:100%;overflow:visible}
-#intro .base{fill:var(--gold-dark);transform-box:fill-box;transform-origin:50% 100%;opacity:0;animation:partIn .35s cubic-bezier(.2,.8,.2,1) forwards}
-#intro .base.b1{animation-delay:.45s}
-#intro .base.b2{animation-delay:.7s}
-#intro .flame{fill:#FFB020;transform-origin:12px 11px;transform:scale(0);animation:flameOn .5s 1s cubic-bezier(.3,1.6,.5,1) forwards, flicker 1.2s 1.5s ease-in-out infinite}
-#intro .core{fill:#FFF3C4;transform-origin:12px 9.5px;transform:scale(0);animation:flameOn .4s 1.1s cubic-bezier(.3,1.6,.5,1) forwards}
-#intro .glow{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-62px 0 0 -20px;border-radius:50%;background:radial-gradient(circle,#FFE08A 0%,#FFB020 45%,rgba(255,176,32,0) 70%);transform:scale(0);opacity:0;z-index:1;animation:glowUp .7s 1.25s cubic-bezier(.5,0,.3,1) forwards}
-#intro .fill{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-72px 0 0 -30px;border-radius:50%;background:radial-gradient(circle,#FFC94D 0%,#FFB020 45%,#FF9A10 100%);transform:scale(0);z-index:3;animation:fillUp .7s 1.5s cubic-bezier(.6,0,.3,1) forwards}
-#intro .word{position:absolute;left:0;right:0;top:calc(50% + 78px);text-align:center;font-weight:800;font-size:26px;letter-spacing:-.03em;color:var(--ink);opacity:0;z-index:4;animation:wordIn .4s .05s ease forwards, wordUp .7s 1.55s cubic-bezier(.5,0,.3,1) forwards}
+#intro .base{fill:var(--gold-dark);transform-box:fill-box;transform-origin:50% 100%;opacity:0;animation:partIn .25s cubic-bezier(.2,.8,.2,1) forwards}
+#intro .base.b1{animation-delay:.29s}
+#intro .base.b2{animation-delay:.45s}
+#intro .flame{fill:#FFB020;transform-origin:12px 11px;transform:scale(0);animation:flameOn .35s .64s cubic-bezier(.3,1.6,.5,1) forwards, flicker 1.2s .96s ease-in-out infinite}
+#intro .core{fill:#FFF3C4;transform-origin:12px 9.5px;transform:scale(0);animation:flameOn .3s .7s cubic-bezier(.3,1.6,.5,1) forwards}
+#intro .glow{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-62px 0 0 -20px;border-radius:50%;background:radial-gradient(circle,#FFE08A 0%,#FFB020 45%,rgba(255,176,32,0) 70%);transform:scale(0);opacity:0;z-index:1;animation:glowUp .5s .8s cubic-bezier(.5,0,.3,1) forwards}
+#intro .fill{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-72px 0 0 -30px;border-radius:50%;background:radial-gradient(circle,#FFC94D 0%,#FFB020 45%,#FF9A10 100%);transform:scale(0);z-index:3;animation:fillUp .5s .96s cubic-bezier(.6,0,.3,1) forwards}
+#intro .word{position:absolute;left:0;right:0;top:calc(50% + 78px);text-align:center;font-weight:800;font-size:26px;letter-spacing:-.03em;color:var(--ink);opacity:0;z-index:4;animation:wordIn .3s .03s ease forwards, wordUp .5s 1s cubic-bezier(.5,0,.3,1) forwards}
 #intro.out{animation:introOut .45s ease forwards}
 @keyframes lampIn{from{opacity:0;transform:translateY(14px) scale(.92)}to{opacity:1;transform:none}}
 @keyframes flameOn{to{transform:scale(1)}}
@@ -1525,6 +1525,16 @@ function modeFor0(id){
 }
 function blankRatio(id){ const b=(prog(id)||{box:0}).box; return Math.min(.95, [.3,.45,.65,.85,.9,.95][b] + diffTier()*0.04); }
 
+/* Cada espacio mide exactamente lo que la palabra que falta: así se nota si es larga o corta y lo que escribes cabe completo */
+let BLANK_CANVAS = null;
+function sizeBlanks(){
+  const ins = root.querySelectorAll("input[data-w]"); if(!ins.length) return;
+  const fit = ()=>{ BLANK_CANVAS = BLANK_CANVAS || document.createElement("canvas"); const g = BLANK_CANVAS.getContext("2d");
+    ins.forEach(el=>{ const cs = getComputedStyle(el); g.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const w = g.measureText(el.dataset.w || "").width, pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      el.style.width = Math.ceil(Math.max(w, parseFloat(cs.fontSize) * 1.1) + pad + 6) + "px"; }); };
+  fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit).catch(()=>{});
+}
 function renderSession(){
   const s = SESSION;
   const total = s.ids.length;
@@ -1572,6 +1582,7 @@ function renderSession(){
     body = summaryBody();
   }
   root.innerHTML = `<main style="min-height:100%"><div class="stage">${top}${body}</div></main>`;
+  sizeBlanks();
   if(s.phase==="quiz") afterQuizRender();
 }
 
@@ -1655,7 +1666,7 @@ function quizBody(){
       if(!set.has(i)) return esc(t);
       const m = t.match(/^([¿¡"«(]*)(.*?)([.,;:!?»")]*)$/) || ["",'',t,''];
       const w = m[2]; const sz = Math.max(3, w.length+1);
-      return `${esc(m[1])}<input data-blank="${i}" aria-label="Palabra faltante" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
+      return `${esc(m[1])}<input data-blank="${i}" data-w="${esc(w)}" aria-label="Palabra faltante de ${[...w].length} letras" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
     }).join("")}</div><p class="muted" style="font-size:13px">Escribe cada palabra con sus tildes. Una tilde mal puesta cuenta medio punto.</p>`;
   } else if(q.mode==="write"){
     inner = `<textarea class="textarea" id="writeBox" placeholder="Escribe el versículo completo de memoria…" ${q.done?"disabled":""}></textarea>
@@ -2008,7 +2019,7 @@ function renderPlacement(){
           if(!set.has(i)) return esc(t);
           const m = t.match(/^([¿¡"«(]*)(.*?)([.,;:!?»")]*)$/) || ["","",t,""];
           const sz = Math.max(3, m[2].length+1);
-          return `${esc(m[1])}<input data-pblank="${i}" aria-label="Palabra faltante" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
+          return `${esc(m[1])}<input data-pblank="${i}" data-w="${esc(m[2])}" aria-label="Palabra faltante" autocomplete="off" autocapitalize="off" spellcheck="false" size="${sz}" style="width:${sz*.62}em">${esc(m[3])}`;
         }).join("")}</div>`;
       actions = `<div class="row" id="plActs"><button class="btn ghost" data-act="pl-unknown">No lo conozco</button><span style="flex:1"></span><button class="btn primary" data-act="pl-check">Comprobar</button></div>`;
     } else if(it.type==="finish"){
@@ -2041,6 +2052,7 @@ function renderPlacement(){
       <div class="row"><button class="btn primary lg" data-act="pl-finish">Ir a mi panel</button></div>`;
   }
   root.innerHTML = `<main style="min-height:100%"><div class="stage">${body}</div></main>`;
+  sizeBlanks();
   if(P.phase==="q"){
     const ins = [...root.querySelectorAll("[data-pblank]")];
     ins.forEach((el,k)=>el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(ins[k+1]) ins[k+1].focus(); else placementCheck(); } }));
@@ -4570,11 +4582,11 @@ function introSound(){
       // "fuu": soplo suave al encenderse la llama
       const len = ctx.sampleRate * .5, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
       for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2);
-      const n = ctx.createBufferSource(); n.buffer = buf; const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.setValueAtTime(400, t+1); f.frequency.exponentialRampToValueAtTime(1600, t+1.45); f.Q.value = .8;
-      const ng = ctx.createGain(); ng.gain.setValueAtTime(0, t+1); ng.gain.linearRampToValueAtTime(.5, t+1.1); ng.gain.exponentialRampToValueAtTime(.001, t+1.55);
-      n.connect(f); f.connect(ng); ng.connect(out); n.start(t+1); n.stop(t+1.6);
+      const n = ctx.createBufferSource(); n.buffer = buf; const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.setValueAtTime(400, t+.64); f.frequency.exponentialRampToValueAtTime(1600, t+.95); f.Q.value = .8;
+      const ng = ctx.createGain(); ng.gain.setValueAtTime(0, t+.64); ng.gain.linearRampToValueAtTime(.5, t+.72); ng.gain.exponentialRampToValueAtTime(.001, t+1.05);
+      n.connect(f); f.connect(ng); ng.connect(out); n.start(t+.64); n.stop(t+1.1);
       // campanita cálida al llenarse de luz
-      [[659.25,1.55],[987.77,1.67],[1318.5,1.8]].forEach(([hz,at])=>{ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = hz;
+      [[659.25,1],[987.77,1.08],[1318.5,1.16]].forEach(([hz,at])=>{ const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = hz;
         g.gain.setValueAtTime(0, t+at); g.gain.linearRampToValueAtTime(.35, t+at+.02); g.gain.exponentialRampToValueAtTime(.001, t+at+1.4); o.connect(g); g.connect(out); o.start(t+at); o.stop(t+at+1.5); });
       setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 4500);
     };
@@ -4595,7 +4607,7 @@ function playIntro(force){
   const finish = ()=>{ if(done) return; done = true; el.classList.add("out"); setTimeout(()=>el.remove(), 460); };
   el.addEventListener("click", finish);
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  setTimeout(finish, reduce ? 500 : 2750);
+  setTimeout(finish, reduce ? 500 : 1750);
 }
 playIntro();
 
