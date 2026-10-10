@@ -1508,7 +1508,11 @@ function startSession(ids, {title, review=false, listId=null}={}){
   render();
 }
 function cardIdsFor(ids){ const failed=new Set(S.lastFailed||[]), t=diffTier(), lim = t<=1 ? 3 : t<=3 ? 2 : 1; return ids.filter(id=>{ const p=prog(id); return !p || p.box<lim || failed.has(id); }); }
-function modeFor(id){
+const MIC_PAUSE = 15*60*1000;
+const micPaused = () => !!(S && S.noMicUntil && Date.now() < S.noMicUntil);
+const micSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+function modeFor(id){ const m = modeFor0(id); return m === "recite" && (micPaused() || !micSupported()) ? "write" : m; }
+function modeFor0(id){
   const m = SESSION.mode;
   if(m!=="mixto") return m;
   if(SESSION.modes && SESSION.modes[id]) return SESSION.modes[id];
@@ -1533,7 +1537,7 @@ function renderSession(){
         ${opt("mixto","Mixto","Incluye los tres: llenar espacios, escribir completo y recitar")}
         ${opt("blanks","Llenar espacios","Completa las palabras que faltan")}
         ${opt("write","Escribir completo","Escríbelo desde cero, palabra por palabra")}
-        ${opt("recite","Recitar en voz alta","Dilo de memoria y evalúate")}
+        ${opt("recite","Recitar en voz alta","Dilo de memoria con el micrófono")}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <span class="eyebrow">¿Cuánto tiempo tienes?</span>
@@ -1659,14 +1663,14 @@ function quizBody(){
     inner = `
       <div style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
         <button class="mic" id="micBtn" data-act="mic" aria-label="Recitar con micrófono">${I.mic}</button>
-        <p class="muted" id="micMsg" style="max-width:46ch">Toca el micrófono y di el versículo de memoria. Si el micrófono no está disponible, recita en voz alta y evalúate tú.</p>
+        <p class="muted" id="micMsg" style="max-width:46ch">Toca el micrófono, di el versículo de memoria y vuelve a tocarlo al terminar.</p>
         <p id="transcript" style="font-family:var(--f-verse);font-size:20px;min-height:1.4em"></p>
       </div>
       <p class="hidden-verse ${q.done?"shown":""}" id="hv">${esc(v.text)}</p>`;
   }
   let actions = "";
   if(!q.done){
-    if(q.mode==="recite") actions = `<div class="row"><button class="btn" data-act="hint">Primera palabra</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Mostrar y evaluarme</button></div>`;
+    if(q.mode==="recite") actions = `<div class="row"><button class="btn" data-act="hint">Primera palabra</button><button class="btn ghost" data-act="mic-off">🔇 No puedo hablar ahora</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Ver mi resultado</button></div>`;
     else actions = `<div class="row"><button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
   }
   return `
@@ -1888,20 +1892,47 @@ function checkAnswer(){
 }
 
 /* ---------- Recitación (voz) ---------- */
-let REC = null;
+let REC = null, REC_ON = false;
 function startMic(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const msg = $("#micMsg"), btn = $("#micBtn"), tr = $("#transcript");
-  if(!SR){ msg.textContent = "Tu navegador no ofrece reconocimiento de voz aquí. Recita en voz alta y luego toca “Mostrar y evaluarme”."; return; }
-  if(REC){ try{REC.stop();}catch(e){} return; }
-  try{
-    REC = new SR(); REC.lang = "es-ES";   // el español de España usa "vosotros/os/pedid", como la RVR1960 REC.continuous = true; REC.interimResults = true;
-    let finalText = "";
-    REC.onresult = e => { let interim=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalText += r[0].transcript+" "; else interim += r[0].transcript; } SESSION.q.transcript = finalText+interim; tr.textContent = SESSION.q.transcript; };
-    REC.onerror = e => { msg.textContent = (e.error==="not-allowed"||e.error==="service-not-allowed") ? "No hay permiso para el micrófono. Permítelo en el navegador (ícono junto a la dirección) o recita en voz alta y toca “Mostrar y evaluarme”." : e.error==="no-speech" ? "No se escuchó nada. Toca el micrófono e inténtalo otra vez." : "No se pudo escuchar bien. Puedes intentarlo de nuevo o evaluarte tú."; };
-    REC.onend = () => { btn.classList.remove("live"); REC = null; if(SESSION && SESSION.q && !SESSION.q.done){ { const m=(SESSION.q.transcript||"").match(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i); if(m){ SESSION.q.spokenRef=m[0].trim(); SESSION.spoken[SESSION.q.id]=m[0].trim(); } } } if(SESSION && SESSION.q && SESSION.q.transcript.trim()) msg.textContent = "Listo. Toca “Mostrar y evaluarme” para ver tu resultado."; };
-    REC.start(); btn.classList.add("live"); msg.textContent = "Escuchando… toca de nuevo para terminar.";
-  }catch(e){ REC=null; msg.textContent = "El micrófono no está disponible en esta vista. Recita en voz alta y luego evalúate."; }
+  if(!SR){ micFallback("Este navegador no reconoce la voz. En iPhone abre la app desde Safari (no desde el ícono de inicio) o usa Chrome en Android."); return; }
+  if(REC){ REC_ON = false; try{ REC.stop(); }catch(e){} return; }   // segundo toque: terminar
+  const q = SESSION.q; let finalText = q.transcript ? q.transcript.trim() + " " : "", restarts = 0; const started = Date.now();
+  const begin = ()=>{
+    REC = new SR();
+    REC.lang = "es-ES";            // el español de España usa "vosotros/os/pedid", como la RVR1960
+    REC.continuous = true; REC.interimResults = true; REC.maxAlternatives = 1;
+    REC.onresult = e => { let interim = ""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalText += r[0].transcript + " "; else interim += r[0].transcript; } q.transcript = (finalText + interim).trim(); if(tr) tr.textContent = q.transcript; };
+    REC.onerror = e => {
+      if(e.error === "not-allowed" || e.error === "service-not-allowed"){ REC_ON = false; micFallback("No hay permiso para usar el micrófono. Actívalo en los ajustes del navegador para este sitio."); }
+      else if(e.error === "audio-capture"){ REC_ON = false; micFallback("No encontramos un micrófono en este dispositivo."); }
+      else if(e.error === "network"){ REC_ON = false; micFallback("El reconocimiento de voz necesita internet y no hay conexión."); }
+    };
+    REC.onend = () => {
+      // Safari y algunos Android cortan tras un silencio: si no tocaste para terminar, seguimos escuchando
+      if(REC_ON && restarts < 8 && Date.now() - started < 90000 && SESSION && SESSION.q === q && !q.done){ restarts++; try{ begin(); return; }catch(err){} }
+      REC_ON = false; REC = null; if(btn) btn.classList.remove("live");
+      if(!SESSION || !SESSION.q || SESSION.q !== q || q.done) return;
+      const m = (q.transcript||"").match(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i);
+      if(m){ q.spokenRef = m[0].trim(); SESSION.spoken[q.id] = m[0].trim(); }
+      if(msg) msg.textContent = q.transcript.trim() ? "Listo. Toca “Ver mi resultado”." : "No escuchamos nada. Toca el micrófono e inténtalo otra vez, más cerca del celular.";
+    };
+    REC.start();
+  };
+  try{ REC_ON = true; begin(); btn.classList.add("live"); msg.textContent = "Escuchando… di el versículo y toca el micrófono al terminar."; }
+  catch(e){ REC_ON = false; REC = null; micFallback("El micrófono no está disponible en esta vista."); }
+}
+/* Si el micrófono no funciona: ofrecer escribirlo en lugar de evaluarse uno mismo */
+function micFallback(text){
+  const msg = $("#micMsg"); if(!msg) return;
+  msg.innerHTML = `${esc(text)}<span class="row" style="justify-content:center;gap:8px;margin-top:10px"><button class="btn" data-act="mic-write">Escribirlo en su lugar</button>${document.querySelector('.q-card [data-act="mic-off"]') ? "" : `<button class="btn ghost" data-act="mic-off">🔇 No puedo hablar ahora</button>`}</span>`;
+}
+function switchToWrite(){
+  const s = SESSION; if(!s || !s.q || s.q.done) return;
+  if(REC){ REC_ON = false; try{ REC.stop(); }catch(e){} }
+  s.modes = s.modes || {}; s.modes[s.q.id] = "write"; if(s.mode === "recite") s.mode = "write";
+  prepQuestion(); render();
 }
 function reveal(){
   const q = SESSION.q; const v = verse(q.id);
@@ -1912,17 +1943,12 @@ function reveal(){
     const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
     const r = scoreSpoken(v.text, tx);
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p><p class="muted" style="font-size:12.5px;margin-top:6px">Aceptamos cuando el micrófono entiende “pedí” por <i>pedid</i> o “los” por <i>os</i>. Si aun así marcó mal algo que dijiste bien, usa “Me evalúo yo”.</p><button class="linkbtn" data-act="self-grade" style="padding:4px 0">Me evalúo yo</button></div>`);
+    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p><p class="muted" style="font-size:12.5px;margin-top:6px">Aceptamos cuando el micrófono entiende “pedí” por <i>pedid</i> o “los” por <i>os</i>.</p></div>`);
     return;
   }
-  root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:10px"><p style="font-weight:600">¿Qué tan bien lo recitaste?</p>
-    <div class="grade">
-      <button data-grade="0.2">No lo recordé<small>Volver a practicar</small></button>
-      <button data-grade="0.7">Con errores<small>Varias palabras mal</small></button>
-      <button data-grade="0.9">Bien<small>Detalles menores</small></button>
-      <button data-grade="1">Perfecto<small>Palabra por palabra</small></button>
-    </div></div>`;
+  // sin voz no hay resultado: se ofrece intentar de nuevo o escribirlo
+  $("#hv").classList.remove("shown");
+  micFallback("Todavía no escuchamos tu voz. Toca el micrófono y recita, o escríbelo.");
 }
 
 /* =========================================================
@@ -4281,7 +4307,7 @@ document.addEventListener("click", e=>{
 
   if(t.dataset.mode){ SESSION.mode = t.dataset.mode; S.prefs.mode = t.dataset.mode; persist(); render(); return; }
   if(t.dataset.grade){ gradeText(parseFloat(t.dataset.grade)); return; }
-  if(t.dataset.act==="self-grade"){ const q = SESSION && SESSION.q; if(!q || q.done) return; q.textDone = false; delete SESSION.pending[q.id];
+  if(t.dataset.act==="self-grade" && false){ const q = SESSION && SESSION.q; if(!q || q.done) return; q.textDone = false; delete SESSION.pending[q.id];
     $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:10px"><p style="font-weight:600">¿Qué tan bien lo recitaste?</p>
       <div class="grade"><button data-grade="0.2">No lo recordé<small>Volver a practicar</small></button><button data-grade="0.7">Con errores<small>Varias palabras mal</small></button><button data-grade="0.9">Bien<small>Detalles menores</small></button><button data-grade="1">Perfecto<small>Palabra por palabra</small></button></div></div>`; return; }
   if(t.dataset.go){ if(t.dataset.go==="avisos") openAvisos(); else go(t.dataset.go); return; }
@@ -4454,6 +4480,8 @@ document.addEventListener("click", e=>{
       break;
     }
     case "mic": startMic(); break;
+    case "mic-write": switchToWrite(); break;
+    case "mic-off": { S.noMicUntil = Date.now() + MIC_PAUSE; persist(); toast("Listo. Durante 15 minutos no te pediremos recitar; escribirás los versículos."); switchToWrite(); break; }
     case "reveal": reveal(); break;
     case "next-q":
       stopSpeech();
