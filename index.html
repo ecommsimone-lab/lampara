@@ -3126,7 +3126,8 @@ const RITMOS = {
   constante:{ label:"Constante", em:"🔥", min:10, week:4, off:0,  desc:"10 min al día · 3 o 4 versículos nuevos por semana · la dificultad normal del camino" },
   intensivo:{ label:"Intensivo", em:"⚡", min:20, week:7, off:1,  desc:"20 min al día · 1 versículo nuevo por día · más escribir y recitar de memoria" }
 };
-const ritmo = () => (S && S.prefs && RITMOS[S.prefs.ritmo]) ? S.prefs.ritmo : "constante";
+// quienes se registraron antes de elegir ritmo: se deduce de los minutos que escogieron
+const ritmo = () => { if(!S || !S.prefs) return "constante"; if(RITMOS[S.prefs.ritmo]) return S.prefs.ritmo; const m = S.prefs.minutes || 10; return m <= 5 ? "tranquilo" : m >= 20 ? "intensivo" : "constante"; };
 function diffTier(){ return Math.max(0, Math.min(TIERS.length-1, tierOf(Math.min(currentStage(), stageCount()-1)) + RITMOS[ritmo()].off)); }
 /* Cuántos versículos nuevos puedes empezar aún esta semana según tu ritmo */
 function newBudget(){
