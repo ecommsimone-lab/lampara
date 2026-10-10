@@ -2802,9 +2802,9 @@ function viewFriend(uid){
   </section>
   <section class="pstats">
     <div class="gold"><b>${I.flame}${soloStreak(theirs)}</b><span>Su racha</span></div>
-    <div class="blue"><b>${daysInLast(new Set([...theirs].filter(k=>!((COMM.sdays||{})[uid]||new Set()).has(k))),30)}</b><span>Días (30)</span></div>
+    <div class="blue"><b>${daysInLast(new Set([...theirs].filter(k=>!((COMM.sdays||{})[uid]||new Set()).has(k))),30)}</b><span>Días en el último mes</span></div>
     <button data-act="amigos-open" data-id="${uid}"><b>${n==null?"…":n}</b><span>${n===1?"Amigo":"Amigos"}</span></button>
-    <div class="green"><b>${f.streak==="accepted"?st:"—"}</b><span>Juntos</span></div>
+    <div class="green"><b>${f.streak==="accepted"?st:"—"}</b><span>Racha juntos</span></div>
   </section>
   <div class="stats" style="grid-template-columns:1fr">
     ${f.streak==="accepted"?"":`<div class="stat" style="justify-content:space-between"><div class="eyebrow">Racha juntos</div>${f.streak==="pending"&&!f.streak_mine?`<div class="row" style="gap:6px"><button class="btn primary" data-act="streak-accept" data-id="${f.id}" style="padding:6px 12px">Aceptar</button><button class="btn ghost" data-act="streak-reject" data-id="${f.id}" style="padding:6px 10px">Ahora no</button></div>`:f.streak==="pending"?`<small class="muted">Invitación enviada</small>`:`<button class="btn" data-act="streak-invite" data-id="${f.id}" style="padding:6px 12px">${I.flame} Invitar</button>`}</div>`}
@@ -3633,23 +3633,33 @@ function friendBadgesHTML(list, uid){
   if(list===null) return "";
   const ids = (list||[]).filter(x=>x && BADGE_MAP[x.id]).sort((a,b)=>String(b.at||"").localeCompare(String(a.at||""))).map(x=>x.id);
   return `<section class="panel" style="display:flex;flex-direction:column;gap:10px;padding:16px"><div class="spread"><h3>Logros <span class="chip gold">${ids.length} de ${BADGES.length}</span></h3>${ids.length>4?`<button class="linkbtn" data-act="fbadges-all" data-id="${uid}" style="padding:4px 0">Ver todos ›</button>`:""}</div>
-    ${ids.length ? `<div class="medals one">${ids.slice(0,8).map(id=>medalHTML(BADGE_MAP[id], true, 'data-friend="1"')).join("")}</div>` : `<p class="muted" style="margin:0">Aún no tiene logros. ¡Envíale ánimo!</p>`}</section>`;
+    ${ids.length ? `<div class="medals one">${ids.slice(0,8).map(id=>medalHTML(BADGE_MAP[id], true, `data-friend="${uid}"`)).join("")}</div>` : `<p class="muted" style="margin:0">Aún no tiene logros. ¡Envíale ánimo!</p>`}</section>`;
 }
 function friendBadgesModal(uid){
   const list = (COMM.fbadges && COMM.fbadges[uid]) || [];
   const ids = list.filter(x=>x && BADGE_MAP[x.id]).map(x=>x.id);
   modal(`<div style="display:flex;flex-direction:column;gap:12px"><h2 style="font-size:22px">Logros de ${esc(String(personLabel(uid)).split(" ")[0])}</h2>
-    ${BADGE_CATS.map(([cat,label])=>{ const l = ids.filter(id=>BADGE_MAP[id].cat===cat); return l.length ? `<div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">${label}</span><div class="medals">${l.map(id=>medalHTML(BADGE_MAP[id], true, 'data-friend="1"')).join("")}</div></div>` : ""; }).join("")}
+    ${BADGE_CATS.map(([cat,label])=>{ const l = ids.filter(id=>BADGE_MAP[id].cat===cat); return l.length ? `<div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">${label}</span><div class="medals">${l.map(id=>medalHTML(BADGE_MAP[id], true, `data-friend="${uid}"`)).join("")}</div></div>` : ""; }).join("")}
     <button class="btn" data-close>Cerrar</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=closeModal));
+}
+/* Descripción en tercera persona para los logros de un amigo */
+function badgeDescFor(b, friend){
+  if(!friend) return b.desc;
+  return b.desc.replace(/^Aprendiste tu /,"Aprendió su ").replace(/^Aprendiste/,"Aprendió").replace(/^Practicaste/,"Practicó").replace(/^Llegaste/,"Llegó")
+    .replace(/^Dominaste tu /,"Dominó su ").replace(/^Dominaste/,"Dominó").replace(/^Agregaste a tu /,"Agregó a su ").replace(/^Tienes/,"Tiene")
+    .replace(/^Ganaste tu /,"Ganó su ").replace(/^Ganaste/,"Ganó").replace(/^Enviaste tu /,"Envió su ").replace(/^Llegaron a/,"Llegó a")
+    .replace(/^Respondiste/,"Respondió").replace(/^Juntaste/,"Juntó").replace(/^Completaste/,"Completó");
 }
 function badgeModal(id, friend){
   const b = BADGE_MAP[id]; if(!b) return;
-  const at = !friend && S.badges && S.badges[id];
-  const on = friend || !!at;
+  const fuid = typeof friend === "string" && friend !== "1" ? friend : null;
+  const fat = fuid && ((COMM.fbadges||{})[fuid]||[]).find(x=>x && x.id===id);
+  const at = friend ? (fat && fat.at) : (S.badges && S.badges[id]);
+  const on = !!friend || !!at;
   const st = badgeStats(), val = Math.min(b.goal, badgeValue(b, st));
   modal(`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
-    <div class="medal big ${on?"on":""}" aria-hidden="true">${badgeIcon(b)}</div><h2 style="font-size:22px">${esc(b.name)}</h2><p class="muted" style="max-width:36ch;margin:0">${esc(b.desc)}</p>
-    ${at?`<span class="chip ok">Ganado el ${new Date(at).toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"})}</span>`:friend?"":`<div style="width:100%;max-width:260px;display:flex;flex-direction:column;gap:6px"><div class="xpbar" style="height:10px"><i style="width:${Math.round(val/b.goal*100)}%"></i></div><small class="muted" style="font-weight:600">${val} de ${b.goal}</small></div>`}
+    <div class="medal big ${on?"on":""}" aria-hidden="true">${badgeIcon(b)}</div>${fuid?`<span class="eyebrow">Logro de ${esc(String(personLabel(fuid)).split(" ")[0])}</span>`:""}<h2 style="font-size:22px">${esc(b.name)}</h2><p class="muted" style="max-width:36ch;margin:0">${esc(badgeDescFor(b, !!friend))}</p>
+    ${at && !isNaN(new Date(at))?`<span class="chip ok">Ganado el ${new Date(at).toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"})}</span>`:friend?"":`<div style="width:100%;max-width:260px;display:flex;flex-direction:column;gap:6px"><div class="xpbar" style="height:10px"><i style="width:${Math.round(val/b.goal*100)}%"></i></div><small class="muted" style="font-weight:600">${val} de ${b.goal}</small></div>`}
     <button class="btn" data-close>Cerrar</button></div>`, sc=>sc.querySelectorAll("[data-close]").forEach(x=>x.onclick=closeModal));
 }
 
@@ -4400,7 +4410,7 @@ document.addEventListener("click", e=>{
     case "heart-fav": { const hid = t.dataset.id; if(S.favs.includes(hid)) S.favs = S.favs.filter(x=>x!==hid); else S.favs.unshift(hid); persist(); t.innerHTML = heartFavBtn(hid); toast(S.favs.includes(hid) ? "Guardado en Mis versículos." : "Lo quitaste de Mis versículos."); break; }
     case "heart-share": shareHeart(t); break;
     case "intro-preview": { try{ sessionStorage.removeItem("lampara.introSeen"); }catch(e){} const was = introEnabled(); try{ localStorage.removeItem("lampara.intro"); }catch(e){} replayIntro(); if(!was){ try{ localStorage.setItem("lampara.intro","off"); }catch(e){} } break; }
-    case "badge-open": badgeModal(t.dataset.id, !!t.dataset.friend); break;
+    case "badge-open": badgeModal(t.dataset.id, t.dataset.friend || false); break;
     case "practice-hard": { const ids=hardestIds(activeIds()); startSession(shuffle(ids),{title:"Los que más te cuestan", source:ids.slice()}); break; }
     case "push-off": disablePush(); break;
     case "notif-clear": confirmBox("¿Borrar todos los avisos?", "Se borran de la lista. No afecta a tus amigos ni a tus retos.", "Borrar", ()=>NAPI.clear().then(()=>{ NOTIF.items=[]; render(); }).catch(e=>toast(notifError(e)))); break;
