@@ -904,7 +904,16 @@ function checkShields(){
     if(S.shields < SHIELD_MAX){ S.shields++; setTimeout(()=>shieldModal("earned"), 600); }
   }
   if(changed){ persist(); }
-  if(used) setTimeout(()=>shieldModal("used", used), 500);
+  if(used){ setTimeout(()=>shieldModal("used", used), 500); syncShieldDays(); }
+}
+/* Sube los días protegidos para que también cuenten en las rachas con amigos */
+function syncShieldDays(){
+  if(!cloudOn() || !S || !(S.shieldDays||[]).length) return;
+  const done = new Set(S._shieldSynced||[]), cutoff = todayKey(new Date(Date.now()-60*DAY));
+  const pending = S.shieldDays.filter(k=>!done.has(k) && k >= cutoff);
+  if(!pending.length) return;
+  API.markShieldDays(pending).then(()=>{ S._shieldSynced = [...done, ...pending].slice(-60); persist();
+    const mine = COMM.days[ME.id] = COMM.days[ME.id] || new Set(); pending.forEach(k=>mine.add(k)); if(["community","racha","friend"].includes(VIEW.name)) render(); }).catch(()=>{});
 }
 function shieldModal(kind, n){
   if($("#scrim") || $("#heartx") || $("#intro")){ setTimeout(()=>shieldModal(kind, n), 1500); return; }
@@ -2506,7 +2515,16 @@ const API = {
   async uploadAvatar(blob){ const path = ME.id + "/avatar.jpg"; const { error } = await SB.storage.from("avatars").upload(path, blob, { upsert:true, contentType:"image/jpeg", cacheControl:"3600" }); if(error) throw error; const { data } = SB.storage.from("avatars").getPublicUrl(path); return data.publicUrl + "?v=" + Date.now(); },
   async removeAvatar(){ try{ await SB.storage.from("avatars").remove([ME.id + "/avatar.jpg"]); }catch(e){} },
   async markDay(day){ const { error } = await SB.from("activity").upsert({ user_id: ME.id, day }, { onConflict:"user_id,day", ignoreDuplicates:true }); if(error) throw error; },
-  async days(uids, since){ const { data, error } = await SB.from("activity").select("user_id,day").in("user_id", uids).gte("day", since); if(error) throw error; return data || []; },
+  async days(uids, since){
+    let { data, error } = await SB.from("activity").select("user_id,day,shield").in("user_id", uids).gte("day", since);
+    if(error && /shield/.test(error.message||"")) ({ data, error } = await SB.from("activity").select("user_id,day").in("user_id", uids).gte("day", since));
+    if(error) throw error; return data || []; },
+  // días cubiertos por un escudo: cuentan para las rachas con amigos
+  async markShieldDays(days){
+    const rows = days.map(day=>({ user_id: ME.id, day, shield:true }));
+    let { error } = await SB.from("activity").upsert(rows, { onConflict:"user_id,day", ignoreDuplicates:true });
+    if(error && /shield/.test(error.message||"")) ({ error } = await SB.from("activity").upsert(rows.map(r=>({ user_id:r.user_id, day:r.day })), { onConflict:"user_id,day", ignoreDuplicates:true }));
+    if(error) throw error; },
   async rpc(name, args){ const { data, error } = await SB.rpc(name, args || {}); if(error) throw error; return data; },
   ensureUsername(hint){ return API.rpc("ensure_username", { p_hint: hint }); },
   setUsername(name){ return API.rpc("set_username", { p_name: name }); },
@@ -2583,7 +2601,9 @@ async function loadCommunity(){
     const ids = [ME.id, ...friendsAccepted().map(f=>f.user_id)];
     const rows = await API.days(ids, dayKey(new Date(Date.now() - 60*DAY)));
     COMM.days = {}; ids.forEach(id=>COMM.days[id] = new Set());
-    rows.forEach(r=>{ (COMM.days[r.user_id] = COMM.days[r.user_id] || new Set()).add(r.day); });
+    COMM.sdays = {};
+    rows.forEach(r=>{ (COMM.days[r.user_id] = COMM.days[r.user_id] || new Set()).add(r.day); if(r.shield) (COMM.sdays[r.user_id] = COMM.sdays[r.user_id] || new Set()).add(r.day); });
+    syncShieldDays();
     COMM.counts[ME.id] = friendsAccepted().length;
     COMM.loaded = true;
   }catch(e){ COMM.err = commError(e); }
@@ -2743,7 +2763,7 @@ function viewFriend(uid){
   </section>
   <section class="pstats">
     <div class="gold"><b>${I.flame}${soloStreak(theirs)}</b><span>Su racha</span></div>
-    <div class="blue"><b>${daysInLast(theirs,30)}</b><span>Días (30)</span></div>
+    <div class="blue"><b>${daysInLast(new Set([...theirs].filter(k=>!((COMM.sdays||{})[uid]||new Set()).has(k))),30)}</b><span>Días (30)</span></div>
     <button data-act="amigos-open" data-id="${uid}"><b>${n==null?"…":n}</b><span>${n===1?"Amigo":"Amigos"}</span></button>
     <div class="green"><b>${f.streak==="accepted"?st:"—"}</b><span>Juntos</span></div>
   </section>
