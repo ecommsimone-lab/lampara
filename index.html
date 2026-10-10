@@ -544,6 +544,8 @@ a.btn:not(.primary){color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.hb.closed,.hb.closed::after,.hb-pill svg,.hb .spk{animation:none!important}#heartx .w,#heartx .fd,#heartx .hx-ring.rg::before{animation:none;opacity:1;transform:none}#heartx .wr{animation:none;-webkit-mask-image:none;mask-image:none}}
 .shield-chip{display:inline-flex;align-self:flex-start;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--gold-text);background:var(--gold-soft);border-radius:999px;padding:2px 8px}
 .cal .d.sh{background:var(--gold-soft);font-size:13px}
+.catchup{all:unset;box-sizing:border-box;cursor:pointer;position:relative;z-index:1;align-self:flex-start;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:600;color:#fff}
+.catchup:hover{background:rgba(255,255,255,.26)}.catchup:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
 .medals.one{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));column-gap:6px;grid-template-rows:auto;grid-auto-rows:0;row-gap:0;overflow:hidden}
 .fbubbles{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -814,7 +816,9 @@ function status(id){
   return "mid";
 }
 const STATUS_LABEL = { ok:"Aprendido", mid:"En proceso", none:"Por aprender" };
-function isDue(id, now=Date.now()){ const p=prog(id); return !p || p.reps===0 || p.due<=now; }
+/* El repaso se cuenta por días: "mañana" es todo el día de mañana, sin importar la hora */
+function dayStart(ms, add=0){ const d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()+add).getTime(); }
+function isDue(id, now=Date.now()){ const p=prog(id); return !p || p.reps===0 || dayStart(p.due) <= now; }
 
 /* ---------- Listas ---------- */
 function listDefs(){
@@ -837,16 +841,16 @@ function applyResult(id, score){
   const now = Date.now();
   setTimeout(markToday, 0);
   const p = S.progress[id] || { box:0, due:now, reps:0, lapses:0, last:0, introduced:now, hist:[] };
-  const wasDue = p.reps===0 || p.due<=now;
+  const wasDue = p.reps===0 || dayStart(p.due) <= now;
   let outcome;
   if(score>=0.9){
     outcome = "ok";
     if(wasDue) p.box = Math.min(5, p.box+1);         // solo sube de nivel si tocaba repasarlo (evita "atiborrarse")
-    p.due = now + INTERVAL_DAYS[p.box]*DAY;
+    p.due = dayStart(now, INTERVAL_DAYS[p.box]);
   } else if(score>=0.6){
     outcome = "mid";
     p.box = Math.max(1, Math.min(p.box, MASTER-1));  // casi: se queda en proceso
-    p.due = now + 0.5*DAY;
+    p.due = dayStart(now, 1);                         // casi: vuelve mañana
   } else {
     outcome = "bad";
     p.lapses++;
@@ -1325,7 +1329,8 @@ function viewHome(){
         ${dueAll.length?`<button class="btn primary lg" data-act="start-due">${I.play} Practicar ahora</button>`:`<button class="btn primary lg" data-act="start-extra">${I.play} Práctica extra</button>`}
         ${counts.ok && (!dueAll.length || Math.floor(Date.now()/DAY) % 3 === 0) ? `<button class="btn" data-go="review">${I.review} Repasar memorizados</button>` : ""}
       </div>
-      <div style="font-size:13px;font-weight:600;opacity:.8;position:relative;z-index:1">${dueReview} ${dueReview===1?"repaso":"repasos"} · ${dueNew} ${dueNew===1?"nuevo":"nuevos"}</div>
+      ${dueReview > Math.max(5, S.prefs.size||6) ? `<button class="catchup" data-act="catch-up">📚 Tienes ${dueReview} repasos pendientes · <b>Ponerme al día ›</b></button>`
+        : `<div style="font-size:13px;font-weight:600;opacity:.8;position:relative;z-index:1">${dueReview} ${dueReview===1?"repaso":"repasos"} · ${dueNew} ${dueNew===1?"nuevo":"nuevos"}</div>`}
     </div>
     <div class="stats">
       <button class="stat" data-go="racha" aria-label="Ver mi racha">
@@ -1384,7 +1389,7 @@ function viewHome(){
   <section class="split">
     <div class="panel" style="display:flex;flex-direction:column;gap:10px">
       <div class="spread"><h3>Próximos repasos</h3></div>
-      ${next.length? `<div class="vlist">${next.map(id=>{ const v=verse(id), p=prog(id); const d=Math.max(0,Math.ceil((p.due-Date.now())/DAY)); return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t open" data-act="verse-open" data-id="${id}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip none">${d<=1?"mañana":"en "+d+" días"}</span></div>`; }).join("")}</div>`
+      ${next.length? `<div class="vlist">${next.map(id=>{ const v=verse(id), p=prog(id); const d=Math.max(0,Math.round((dayStart(p.due)-dayStart(Date.now()))/DAY)); return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t open" data-act="verse-open" data-id="${id}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip none">${d<=1?"mañana":"en "+d+" días"}</span></div>`; }).join("")}</div>`
        : `<div class="empty"><b>Aún no hay repasos programados</b><span>Cuando practiques, aquí verás cuándo vuelve cada versículo.</span></div>`}
     </div>
     <div class="panel" style="display:flex;flex-direction:column;gap:10px">
@@ -2059,7 +2064,7 @@ function finishPlacement(){
     else if(sc>=1){ box=1; refs++; }
     if(box){
       known++; maxIdx = Math.max(maxIdx, SUG_MAP[it.id].order);
-      S.progress[it.id] = { box, due: now + INTERVAL_DAYS[box]*DAY, reps:1, lapses:0, last:now, introduced:now, hist:[Math.round(sc*100)], placed:true };
+      S.progress[it.id] = { box, due: dayStart(now, INTERVAL_DAYS[box]), reps:1, lapses:0, last:now, introduced:now, hist:[Math.round(sc*100)], placed:true };
     }
   });
   S.unlocked = Math.min(SUGGESTED.length, level.unlock);
@@ -4376,6 +4381,7 @@ document.addEventListener("click", e=>{
     }
     case "unlock-more": { const add=SUGGESTED.map(r=>r[0]).filter(id=>SUG_MAP[id].order>=S.unlocked && !(S.extraActive||[]).includes(id)).slice(0,3); S.extraActive=(S.extraActive||[]).concat(add); persist(); render(); toast(`${add.length} versículos agregados a tu plan.`); break; }
     case "unlock-now": { S.extraActive=(S.extraActive||[]).concat(id); persist(); render(); toast("Versículo agregado a tu plan."); break; }
+    case "catch-up": { const due = dueIds(activeIds()).filter(id=>prog(id)&&prog(id).reps>0).sort((a,b)=>prog(a).due-prog(b).due).slice(0,15); startSession(due, { title:"Ponerme al día", source:due }); break; }
     case "start-due": case "start-extra": { startSession(pickFor("active"),{title:a==="start-due"?"Práctica de hoy":"Práctica extra", source:"active"}); break; }
     case "play-list": {
       const l=getList(t.dataset.list); const q=pickFor(l.id, l.id);
