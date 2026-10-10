@@ -1983,7 +1983,7 @@ function renderPlacement(){
     }
     body = `
       <div class="progress"><i style="width:${P.i/P.items.length*100}%"></i></div>
-      <div class="spread"><div class="phase-tag"><span class="chip acc">Prueba de nivel</span><span class="chip none mono">${P.i+1} / ${P.items.length}</span></div><span class="chip none">${P.i<3?"Básico":P.i<6?"Intermedio":"Avanzado"}</span></div>
+      <div class="spread"><div class="phase-tag"><span class="chip acc">Prueba de nivel</span><span class="chip none mono">${P.i+1} / ${P.items.length}</span></div><button class="linkbtn" data-act="pl-skip" style="padding:4px 0;font-size:14px">Saltar y empezar desde cero</button></div>
       <div class="q-card">${inner}<div id="plFeedback"></div>${actions}</div>`;
   }
   else {
@@ -3980,7 +3980,9 @@ function renderWelcome(){
       <div style="display:flex;flex-direction:column;gap:10px">
         ${Object.entries(RITMOS).map(([k,r])=>`<button class="goal" data-act="wel-ritmo" data-k="${k}" aria-pressed="${(WEL.ritmo||"constante")===k}" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;text-align:left"><span style="font-size:28px">${r.em}</span><span style="display:flex;flex-direction:column;gap:2px"><b>${r.label}</b><small>${r.desc}</small></span></button>`).join("")}
       </div>
-      <div class="wel-actions"><button class="btn primary lg" data-act="wel-finish">Hacer la prueba de nivel</button><button class="linkbtn" data-act="wel-finish-skip">Empezar desde cero</button></div>`;
+      <div class="wel-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button class="btn primary lg" data-act="wel-finish" style="flex-direction:column;gap:2px;line-height:1.2"><span>Hacer la prueba</span><small style="font-weight:500;opacity:.85;font-size:12px">10 preguntas · 5 min</small></button>
+        <button class="btn lg" data-act="wel-finish-skip" style="flex-direction:column;gap:2px;line-height:1.2"><span>Empezar desde cero</span><small style="font-weight:500;opacity:.7;font-size:12px">ir directo al inicio</small></button></div>`;
   } else if(st==="forgot"){
     main = `
       <div class="spread"><button class="btn ghost" data-act="wel-login" style="padding:8px 12px">← Atrás</button><span></span></div>
