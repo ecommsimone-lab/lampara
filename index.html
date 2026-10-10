@@ -1515,6 +1515,7 @@ const micSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRec
 function modeFor(id){ const m = modeFor0(id); return m === "recite" && (micPaused() || !micSupported()) ? "write" : m; }
 function modeFor0(id){
   const m = SESSION.mode;
+  if(SESSION.knowCheck && SESSION.knowCheck[id]) return "write";
   if(m!=="mixto") return m;
   if(SESSION.modes && SESSION.modes[id]) return SESSION.modes[id];
   const b = (prog(id)||{box:0}).box, t = diffTier();
@@ -1683,10 +1684,10 @@ function quizBody(){
   let actions = "";
   if(!q.done){
     if(q.mode==="recite") actions = `<div class="row"><button class="btn" data-act="hint">Primera palabra</button><button class="btn ghost" data-act="mic-off">🔇 No puedo hablar ahora</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Ver mi resultado</button></div>`;
-    else actions = `<div class="row"><button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
+    else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}<button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
   }
   return `
-  <div class="spread"><div class="phase-tag">${s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
+  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
   <div class="q-card">
     <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
     ${inner}
@@ -1853,12 +1854,26 @@ function checkRef(giveUp=false){
   const refHTML = `<div class="result-bar ${ok?"ok":"bad"}" style="padding:10px 16px"><span>${ok?"Cita correcta:":"La cita correcta es"} <b style="font-size:inherit">${esc(v.ref)}</b>${ok||giveUp?"":` · escribiste “${esc(rb.value.trim())}”`}</span></div>`;
   finalize(score, refHTML);
 }
+/* “Ya me lo sé”: lo escribió completo → aprendido, con repasos espaciados; y se suma otro versículo al plan */
+let GROWN_KNOWN = 0;
+function markKnown(id){
+  const now = Date.now(), p = S.progress[id] || { reps:0, lapses:0, hist:[], introduced:now };
+  p.box = MASTER; p.due = dayStart(now, 4); p.last = now; p.known = true; p.reps = Math.max(1, p.reps||0);
+  S.progress[id] = p;
+  if(S.unlocked < SUGGESTED.length){ S.unlocked++; GROWN_KNOWN = 1; }
+  persist();
+}
 function finalize(score, extraHTML=""){
   const s = SESSION, q = s.q;
   if(q.done) return;
   q.done = true; q.score = score;
   const before = status(q.id);
-  const outcome = applyResult(q.id, score);
+  let outcome = applyResult(q.id, score);
+  if((s.knowCheck||{})[q.id] && !s.knownDone?.[q.id]){
+    s.knownDone = s.knownDone || {}; s.knownDone[q.id] = true;
+    if((s.pending[q.id] ?? 0) >= .95){ markKnown(q.id); outcome = "ok"; extraHTML = `<div class="result-bar ok"><span>✓ <b style="font-size:inherit">¡Ya lo sabías!</b> Pasó a aprendidos. Te lo preguntaremos de vez en cuando para que no se te olvide${GROWN_KNOWN?", y agregamos un versículo nuevo a tu plan":""}.</span></div>` + extraHTML; GROWN_KNOWN = 0; }
+    else extraHTML = `<div class="result-bar mid"><span>Casi. Lo seguiremos practicando hasta que te lo sepas completo.</span></div>` + extraHTML;
+  }
   const xp = xpFor(score, q.mode); gainXP(xp);
   s.results.push({ id:q.id, score, outcome, before, after:status(q.id), xp });
   persist();
@@ -3196,7 +3211,7 @@ function diffTier(){ return Math.max(0, Math.min(TIERS.length-1, tierOf(Math.min
 /* Cuántos versículos nuevos puedes empezar aún esta semana según tu ritmo */
 function newBudget(){
   const since = Date.now() - 7*DAY;
-  const started = Object.values(S.progress||{}).filter(p=>p && !p.placed && p.introduced && p.introduced >= since && p.reps>0).length;   // los que ya sabías en la prueba de nivel no cuentan
+  const started = Object.values(S.progress||{}).filter(p=>p && !p.placed && !p.known && p.introduced && p.introduced >= since && p.reps>0).length;   // los que ya sabías no cuentan   // los que ya sabías en la prueba de nivel no cuentan
   return Math.max(0, RITMOS[ritmo()].week - started);
 }
 function limitNew(ids, keepAtLeast){
@@ -4103,9 +4118,7 @@ function renderWelcome(){
       <div style="display:flex;flex-direction:column;gap:10px">
         ${Object.entries(RITMOS).map(([k,r])=>`<button class="goal" data-act="wel-ritmo" data-k="${k}" aria-pressed="${(WEL.ritmo||"constante")===k}" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;text-align:left"><span style="font-size:28px">${r.em}</span><span style="display:flex;flex-direction:column;gap:2px"><b>${r.label}</b><small>${r.desc}</small></span></button>`).join("")}
       </div>
-      <div class="wel-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button class="btn primary lg" data-act="wel-finish" style="flex-direction:column;gap:2px;line-height:1.2"><span>Hacer la prueba</span><small style="font-weight:500;opacity:.85;font-size:12px">10 preguntas · 5 min</small></button>
-        <button class="btn lg" data-act="wel-finish-skip" style="flex-direction:column;gap:2px;line-height:1.2"><span>Empezar desde cero</span><small style="font-weight:500;opacity:.7;font-size:12px">ir directo al inicio</small></button></div>`;
+      <div class="wel-actions"><button class="btn primary lg" data-act="wel-finish">Empezar</button><p class="muted" style="font-size:13px;text-align:center;margin:0">¿Ya te sabes algunos versículos? Cuando te aparezcan, toca “Ya me lo sé” y escríbelo completo.</p></div>`;
   } else if(st==="forgot"){
     main = `
       <div class="spread"><button class="btn ghost" data-act="wel-login" style="padding:8px 12px">← Atrás</button><span></span></div>
@@ -4311,7 +4324,7 @@ async function deleteAccount(){
   delete MEM["lampara.state.acct:"+id]; try{ localStorage.removeItem("lampara.state.acct:"+id); }catch(e){}
   localSignOut(); WEL.step=0; render(); toast("Tu cuenta y su progreso se eliminaron de este dispositivo.");
 }
-function needsPlacement(){ return !S.placed && Object.keys(S.progress).length===0; }
+function needsPlacement(){ return false; }   // ya no hay prueba inicial: lo que sabes se reconoce con “Ya me lo sé”
 function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
 
 /* ---------- Perfil y ajustes ---------- */
@@ -4466,7 +4479,7 @@ document.addEventListener("click", e=>{
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
       S.prefs.ritmo = WEL.ritmo || "constante"; S.prefs.minutes = RITMOS[S.prefs.ritmo].min; S.prefs.size = versesFor(S.prefs.minutes); persist();
-      if(a==="wel-finish") startPlacement(); else { S.placed={ level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); handlePendingLink(); }
+      S.placed = S.placed || { level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); handlePendingLink();
       break;
     }
     case "new-list": newListModal(); break;
@@ -4551,6 +4564,7 @@ document.addEventListener("click", e=>{
       break;
     }
     case "mic": startMic(); break;
+    case "know-it": { const s = SESSION; if(!s || !s.q || s.q.done) break; s.knowCheck = s.knowCheck || {}; s.knowCheck[s.q.id] = true; s.modes = s.modes || {}; s.modes[s.q.id] = "write"; prepQuestion(); render(); const ta = $("#answer, textarea"); if(ta) ta.focus(); break; }
     case "mic-write": switchToWrite(); break;
     case "mic-off": { S.noMicUntil = Date.now() + MIC_PAUSE; persist(); toast("Listo. Durante 15 minutos no te pediremos recitar; escribirás los versículos."); switchToWrite(); break; }
     case "reveal": reveal(); break;
