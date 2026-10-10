@@ -3653,8 +3653,7 @@ function badgeDescFor(b, friend){
 function badgeModal(id, friend){
   const b = BADGE_MAP[id]; if(!b) return;
   const fuid = typeof friend === "string" && friend !== "1" ? friend : null;
-  const fat = fuid && ((COMM.fbadges||{})[fuid]||[]).find(x=>x && x.id===id);
-  const at = friend ? (fat && fat.at) : (S.badges && S.badges[id]);
+  const at = friend ? null : (S.badges && S.badges[id]);   // la fecha solo se muestra en tus propios logros
   const on = !!friend || !!at;
   const st = badgeStats(), val = Math.min(b.goal, badgeValue(b, st));
   modal(`<div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
