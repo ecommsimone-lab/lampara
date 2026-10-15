@@ -1322,7 +1322,9 @@ function viewHome(){
   const acc = accuracy();
   const dueAll = dueIds(act);
   const dueReview = dueAll.filter(id=>prog(id)&&prog(id).reps>0).length;
-  const dueNew = dueAll.length - dueReview;
+  // los nuevos solo cuentan si tu ritmo permite empezarlos esta semana (si no, la práctica no los incluye y el número nunca bajaba)
+  const dueNew = Math.min(dueAll.length - dueReview, newBudget());
+  const todayN = dueReview + dueNew;
   const first = dueAll[0] ? verse(dueAll[0]) : verse(act[0]);
   const hour = new Date().getHours();
   const greet = hour<12?"Buenos días":hour<19?"Buenas tardes":"Buenas noches";
@@ -1333,11 +1335,11 @@ function viewHome(){
   <section class="hero">
     <div class="today">
       <p class="greet">${greet}, ${esc(displayName().split(" ")[0])} 👋</p>
-      <h1>${dueAll.length ? `Hoy tienes <em>${dueAll.length}</em> ${dueAll.length===1?"versículo":"versículos"} por practicar` : `Estás al día. <em>Bien hecho.</em>`}</h1>
+      <h1>${todayN ? `Hoy tienes <em>${todayN}</em> ${todayN===1?"versículo":"versículos"} por practicar` : `Estás al día. <em>Bien hecho.</em>`}</h1>
       ${first?`<p class="verse-peek">“${esc(first.text.length>130?first.text.slice(0,130)+"…":first.text)}” <b style="font-size:13px;opacity:.85;white-space:nowrap">— ${esc(first.ref)}</b></p>`:""}
       <div class="row">
-        ${dueAll.length?`<button class="btn primary lg" data-act="start-due">${I.play} Practicar ahora</button>`:`<button class="btn primary lg" data-act="start-extra">${I.play} Práctica extra</button>`}
-        ${counts.ok && (!dueAll.length || Math.floor(Date.now()/DAY) % 3 === 0) ? `<button class="btn" data-go="review">${I.review} Repasar memorizados</button>` : ""}
+        ${todayN?`<button class="btn primary lg" data-act="start-due">${I.play} Practicar ahora</button>`:`<button class="btn primary lg" data-act="start-extra">${I.play} Práctica extra</button>`}
+        ${counts.ok && (!todayN || Math.floor(Date.now()/DAY) % 3 === 0) ? `<button class="btn" data-go="review">${I.review} Repasar memorizados</button>` : ""}
       </div>
       ${dueReview > Math.max(5, S.prefs.size||6) ? `<button class="catchup" data-act="catch-up">📚 Tienes ${dueReview} repasos pendientes · <b>Ponerme al día ›</b></button>`
         : `<div style="font-size:13px;font-weight:600;opacity:.8;position:relative;z-index:1">${dueReview} ${dueReview===1?"repaso":"repasos"} · ${dueNew} ${dueNew===1?"nuevo":"nuevos"}</div>`}
