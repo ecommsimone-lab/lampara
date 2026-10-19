@@ -177,6 +177,47 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .chart text{fill:var(--muted);font-size:10px;font-weight:600}
 
 .vlist{display:flex;flex-direction:column}
+.mood{display:flex;flex-direction:column;gap:10px}
+.mood>.spread b{font-size:16px}
+.mood-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.mood-row::-webkit-scrollbar{display:none}
+.mood-row button{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px;padding:10px 8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;font-weight:600;text-align:center}
+.mood-row button span{font-size:26px;line-height:1}
+.mood-row button:hover{border-color:var(--accent)}
+.pild-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.pild-grid button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.pild-grid button span{font-size:30px;line-height:1.1;margin-bottom:4px}
+.pild-grid button b{font-size:15.5px}
+.pild-grid button small{color:var(--muted);font-size:12.5px}
+.pild-grid button:hover{border-color:var(--accent)}
+.pild-head{display:flex;gap:16px;align-items:flex-start}
+.pild-head .pe{font-size:46px;line-height:1;flex:none;width:72px;height:72px;border-radius:22px;background:var(--surface-2);display:grid;place-items:center}
+.pild-head .pf{margin:0;font-family:var(--f-display);font-size:18px;line-height:1.45;font-style:italic;color:var(--muted)}
+.pild-verses{display:flex;flex-direction:column;gap:10px}
+.pild-verses .pv{cursor:pointer;padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.pild-verses .pv b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.pild-verses .pv p{margin:0;font-family:var(--f-display);font-size:17px;line-height:1.5}
+.pild-help{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:var(--accent-soft);font-size:14.5px;line-height:1.45}
+.pv-more{font-size:12.5px;font-weight:600;color:var(--muted)}
+.pv-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv-acts button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--bg)}
+.pv-acts button svg{width:20px;height:20px;color:var(--accent);margin-bottom:4px}
+.pv-acts button b{font-size:14.5px}
+.pv-acts button small{font-size:12px;color:var(--muted);line-height:1.3}
+.pv-acts button:hover{border-color:var(--accent)}
+.share-prev{position:relative;align-self:center;width:min(230px,60vw);aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center}
+.share-prev img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.share-prev span{position:relative;font-size:13px;color:var(--muted)}
+.share-scenes{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.share-thumbs{display:flex;gap:8px;overflow-x:auto;justify-content:safe center;padding:2px}
+.share-thumbs button{all:unset;cursor:pointer;flex:none;width:46px;height:82px;border-radius:10px;background-size:cover;background-position:center;outline:2.5px solid transparent;outline-offset:2px}
+.share-thumbs button[aria-pressed="true"]{outline-color:var(--accent)}
+.share-scenes button{all:unset;cursor:pointer;padding:7px 12px;border-radius:999px;border:1.5px solid var(--line);font-size:13.5px;font-weight:600}
+.share-scenes button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pick-list{display:flex;flex-direction:column;gap:8px}
+.pick-list button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1.5px solid var(--line)}
+.pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
 .tm-chip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:600;background:var(--bg)}
 .tm-chip i,.tm-est i,.tm-estpick i{width:9px;height:9px;border-radius:50%;background:var(--ec)}
@@ -490,6 +531,8 @@ a.btn:not(.primary){color:var(--ink)}
 .crop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.55);pointer-events:none;outline:2px solid rgba(255,255,255,.8);outline-offset:-2px}
 .zoom{width:100%;accent-color:var(--accent)}
 /* ---------- Logros ---------- */
+@font-face{font-family:"Roboto";font-weight:900;font-display:swap;src:url("fonts/roboto-900.woff2") format("woff2")}
+@font-face{font-family:"Roboto";font-weight:500;font-display:swap;src:url("fonts/roboto-500.woff2") format("woff2")}
 @font-face{font-family:"Yellowtail";font-weight:400;font-display:swap;src:url("fonts/yellowtail-400.woff2") format("woff2")}
 @font-face{font-family:"Playfair Display";font-weight:500;font-display:swap;src:url("fonts/playfair-500.woff2") format("woff2")}
 @font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url("fonts/fraunces-600.woff2") format("woff2")}
@@ -828,6 +871,7 @@ function activeIds(){
   const ids = new Set(S.favs);
   SUGGESTED.slice(0,S.unlocked).forEach(([id])=>ids.add(id));
   (S.extraActive||[]).forEach(id=>ids.add(id));
+  (S.queued||[]).forEach(id=>ids.add(id));
   return [...ids].filter(id=>verse(id));
 }
 function prog(id){ return S.progress[id] || null; }
@@ -1029,7 +1073,8 @@ function buildQueue(ids, {grow=false, size=S.prefs.size}={}){
     ids = ids.concat(added); fresh = fresh.concat(added); GROWN = added.length;
   }
   const failedNow = fresh.filter(id=>failed.has(id));
-  let pick = weightedSample(failedNow, Math.min(failedNow.length, Math.ceil(size/3)), now);
+  const up = fresh.filter(id=>!prog(id) && upRank(id) < 1e9).sort((a,b)=>upRank(a)-upRank(b)).slice(0, Math.ceil(size/2));
+  let pick = up.concat(weightedSample(failedNow.filter(id=>!up.includes(id)), Math.min(failedNow.length, Math.ceil(size/3)), now));
   const rest = fresh.filter(id=>!pick.includes(id));
   pick = pick.concat(weightedSample(rest.filter(id=>isDue(id,now)), size-pick.length, now));
   if(pick.length<size) pick = pick.concat(weightedSample(rest.filter(id=>!pick.includes(id)), size-pick.length, now));
@@ -1113,6 +1158,7 @@ function render(){
   else if(VIEW.name==="avisos") v.innerHTML = mtop + viewAvisos();
   else if(VIEW.name==="racha") v.innerHTML = mtop + viewRacha();
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
+  else if(VIEW.name==="pildora") v.innerHTML = mtop + viewPildora(VIEW.id);
   else if(VIEW.name==="equipo") v.innerHTML = mtop + viewEquipo();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
@@ -1301,6 +1347,41 @@ async function shareHeart(btn){
   finally{ if(btn) btn.disabled = false; }
 }
 
+/* ---------- Imagen para compartir un versículo: fotos reales (Unsplash, Pexels y NASA, uso libre) en formato de celular ---------- */
+const FONDOS = [
+  ["cielo-nubes","Cielo",.36],["cielo-cumulo","Cielo",.3],["cielo-amanecer","Cielo",.56],
+  ["universo-via-lactea","Universo",.5],["universo-galaxia","Universo",.5],["universo-orion","Universo",.5],["universo-magallanes","Universo",.5],["universo-nebulosa","Universo",.5],["universo-luna","Universo",.8],
+  ["mar-acantilados","Mar",.52],["mar-montes","Mar",.3],
+  ["bosque-secuoyas","Bosque",.5],["bosque-cascada","Bosque",.72],["bosque-corteza","Bosque",.5],["campo-flores","Bosque",.5],["montana-roca","Bosque",.24]
+];
+const FONDO_TEMAS = ["Cielo","Universo","Mar","Bosque"];
+function loadImg(src){ return new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = src; }); }
+async function verseImage(id, fondo){
+  const v = verse(id); if(!v) return null;
+  const F = FONDOS.find(x=>x[0]===fondo) || FONDOS[0];
+  try{ await Promise.all(['900 80px "Roboto"', '500 30px "Roboto"'].map(f=>document.fonts.load(f))); }catch(e){}
+  const W = 1080, H = 1920, X = 96, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  try{ g.drawImage(await loadImg(`img/fondos/${F[0]}.jpg`), 0, 0, W, H); }catch(e){ g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H); }
+  // columna alineada a la izquierda: primero la cita pequeña (da contexto) y debajo el versículo grande
+  const maxW = W - X*2, maxH = 900;
+  let fs = 104, lines = [];
+  for(; fs >= 44; fs -= 2){ g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`; lines = wrapLines(g, v.text, maxW); if(lines.length * fs * 1.08 <= maxH) break; }
+  const lh = fs * 1.08, eyeH = 34 + 30, blockH = eyeH + lines.length*lh;
+  const cy = Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
+  g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(0, 0, W, H);
+  const vg = g.createLinearGradient(0, top - 300, 0, top + blockH + 300);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(.3, "rgba(0,0,0,.4)"); vg.addColorStop(.7, "rgba(0,0,0,.4)"); vg.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = vg; g.fillRect(0, top - 300, W, blockH + 600);
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillStyle = "#fff"; g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 16; g.shadowOffsetY = 2;
+  g.font = '500 32px "Roboto", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.globalAlpha = .9;
+  g.fillText(v.ref.toUpperCase(), X, top + 32); g.globalAlpha = 1;
+  g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`;
+  lines.forEach((l,i)=>g.fillText(l, X - fs*.04, top + eyeH + fs*.92 + i*lh));
+  g.font = '500 24px "Roboto", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "5px"; g.globalAlpha = .75;
+  g.fillText(`${APP_NAME.toUpperCase()} · RVR1960`, X, H - 110);
+  g.globalAlpha = 1; if("letterSpacing" in g) g.letterSpacing = "0px"; g.shadowBlur = 0;
+  return new Promise(r=>c.toBlob(r, "image/jpeg", .9));
+}
 /* ---------- Inicio / Dashboard ---------- */
 function ring(pct, size=92, stroke=10){
   const r=(size-stroke)/2, c=2*Math.PI*r, off=c*(1-pct/100);
@@ -1396,6 +1477,7 @@ function viewHome(){
   </section>
 
   ${heartCard()}
+  ${moodRowHTML()}
 
   ${pathCard()}
 
@@ -1444,12 +1526,143 @@ function viewLibrary(){
     <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Explora y practica</span><h1 style="font-size:clamp(30px,5vw,46px)">Biblioteca</h1></div>
     <div class="row"><button class="btn" data-act="new-list">${I.plus} Nueva lista</button><button class="btn primary" data-act="add-verse">${I.plus} Agregar versículo</button></div>
   </section>
+  ${pildorasSection()}
   ${topicsSection()}
   <section style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Tus colecciones</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Tus listas</h2></section>
   <section class="lists-grid">
     ${lists.map(l=>`<button class="lcard" data-list="${l.id}"><div class="cv ${l.cv}"><span>${esc(l.glyph)}</span></div><div><b>${esc(l.name)}</b><br><small>${l.ids.length} ${l.ids.length===1?"versículo":"versículos"}</small></div></button>`).join("")}
   </section>
   ${noticeHTML()}`;
+}
+
+/* ----- Píldoras de fe: versículos según cómo te sientes hoy (lo que eliges no se guarda en la nube ni lo ven tus amigos) -----
+   Textos verificados palabra por palabra con la RVR1960 de Blue Letter Bible el 19 de octubre de 2026. */
+const PILD_VERSES = [
+  ["sal-34-18","Salmos 34:18","Cercano está Jehová a los quebrantados de corazón; Y salva a los contritos de espíritu."],
+  ["sal-147-3","Salmos 147:3","El sana a los quebrantados de corazón, Y venda sus heridas."],
+  ["mt-5-4","Mateo 5:4","Bienaventurados los que lloran, porque ellos recibirán consolación."],
+  ["sal-42-11","Salmos 42:11","¿Por qué te abates, oh alma mía, Y por qué te turbas dentro de mí? Espera en Dios; porque aún he de alabarle, Salvación mía y Dios mío."],
+  ["2co-4-8-9","2 Corintios 4:8-9","que estamos atribulados en todo, mas no angustiados; en apuros, mas no desesperados; perseguidos, mas no desamparados; derribados, pero no destruidos;"],
+  ["sal-40-1-2","Salmos 40:1-2","Pacientemente esperé a Jehová, Y se inclinó a mí, y oyó mi clamor. Y me hizo sacar del pozo de la desesperación, del lodo cenagoso; Puso mis pies sobre peña, y enderezó mis pasos."],
+  ["is-40-29","Isaías 40:29","El da esfuerzo al cansado, y multiplica las fuerzas al que no tiene ningunas."],
+  ["gal-6-9","Gálatas 6:9","No nos cansemos, pues, de hacer bien; porque a su tiempo segaremos, si no desmayamos."],
+  ["1co-10-13","1 Corintios 10:13","No os ha sobrevenido ninguna tentación que no sea humana; pero fiel es Dios, que no os dejará ser tentados más de lo que podéis resistir, sino que dará también juntamente con la tentación la salida, para que podáis soportar."],
+  ["sal-119-9","Salmos 119:9","¿Con qué limpiará el joven su camino? Con guardar tu palabra."],
+  ["2tim-2-22","2 Timoteo 2:22","Huye también de las pasiones juveniles, y sigue la justicia, la fe, el amor y la paz, con los que de corazón limpio invocan al Señor."],
+  ["hb-4-15-16","Hebreos 4:15-16","Porque no tenemos un sumo sacerdote que no pueda compadecerse de nuestras debilidades, sino uno que fue tentado en todo según nuestra semejanza, pero sin pecado. Acerquémonos, pues, confiadamente al trono de la gracia, para alcanzar misericordia y hallar gracia para el oportuno socorro."],
+  ["sal-118-24","Salmos 118:24","Este es el día que hizo Jehová; Nos gozaremos y alegraremos en él."],
+  ["flp-4-4","Filipenses 4:4","Regocijaos en el Señor siempre. Otra vez digo: ¡Regocijaos!"],
+  ["stg-1-17","Santiago 1:17","Toda buena dádiva y todo don perfecto desciende de lo alto, del Padre de las luces, en el cual no hay mudanza, ni sombra de variación."],
+  ["sal-103-2","Salmos 103:2","Bendice, alma mía, a Jehová, Y no olvides ninguno de sus beneficios."],
+  ["ec-3-1","Eclesiastés 3:1","Todo tiene su tiempo, y todo lo que se quiere debajo del cielo tiene su hora."],
+  ["sal-16-11","Salmos 16:11","Me mostrarás la senda de la vida; En tu presencia hay plenitud de gozo; Delicias a tu diestra para siempre."],
+  ["prov-6-6","Proverbios 6:6","Ve a la hormiga, oh perezoso, Mira sus caminos, y sé sabio;"],
+  ["ec-9-10","Eclesiastés 9:10","Todo lo que te viniere a la mano para hacer, hazlo según tus fuerzas; porque en el Seol, adonde vas, no hay obra, ni trabajo, ni ciencia, ni sabiduría."],
+  ["ef-5-15-16","Efesios 5:15-16","Mirad, pues, con diligencia cómo andéis, no como necios sino como sabios, aprovechando bien el tiempo, porque los días son malos."],
+  ["hb-13-5","Hebreos 13:5","Sean vuestras costumbres sin avaricia, contentos con lo que tenéis ahora; porque él dijo: No te desampararé, ni te dejaré;"],
+  ["sal-27-10","Salmos 27:10","Aunque mi padre y mi madre me dejaran, Con todo, Jehová me recogerá."],
+  ["jn-14-18","Juan 14:18","No os dejaré huérfanos; vendré a vosotros."],
+  ["sal-56-3","Salmos 56:3","En el día que temo, Yo en ti confío."],
+  ["is-43-1","Isaías 43:1","Ahora, así dice Jehová, Creador tuyo, oh Jacob, y Formador tuyo, oh Israel: No temas, porque yo te redimí; te puse nombre, mío eres tú."],
+  ["stg-1-19-20","Santiago 1:19-20","Por esto, mis amados hermanos, todo hombre sea pronto para oír, tardo para hablar, tardo para airarse; porque la ira del hombre no obra la justicia de Dios."],
+  ["prov-15-1","Proverbios 15:1","La blanda respuesta quita la ira; Mas la palabra áspera hace subir el furor."],
+  ["ef-4-26-27","Efesios 4:26-27","Airaos, pero no pequéis; no se ponga el sol sobre vuestro enojo, ni deis lugar al diablo."],
+  ["sal-32-5","Salmos 32:5","Mi pecado te declaré, y no encubrí mi iniquidad. Dije: Confesaré mis transgresiones a Jehová; Y tú perdonaste la maldad de mi pecado. Selah"],
+  ["mi-7-19","Miqueas 7:19","El volverá a tener misericordia de nosotros; sepultará nuestras iniquidades, y echará en lo profundo del mar todos nuestros pecados."]
+];
+PILD_VERSES.forEach(([id,ref,text],i)=>{ if(!SUG_MAP[id]) SUG_MAP[id] = { id, ref, text, theme:"Píldora de fe", order: 2000+i, sug:true, extra:true, pild:true }; });
+const PILDORAS = [
+  { id:"ansiedad", e:"😰", l:"Ansiedad", t:"Para cuando sientes ansiedad", f:"Las preocupaciones solo te roban la alegría. Trabaja con empeño en lo que Dios puso en tus manos y confía en que Él cuidará de ti.", ids:["flp-4-6-7","1p-5-7","is-26-3","mt-6-34","jn-14-27"] },
+  { id:"tristeza", e:"😢", l:"Tristeza", t:"Para cuando estás triste", f:"Medita en la Palabra de Dios para sanar tu corazón y renovar tu alegría.", ids:["sal-34-18","sal-147-3","mt-5-4","jn-16-33","ap-21-4","rom-15-13"] },
+  { id:"sinanimo", e:"🌧️", l:"Sin ánimo", t:"Para los días sin ánimo", f:"El ánimo viene de Dios y de su Palabra.", ids:["sal-42-11","lm-3-22-23","2co-4-8-9","sal-40-1-2","is-41-10","mt-11-28"], ayuda:true },
+  { id:"cansancio", e:"😮‍💨", l:"Cansancio", t:"Para cuando estás cansado", f:"El cansancio puede hacernos más vulnerables al pecado. Mira a Dios: Él aumentará tus fuerzas con su poderosa presencia.", ids:["mt-11-28","is-40-29","is-40-31","gal-6-9","2co-12-9"] },
+  { id:"tentacion", e:"🛡️", l:"Tentación", t:"Para la tentación · Pureza", f:"Dios prometió darte la salida para resistir la tentación. Mantente alerta y aléjate de ella lo más rápido posible.", ids:["1co-10-13","sal-119-9","2tim-2-22","hb-4-15-16","sal-119-11","1jn-1-9"] },
+  { id:"alegria", e:"😊", l:"Alegría", t:"Para un día de alegría", f:"Tienes muchas razones para alegrarte: el perdón de Dios por medio de Cristo y la esperanza de la vida eterna.", ids:["sal-118-24","flp-4-4","stg-1-17","1ts-5-16-18","sal-16-11"] },
+  { id:"gratitud", e:"🙏", l:"Gratitud", t:"Para dar gracias", f:"Agradece a Dios en todas las circunstancias de la vida, y Él te dará paz.", ids:["sal-103-2","1ts-5-16-18","stg-1-17","lm-3-22-23","sal-139-14"] },
+  { id:"aburrimiento", e:"🥱", l:"Aburrimiento", t:"Para cuando todo parece igual", f:"Aunque lleguen momentos de aburrimiento, seguir a Dios y su llamado es la mejor vida posible.", ids:["ec-3-1","sal-16-11","ef-2-10","col-3-23","jer-29-11"] },
+  { id:"postergando", e:"⏳", l:"Postergando", t:"Para cuando lo dejas para después", f:"Un paso pequeño hoy, hecho para el Señor, vale más que un gran plan para mañana.", ids:["prov-6-6","ec-9-10","ef-5-15-16","col-3-23","stg-1-22"] },
+  { id:"soledad", e:"🫂", l:"Soledad", t:"Para cuando te sientes solo", f:"Busca en Dios una amistad eterna y confía en que Él te guiará a amistades sanas.", ids:["hb-13-5","sal-27-10","jn-14-18","dt-31-6","is-41-10"] },
+  { id:"miedo", e:"😨", l:"Miedo", t:"Para cuando tienes miedo", f:"Dios es tu luz y tu fortaleza; Él te protege del peligro. No temas.", ids:["sal-56-3","is-43-1","2tim-1-7","jos-1-9","sal-27-1"] },
+  { id:"enojo", e:"😤", l:"Enojo", t:"Para cuando estás enojado", f:"No permitas que el enojo domine tu vida: suéltalo y busca a Dios.", ids:["stg-1-19-20","prov-15-1","ef-4-26-27","ef-4-32","col-3-13"] },
+  { id:"culpa", e:"🤍", l:"Culpa", t:"Para cuando sientes culpa", f:"Confiesa tus pecados y Dios te perdonará; ante sus ojos quedarás limpio.", ids:["sal-32-5","mi-7-19","1jn-1-9","rom-8-1","sal-103-12","is-1-18"] }
+];
+const PILD_MAP = Object.fromEntries(PILDORAS.map(p=>[p.id,p]));
+/* "Memorizar este": entra a tu plan y sale primero entre los versículos nuevos, respetando tu ritmo */
+function queueVerse(id){
+  S.queued = (S.queued||[]).filter(x=>x!==id); S.queued.unshift(id); persist();
+  const v = verse(id); toast(prog(id) ? `${v.ref} ya está en tu práctica.` : `${v.ref} saldrá primero en tus próximas prácticas.`);
+}
+const upRank = id => { const i = (S.queued||[]).indexOf(id); return i < 0 ? 1e9 : i; };
+function moodRowHTML(){
+  return `<section class="mood"><div class="spread" style="align-items:baseline"><b>¿Cómo te sientes hoy?</b><button class="linkbtn" data-go="library" style="font-size:13px">Ver todas</button></div>
+    <div class="mood-row">${PILDORAS.map(p=>`<button data-act="pild-open" data-id="${p.id}"><span>${p.e}</span>${esc(p.l)}</button>`).join("")}</div></section>`;
+}
+function pildorasSection(){
+  return `<section style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Para tu día a día</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Píldoras de fe</h2><p class="muted" style="margin:0;font-size:14.5px">Elige cómo te sientes y recibe versículos para ese momento.</p></section>
+  <section class="pild-grid">${PILDORAS.map(p=>`<button data-act="pild-open" data-id="${p.id}"><span>${p.e}</span><b>${esc(p.l)}</b><small>${p.ids.length} versículos</small></button>`).join("")}</section>`;
+}
+function viewPildora(id){
+  const p = PILD_MAP[id]; if(!p) return `<div class="empty"><b>No encontramos esta píldora</b></div>`;
+  return `
+  <button class="linkbtn" data-go="library" style="align-self:flex-start;padding:0">← Píldoras de fe</button>
+  <section class="pild-head"><span class="pe">${p.e}</span><div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Píldora de fe</span><h1 style="font-size:clamp(28px,5vw,42px)">${esc(p.t)}</h1><p class="pf">${esc(p.f)}</p></div></section>
+  <div class="row spread" style="gap:8px;align-items:center"><span class="muted" style="font-size:13.5px">Toca un versículo para memorizarlo, guardarlo, enviarlo o compartirlo.</span><button class="btn" data-act="pild-save" data-id="${p.id}">${I.listAdd} Guardar todos</button></div>
+  <section class="pild-verses">${p.ids.map(vid=>{ const v=verse(vid); return v?`<div class="pv" data-act="pild-verse" data-id="${vid}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p><span class="pv-more">Memorizar · Guardar · Enviar · Compartir</span></div>`:""; }).join("")}</section>
+  ${p.ayuda?`<div class="pild-help"><b>No tienes que pasarlo solo</b><span>Si llevas días o semanas así, habla con tu pastor, con alguien de confianza o con un profesional. En Colombia puedes llamar gratis a la línea nacional de salud mental: <b>192, opción 4</b>. Si es una emergencia, marca <b>123</b>.</span></div>`:""}`;
+}
+function pildVerseModal(vid){
+  const v = verse(vid); if(!v) return;
+  modal(`<div class="spread" style="flex-wrap:nowrap"><span class="ref-line">${esc(v.ref)}</span><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="verse-full">${esc(v.text)}</p><p class="muted" style="font-size:12px;margin:0">Reina-Valera 1960</p>
+    <div class="pv-acts">
+      <button data-act="pv-learn" data-id="${vid}">${I.play}<b>Memorizar este</b><small>Sale primero en tus próximas prácticas</small></button>
+      <button data-act="pv-save" data-id="${vid}">${I.listAdd}<b>Guardar en una lista</b><small>Mis versículos o una lista tuya</small></button>
+      <button data-act="pv-send" data-id="${vid}">${I.users}<b>Enviar a un amigo</b><small>Con un mensaje corto si quieres</small></button>
+      <button data-act="pv-share" data-id="${vid}">${I.share}<b>Compartir imagen</b><small>Para tus estados o redes</small></button>
+    </div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
+}
+function shareVerseModal(vid){
+  const v = verse(vid); if(!v) return; let tema = FONDO_TEMAS[0], fondo = FONDOS.find(x=>x[1]===tema)[0], blob = null, seq = 0;
+  modal(`<div class="spread"><h2 style="font-size:22px">Compartir ${esc(v.ref)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="share-prev"><img id="shImg" alt="Vista previa de la imagen"><span id="shWait">Creando imagen…</span></div>
+    <div class="share-scenes" id="shTema">${FONDO_TEMAS.map((x,i)=>`<button type="button" data-t="${x}" aria-pressed="${i===0}">${x}</button>`).join("")}</div>
+    <div class="share-thumbs" id="shFondos"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="shGo">${I.share} Compartir</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const img = sc.querySelector("#shImg"), wait = sc.querySelector("#shWait");
+    const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await verseImage(vid, fondo); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
+    const thumbs = ()=>{ sc.querySelector("#shFondos").innerHTML = FONDOS.filter(x=>x[1]===tema).map(x=>`<button type="button" data-f="${x[0]}" aria-pressed="${x[0]===fondo}" style="background-image:url('img/fondos/${x[0]}.jpg')" aria-label="Fondo"></button>`).join("");
+      sc.querySelectorAll("#shFondos [data-f]").forEach(b=>b.onclick=()=>{ fondo = b.dataset.f; thumbs(); draw(); }); };
+    sc.querySelectorAll("#shTema [data-t]").forEach(b=>b.onclick=()=>{ tema = b.dataset.t; fondo = FONDOS.find(x=>x[1]===tema)[0]; sc.querySelectorAll("#shTema [data-t]").forEach(x=>x.setAttribute("aria-pressed", x===b)); thumbs(); draw(); });
+    sc.querySelector("#shGo").onclick = async ()=>{ if(!blob) return; const name = v.ref.replace(/[^\wáéíóúñ]+/gi,"-").toLowerCase() + ".jpg"; const file = new File([blob], name, { type:"image/jpeg" });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; } }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast("Imagen descargada. Ya la puedes subir a tus estados."); };
+    thumbs(); draw();
+  });
+}
+function saveToListModal(ids, suggest){
+  ids = ids.filter(id=>verse(id)); if(!ids.length) return; let pick = "fav";
+  const title = ids.length===1 ? `Guardar ${verse(ids[0]).ref}` : `Guardar ${ids.length} versículos`;
+  modal(`<div class="spread"><h2 style="font-size:22px">${esc(title)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0">¿En qué lista ${ids.length===1?"lo":"los"} quieres?</p>
+    <div class="pick-list" id="pkl">
+      <button type="button" data-l="fav" aria-pressed="true"><span class="cv cv-fav"><span>♡</span></span><b>Mis versículos</b></button>
+      ${S.lists.map((l,i)=>`<button type="button" data-l="${l.id}" aria-pressed="false"><span class="cv cv-c${(i%4)+1}"><span>${esc(l.name.trim().charAt(0).toUpperCase()||"L")}</span></span><b>${esc(l.name)}</b></button>`).join("")}
+      <button type="button" data-l="new" aria-pressed="false"><span class="cv" style="background:var(--surface-2);color:var(--muted)">${I.plus}</span><b>Crear una lista nueva</b></button>
+    </div>
+    <div class="field" id="pkNew" hidden><label for="pkName">Nombre de la lista</label><input class="input" id="pkName" maxlength="40" value="${esc(suggest||"")}" placeholder="Ej. Para los días difíciles"></div>
+    <p id="pkErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="pkOk">Guardar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelectorAll("#pkl [data-l]").forEach(b=>b.onclick=()=>{ pick=b.dataset.l; sc.querySelectorAll("#pkl [data-l]").forEach(x=>x.setAttribute("aria-pressed",x===b)); sc.querySelector("#pkNew").hidden = pick!=="new"; if(pick==="new") sc.querySelector("#pkName").focus(); });
+    sc.querySelector("#pkOk").onclick=()=>{
+      let name = "";
+      if(pick==="fav"){ ids.slice().reverse().forEach(id=>{ if(!S.favs.includes(id)) S.favs.unshift(id); }); name = "Mis versículos"; }
+      else if(pick==="new"){ name = sc.querySelector("#pkName").value.trim(); if(!name){ sc.querySelector("#pkErr").textContent = "Escribe un nombre para la lista."; return; } S.lists.push({ id:"l-"+uid(), name, ids:ids.slice() }); }
+      else { const l = S.lists.find(x=>x.id===pick); if(!l) return; ids.forEach(id=>{ if(!l.ids.includes(id)) l.ids.push(id); }); name = l.name; }
+      persist(); closeModal(); toast(`Guardado en “${name}”.`); render();
+    };
+  });
 }
 
 function verseRow(id, i, list){
@@ -3244,6 +3457,7 @@ function newBudget(){
 }
 function limitNew(ids, keepAtLeast){
   let left = newBudget();
+  if((S.queued||[]).length) ids = ids.slice().sort((a,b)=>upRank(a)-upRank(b));   // los que pediste memorizar van primero
   const out = ids.filter(id=>{ if(prog(id)) return true; if(left>0){ left--; return true; } return false; });
   return out.length >= (keepAtLeast||1) ? out : ids.slice(0, Math.max(keepAtLeast||1, out.length));
 }
@@ -3268,8 +3482,10 @@ function pathQueue(size){
   const nRev = Math.max(1, Math.round(size/4));
   const learned = activeIds().filter(id=>!stage.includes(id) && (verseCleared(id) || status(id)==="ok"));
   const rev = weightedSample(learned.filter(id=>isDue(id,now)).concat(learned.filter(id=>!isDue(id,now))), Math.min(nRev, learned.length), now);
-  const pending = limitNew(stage.filter(id=>!verseCleared(id)), Math.min(2, stage.length)), cleared = stage.filter(verseCleared);
-  let main = weightedSample(pending, Math.min(pending.length, size-rev.length), now);
+  const queued = (S.queued||[]).filter(id=>verse(id) && !prog(id) && !stage.includes(id));
+  const pending = limitNew(queued.concat(stage.filter(id=>!verseCleared(id))), Math.min(2, stage.length)), cleared = stage.filter(verseCleared);
+  const up = pending.filter(id=>upRank(id) < 1e9).slice(0, Math.max(0, size-rev.length));
+  let main = up.concat(weightedSample(pending.filter(id=>!up.includes(id)), Math.max(0, Math.min(pending.length-up.length, size-rev.length-up.length)), now));
   if(main.length < size-rev.length) main = main.concat(weightedSample(cleared, size-rev.length-main.length, now));
   return shuffle(main.concat(rev));
 }
@@ -3442,11 +3658,12 @@ function verseModal(id){
     <p class="verse-full">${esc(v.text)}</p>
     <div class="row" style="gap:6px"><span class="chip ${s}"><i class="dot" style="background:currentColor"></i>${STATUS_LABEL[s]}</span>${v.theme?`<span class="chip none">${esc(v.theme)}</span>`:""}${h!=null?`<span class="chip ${h>=90?"ok":h>=60?"mid":"bad"}">Acierto ${h}%</span>`:""}${p&&p.lapses?`<span class="chip bad">${p.lapses} ${p.lapses===1?"fallo":"fallos"}</span>`:""}</div>
     <p class="muted" style="font-size:12px">Reina-Valera 1960</p>
-    <div class="row"><button class="btn primary" id="vmPlay">${I.play} Practicar este versículo</button><button class="btn" id="vmList">${I.listAdd} A una lista</button>${cloudOn()&&v.sug?`<button class="btn" id="vmSend">${I.users} Enviar a un amigo</button>`:""}${v.sug?`<button class="btn ghost" id="vmFav">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"A Mis versículos"}</button>`:""}</div>`, sc=>{
+    <div class="row"><button class="btn primary" id="vmPlay">${I.play} Practicar este versículo</button><button class="btn" id="vmList">${I.listAdd} A una lista</button>${cloudOn()&&v.sug?`<button class="btn" id="vmSend">${I.users} Enviar a un amigo</button>`:""}<button class="btn" id="vmShare">${I.share} Compartir imagen</button>${v.sug&&!v.pild?`<button class="btn ghost" id="vmFav">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"A Mis versículos"}</button>`:""}</div>`, sc=>{
       sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
       sc.querySelector("#vmPlay").onclick = ()=>{ closeModal(); startSession([id], { title:v.ref, source:[id] }); };
       sc.querySelector("#vmList").onclick = ()=>{ closeModal(); toListModal(id); };
       const vs = sc.querySelector("#vmSend"); if(vs) vs.onclick = ()=>{ closeModal(); sendVerseToFriend(id); };
+      const vh = sc.querySelector("#vmShare"); if(vh) vh.onclick = ()=>{ shareVerseModal(id); };
       const f = sc.querySelector("#vmFav"); if(f) f.onclick = ()=>{ closeModal(); if(S.favs.includes(id)){ S.favs = S.favs.filter(x=>x!==id); toast(`${v.ref} volvió a Sugeridos.`); } else { S.favs.unshift(id); toast(`${v.ref} se movió a Mis versículos.`); } persist(); render(); };
     });
 }
@@ -4550,6 +4767,13 @@ document.addEventListener("click", e=>{
     case "cal-next": VIEW.month=Math.min(0,(VIEW.month||0)+1); render(); break;
     case "verse-open": verseModal(t.dataset.id); break;
     case "heart-open": openHeart(); break;
+    case "pild-open": go("pildora",{id:t.dataset.id}); break;
+    case "pild-save": { const p = PILD_MAP[t.dataset.id]; if(p) saveToListModal(p.ids, p.l); break; }
+    case "pild-verse": pildVerseModal(t.dataset.id); break;
+    case "pv-learn": closeModal(); queueVerse(t.dataset.id); break;
+    case "pv-save": closeModal(); saveToListModal([t.dataset.id]); break;
+    case "pv-send": closeModal(); sendVerseToFriend(t.dataset.id); break;
+    case "pv-share": shareVerseModal(t.dataset.id); break;
     case "shield-pick": shieldPickModal(); break;
     case "shield-send": sendShield(t.dataset.id, t); break;
     case "shield-send-ask": { const uid = t.dataset.id; confirmBox("Regalar un escudo", `Le darás uno de tus escudos a ${personLabel(uid).split(" ")[0]}. Te quedarán ${(S.shields||1)-1}.`, "Regalar", ()=>sendShield(uid)); break; }
