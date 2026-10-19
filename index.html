@@ -177,6 +177,12 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .chart text{fill:var(--muted);font-size:10px;font-weight:600}
 
 .vlist{display:flex;flex-direction:column}
+.mc-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mc-opt{all:unset;cursor:pointer;text-align:center;padding:14px 10px;border-radius:14px;border:2px solid var(--line);background:var(--surface);font-weight:700;font-size:16px;box-shadow:0 2px 0 var(--line)}
+.mc-opt:hover:not(:disabled){border-color:var(--accent)}
+.mc-opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.mc-opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.mc-opt:disabled{cursor:default}
 .mood{display:flex;flex-direction:column;gap:10px}
 .mood>.spread b{font-size:16px}
 .mood-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
@@ -1753,18 +1759,22 @@ const MIC_PAUSE = 15*60*1000;
 const micPaused = () => !!(S && S.noMicUntil && Date.now() < S.noMicUntil);
 const micSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 function modeFor(id){ const m = modeFor0(id); return m === "recite" && (micPaused() || !micSupported()) ? "write" : m; }
+/* Escalera de ayuda de cada versículo, igual en cualquier etapa: tarjeta y pocos espacios → más espacios → escribir → escribir o recitar.
+   Sube cuando lo haces bien y baja cuando fallas (la caja del versículo sube o baja con cada resultado). */
+function ladderMode(id){
+  const b = (prog(id)||{box:0}).box;
+  if(b <= 2) return "blanks";
+  if(b === 3) return "write";
+  return Math.random() < .5 ? "write" : "recite";
+}
 function modeFor0(id){
   const m = SESSION.mode;
   if(SESSION.knowCheck && SESSION.knowCheck[id]) return "write";
   if(m!=="mixto") return m;
   if(SESSION.modes && SESSION.modes[id]) return SESSION.modes[id];
-  const b = (prog(id)||{box:0}).box, t = diffTier();
-  if(b===0) return "blanks";
-  if(b<=2) return t>=2 && b===2 ? "write" : t>=4 ? (Math.random()<.5?"write":"blanks") : "blanks";
-  if(b===3) return t>=3 && Math.random()<.4 ? "recite" : "write";
-  return Math.random()<.5 ? "write" : "recite";
+  return ladderMode(id);
 }
-function blankRatio(id){ const b=(prog(id)||{box:0}).box; return Math.min(.95, [.3,.45,.65,.85,.9,.95][b] + diffTier()*0.04); }
+function blankRatio(id){ const b=(prog(id)||{box:0}).box; return [.3,.5,.7,.85,.9,.95][Math.min(5,b)]; }
 
 /* Cada espacio mide exactamente lo que la palabra que falta: así se nota si es larga o corta y lo que escribes cabe completo */
 let BLANK_CANVAS = null;
@@ -1808,7 +1818,7 @@ function renderSession(){
       <div class="flash ${s.flipped?"flipped":""}" data-act="flip" role="button" tabindex="0" aria-label="Voltear tarjeta">
         <div class="flash-inner">
           <div class="face front"><span class="eyebrow" style="color:inherit;opacity:.6">Reina-Valera 1960</span><div class="ref">${esc(v.ref)}</div><span class="hint">Toca para ver el versículo · intenta recordarlo primero</span></div>
-          <div class="face back"><span class="ref-line">${esc(v.ref)}</span><p class="verse-text">${esc(v.text)}</p><span class="muted" style="font-size:13px">Léelo despacio, dos veces.</span></div>
+          <div class="face back"><span class="ref-line">${esc(v.ref)}</span><p class="verse-text">${splitPhrases(v.text).map(esc).join("<br>")}</p><span class="muted" style="font-size:13px">Léelo despacio, dos veces.</span></div>
         </div>
       </div>
       <div class="spread">
@@ -1829,8 +1839,24 @@ function renderSession(){
 
 /* ---------- Construcción de preguntas ---------- */
 /* Las preguntas de cita se mezclan al azar entre las demás, siempre con otras preguntas de por medio */
+/* Versículos largos: la primera vez se aprenden por frases (parte 1, parte 2…) y después completos */
+const LONG_WORDS = 22;
+function splitPhrases(text){
+  const w = text.split(/\s+/); if(w.length < LONG_WORDS) return [text];
+  const n = Math.min(3, Math.ceil(w.length/14)), cuts = [];
+  const breakAt = i => /[;:]$/.test(w[i]) ? 3 : /[,.?!]$/.test(w[i]) ? 2 : 0;
+  for(let k=1; k<n; k++){
+    const target = Math.round(w.length*k/n); let best = -1, bestScore = -1;
+    for(let i=Math.max(3, target-6); i<=Math.min(w.length-4, target+6); i++){ const b = breakAt(i); if(!b) continue; const sc = b*10 - Math.abs(i+1-target); if(sc > bestScore){ bestScore = sc; best = i; } }
+    cuts.push(best >= 0 ? best+1 : target);
+  }
+  const out = []; let prev = 0; [...new Set(cuts)].sort((a,b)=>a-b).forEach(c=>{ if(c>prev){ out.push(w.slice(prev, c).join(" ")); prev = c; } }); out.push(w.slice(prev).join(" "));
+  return out.filter(Boolean);
+}
+const needsParts = (id, mode) => (mode==="mixto" || mode==="blanks") && (prog(id)||{box:0}).box===0 && splitPhrases(verse(id).text).length>1 && !(SESSION && SESSION.knowCheck && SESSION.knowCheck[id]);
 function buildTasks(ids){
-  const tasks = ids.map(id=>({ type:"text", id }));
+  const tasks = [];
+  ids.forEach(id=>{ if(needsParts(id, SESSION.mode)){ const ph = splitPhrases(verse(id).text); ph.forEach((_,i)=>tasks.push({ type:"part", id, part:i, of:ph.length })); } tasks.push({ type:"text", id }); });
   shuffle(ids).forEach(id=>{
     const p = tasks.findIndex(x=>x.type==="text" && x.id===id);
     const min = Math.min(tasks.length, p+3);
@@ -1843,34 +1869,26 @@ function startQuiz(){
   const s = SESSION;
   s.phase = "quiz"; s.tasks = buildTasks(shuffle(s.ids)); s.t = 0; s.pending = {}; s.spoken = {};
   s.modes = {};
-  if(s.mode==="mixto" && ritmo()==="tranquilo"){
-    // Ritmo tranquilo: casi todo es completar espacios; cada 2 días aparece un reto de escribir o recitar un versículo completo
-    s.ids.forEach(id=>s.modes[id] = "blanks");
-    const daysSince = S.lastChallenge ? Math.round((new Date(todayKey()) - new Date(S.lastChallenge))/DAY) : 99;
-    const cand = s.ids.filter(id=>(prog(id)||{box:0}).box>=1);
-    if(daysSince>=2 && cand.length){                       // solo con versículos que ya practicaste
-      const id = cand[Math.floor(Math.random()*cand.length)];
-      const kind = S.challengeKind==="write" ? "recite" : "write";
-      s.modes[id] = kind; s.challenge = id; S.challengeKind = kind; S.lastChallenge = todayKey();
-    }
-  } else if(s.mode==="mixto"){
-    // Reparte los tres tipos en la sesión: espacios para los de menor nivel, escribir en el medio, recitar para los más avanzados (con algo de azar)
-    const sorted = s.ids.map(id=>({ id, k:((prog(id)||{box:0}).box) + Math.random()*1.5 })).sort((a,b)=>a.k-b.k).map(x=>x.id);
-    // La proporción depende de la fase del camino: al principio más espacios, después más escribir y recitar
-    const n = sorted.length, t = diffTier();
-    const pb = Math.max(0.15, 0.5 - 0.07*t), pr = Math.min(0.4, 0.17 + 0.045*t);
-    const counts = { blanks: Math.round(n*pb), recite: Math.round(n*pr) };
-    if(n>=3){ counts.blanks = Math.max(1, counts.blanks); counts.recite = Math.max(1, counts.recite); }
-    counts.write = Math.max(0, n - counts.blanks - counts.recite);
-    if(n>=3 && !counts.write){ if(counts.blanks>1) counts.blanks--; else counts.recite--; counts.write = 1; }
-    let k = 0; ["blanks","write","recite"].forEach(t=>{ for(let c=0;c<counts[t];c++) s.modes[sorted[k++]] = t; });
-    s.ids.forEach(id=>{ if(((prog(id)||{box:0}).box)===0) s.modes[id] = "blanks"; });   // un versículo nuevo nunca empieza escribiéndolo completo
-  }
+  if(s.mode==="mixto") s.ids.forEach(id=>s.modes[id] = ladderMode(id));
   prepQuestion();
 }
 function prepQuestion(){
   const s = SESSION; const task = s.tasks[s.t]; const id = task.id; const v = verse(id);
-  if(task.type==="ref"){ s.q = { id, stage:"ref", done:false, spokenRef: s.spoken[id]||"" }; return; }
+  if(task.type==="ref"){
+    s.q = { id, stage:"ref", done:false, spokenRef: s.spoken[id]||"" };
+    // cita de selección múltiple: en el repaso de memorizados (una sí, una no) y en versículos que apenas empiezas
+    s.mcCount = (s.mcCount||0) + 1;
+    const box = (prog(id)||{box:0}).box;
+    if((s.review && s.mcCount % 2 === 1) || (!s.review && box <= 1 && !(s.knowCheck||{})[id])) s.q.opts = refOptions(id);
+    return;
+  }
+  if(task.type==="part"){
+    const ph = splitPhrases(v.text)[task.part] || v.text, toks = ph.split(/(\s+)/), cand = [];
+    toks.forEach((t,i)=>{ const w=norm(t); if(w && w.length>=3) cand.push(i); });
+    const pick = new Set(shuffle(cand).slice(0, Math.max(1, Math.round(cand.length*.35))));
+    s.q = { id, mode:"blanks", stage:"text", isPart:true, part:task.part, of:task.of, phrase:ph, textDone:false, textScore:0, done:false, toks, blanks:[...pick].sort((a,b)=>a-b) };
+    return;
+  }
   const mode = modeFor(id);
   const q = { id, mode, stage:"text", textDone:false, textScore:0, done:false, score:null, transcript:"", spokenRef:"" };
   if(mode==="blanks"){
@@ -1883,8 +1901,34 @@ function prepQuestion(){
   }
   s.q = q;
 }
+/* Opciones de la cita: la correcta y 3 citas reales de otros versículos, de preferencia del mismo libro */
+function refOptions(id){
+  const v = verse(id), book = v.ref.replace(/\s+\d+:.*$/, "");
+  const pool = Object.values(SUG_MAP).filter(x=>x.id!==id && x.ref!==v.ref);
+  const same = shuffle(pool.filter(x=>x.ref.replace(/\s+\d+:.*$/, "")===book)).slice(0, 2);
+  const mine = new Set(activeIds());
+  const rest = shuffle(pool.filter(x=>!same.includes(x))).sort((a,b)=>(mine.has(b.id)?1:0)-(mine.has(a.id)?1:0));
+  const opts = same.concat(rest.slice(0, 3-same.length)).map(x=>x.ref);
+  return shuffle(opts.concat(v.ref));
+}
+function checkRefChoice(i){
+  const q = SESSION.q; if(!q || q.done || !q.opts) return;
+  const v = verse(q.id), ok = q.opts[i] === v.ref;
+  root.querySelectorAll("[data-act='ref-mc']").forEach(b=>{ b.disabled = true; const k = +b.dataset.i; if(q.opts[k]===v.ref) b.classList.add("right"); else if(k===i) b.classList.add("wrong"); });
+  const ts = SESSION.pending[q.id] ?? 0;
+  const score = ok ? ts : Math.min(ts*0.85, 0.85);
+  finalize(score, `<div class="result-bar ${ok?"ok":"bad"}" style="padding:10px 16px"><span>${ok?"Cita correcta:":"La cita correcta es"} <b style="font-size:inherit">${esc(v.ref)}</b></span></div>`);
+}
 function refBody(){
   const s = SESSION; const q = s.q; const v = verse(q.id);
+  if(q.opts) return `
+  <div class="spread"><div class="phase-tag"><span class="chip acc">Cita bíblica</span><span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div></div>
+  <div class="q-card">
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Elige la respuesta</span><h2 style="font-size:clamp(22px,3.4vw,30px)">¿A qué versículo pertenecen estas palabras?</h2></div>
+    <p class="verse-text">“${esc(v.text)}”</p>
+    <div class="mc-opts">${q.opts.map((r,i)=>`<button class="mc-opt" data-act="ref-mc" data-i="${i}">${esc(r)}</button>`).join("")}</div>
+    <div id="feedback"></div>
+  </div>`;
   return `
   <div class="spread"><div class="phase-tag"><span class="chip acc">Cita bíblica</span><span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div></div>
   <div class="q-card">
@@ -1928,9 +1972,9 @@ function quizBody(){
     else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}<button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
   }
   return `
-  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
+  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
   <div class="q-card">
-    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
     ${inner}
     <div id="feedback"></div>
     ${actions}
@@ -2071,6 +2115,17 @@ function feedbackHTML(score){
 function gradeText(score, extraHTML=""){
   const s = SESSION, q = s.q;
   if(q.textDone) return;
+  if(q.isPart){   // práctica por frases: no cuenta para el progreso, solo prepara para el versículo completo
+    q.textDone = true; q.done = true;
+    const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", last = q.part === q.of-1;
+    $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+      <div class="result-bar ${cls}"><b>${pct}%</b><span>${last?"Ya practicaste todas las partes. Ahora inténtalo completo.":`Parte ${q.part+1} de ${q.of}. Sigue con la próxima.`}</span></div>
+      <p class="muted" style="font-size:13px;margin:0">Esta parte dice:</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p>
+      <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${last?"Ahora el versículo completo":"Siguiente parte"}</button></div></div>`;
+    root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+    const n = $("#nextQ"); if(n) n.focus();
+    return;
+  }
   q.textDone = true; q.textScore = score; s.pending[q.id] = score;
   s.textInfo = s.textInfo || {}; s.textInfo[q.id] = { mode:q.mode, detail: q.detailHTML || "" };
   const v = verse(q.id);
@@ -3418,37 +3473,43 @@ function streakDays(f){
 
 /* =========================================================
    CAMINO POR NIVELES + PUNTOS DE EXPERIENCIA
-   - El camino tiene etapas de 6 versículos, del más corto y conocido al más largo.
-   - Cada 3 etapas cambia la fase (Semilla → Lámpara) y sube la dificultad:
-     menos tarjetas, más palabras ocultas y más escribir o recitar de memoria.
+   - El camino tiene etapas de 6 versículos. La dificultad viene del contenido, no de quitar ayuda:
+     primero versículos cortos y conocidos, luego más largos, luego pasajes de varios versículos.
+   - La ayuda (tarjetas, espacios, escribir, recitar) depende solo de qué tan bien sabes cada versículo.
    - En cada práctica del camino, 1 de cada 4 preguntas repasa lo ya aprendido.
    ========================================================= */
 const PATH_SIZE = 6;
 const TIERS = [
-  { name:"Semilla", em:"🌱", c1:"#22B573", c2:"#14935A", note:"Versículos cortos, con tarjetas y muchas pistas.", ref:"«La semilla es la palabra de Dios» (Lucas 8:11)" },
-  { name:"Raíz", em:"🌿", c1:"#2FB5A0", c2:"#168A7B", note:"Menos pistas: más palabras por completar.", ref:"«Arraigados y cimentados en amor» (Efesios 3:17)" },
-  { name:"Árbol", em:"🌳", c1:"#2F6FED", c2:"#1F4FC4", note:"Empiezas a escribir versículos completos.", ref:"«Será como árbol plantado junto a corrientes de aguas» (Salmos 1:3)" },
-  { name:"Fruto", em:"🍇", c1:"#7C5CFF", c2:"#5A3BDB", note:"Versículos más largos y casi sin tarjetas.", ref:"«El que permanece en mí… lleva mucho fruto» (Juan 15:5)" },
-  { name:"Luz", em:"✨", c1:"#FF8A00", c2:"#E06A00", note:"Escribir y recitar de memoria.", ref:"«Vosotros sois la luz del mundo» (Mateo 5:14)" },
-  { name:"Lámpara", em:"🪔", c1:"#E5484D", c2:"#B8323A", note:"El reto final: pasajes largos, de memoria.", ref:"«Lámpara es a mis pies tu palabra» (Salmos 119:105)" }
+  { name:"Semilla", em:"🌱", c1:"#22B573", c2:"#14935A", note:"Versículos cortos y muy conocidos.", ref:"«La semilla es la palabra de Dios» (Lucas 8:11)" },
+  { name:"Raíz", em:"🌿", c1:"#2FB5A0", c2:"#168A7B", note:"Versículos un poco más largos.", ref:"«Arraigados y cimentados en amor» (Efesios 3:17)" },
+  { name:"Árbol", em:"🌳", c1:"#2F6FED", c2:"#1F4FC4", note:"Versículos medianos: más palabras que recordar.", ref:"«Será como árbol plantado junto a corrientes de aguas» (Salmos 1:3)" },
+  { name:"Fruto", em:"🍇", c1:"#7C5CFF", c2:"#5A3BDB", note:"Versículos largos y libros menos conocidos.", ref:"«El que permanece en mí… lleva mucho fruto» (Juan 15:5)" },
+  { name:"Luz", em:"✨", c1:"#FF8A00", c2:"#E06A00", note:"Pasajes de dos o más versículos.", ref:"«Vosotros sois la luz del mundo» (Mateo 5:14)" },
+  { name:"Lámpara", em:"🪔", c1:"#E5484D", c2:"#B8323A", note:"El reto final: los pasajes más largos.", ref:"«Lámpara es a mis pies tu palabra» (Salmos 119:105)" }
 ];
-function pathIds(){ return Object.values(SUG_MAP).sort((a,b)=>a.order-b.order).map(v=>v.id); }
+/* Orden del camino por lo que de verdad cuesta memorizar: largo del texto, pasajes de varios versículos y qué tan conocido es */
+let PATH_CACHE = null;
+function pathIds(){
+  if(PATH_CACHE) return PATH_CACHE;
+  const sc = v => { const w = v.text.split(/\s+/).length, multi = /:\d+-\d+$/.test(v.ref) ? 10 : 0, rank = v.order < 1000 ? v.order : SUGGESTED.length + (v.order - 1000); return w + multi + rank*0.12 - (rank < 10 ? 8 : 0); };
+  PATH_CACHE = Object.values(SUG_MAP).filter(v=>!v.pild).sort((a,b)=>sc(a)-sc(b) || a.order-b.order).map(v=>v.id);
+  return PATH_CACHE;
+}
 function stageCount(){ return Math.ceil(pathIds().length / PATH_SIZE); }
 function stageIds(k){ return pathIds().slice(k*PATH_SIZE, (k+1)*PATH_SIZE); }
 function tierOf(k){ return Math.min(TIERS.length-1, Math.floor(k/3)); }
 function verseCleared(id){ const p = prog(id); return !!p && (p.box>=2 || (p.hist||[]).filter(x=>x>=90).length>=2); }
 function stageDone(k){ return stageIds(k).every(verseCleared); }
 function currentStage(){ const n = stageCount(); for(let k=0;k<n;k++) if(!stageDone(k)) return k; return n; }
-/* La dificultad de toda la app sigue la fase del camino en la que vas */
-/* Ritmo elegido por la persona: tiempo diario, versículos nuevos por semana y dificultad */
+/* Ritmo elegido por la persona: tiempo diario y versículos nuevos por semana (la ayuda depende de cada versículo, no del ritmo) */
 const RITMOS = {
-  tranquilo:{ label:"Tranquilo", em:"🌱", min:5,  week:2, off:-1, desc:"5 min al día · 1 o 2 versículos nuevos por semana · más tarjetas y pistas, con un reto de vez en cuando" },
-  constante:{ label:"Constante", em:"🔥", min:10, week:4, off:0,  desc:"10 min al día · 3 o 4 versículos nuevos por semana · la dificultad normal del camino" },
-  intensivo:{ label:"Intensivo", em:"⚡", min:20, week:7, off:1,  desc:"20 min al día · 1 versículo nuevo por día · más escribir y recitar de memoria" }
+  tranquilo:{ label:"Tranquilo", em:"🌱", min:5,  week:2, off:-1, desc:"5 min al día · 1 o 2 versículos nuevos por semana" },
+  constante:{ label:"Constante", em:"🔥", min:10, week:4, off:0,  desc:"10 min al día · 3 o 4 versículos nuevos por semana" },
+  intensivo:{ label:"Intensivo", em:"⚡", min:20, week:7, off:1,  desc:"20 min al día · 1 versículo nuevo por día" }
 };
 // quienes se registraron antes de elegir ritmo: se deduce de los minutos que escogieron
 const ritmo = () => { if(!S || !S.prefs) return "constante"; if(RITMOS[S.prefs.ritmo]) return S.prefs.ritmo; const m = S.prefs.minutes || 10; return m <= 5 ? "tranquilo" : m >= 20 ? "intensivo" : "constante"; };
-function diffTier(){ return Math.max(0, Math.min(TIERS.length-1, tierOf(Math.min(currentStage(), stageCount()-1)) + RITMOS[ritmo()].off)); }
+function diffTier(){ return Math.max(0, Math.min(TIERS.length-1, tierOf(Math.min(currentStage(), stageCount()-1)))); }   // solo da puntos extra en etapas avanzadas
 /* Cuántos versículos nuevos puedes empezar aún esta semana según tu ritmo */
 function newBudget(){
   const since = Date.now() - 7*DAY;
@@ -3469,8 +3530,8 @@ function syncPath(){
   let changed = false;
   ids.forEach(id=>{
     const o = SUG_MAP[id].order;
-    if(o < SUGGESTED.length){ if(o >= S.unlocked){ S.unlocked = o+1; changed = true; } }
-    else if(!(S.extraActive||[]).includes(id)){ S.extraActive = (S.extraActive||[]).concat(id); changed = true; }
+    if(o < S.unlocked) return;                                              // ya está en tu plan
+    if(!(S.extraActive||[]).includes(id)){ S.extraActive = (S.extraActive||[]).concat(id); changed = true; }
   });
   return changed;
 }
@@ -4913,6 +4974,7 @@ document.addEventListener("click", e=>{
       else { startQuiz(); }
       render(); break;
     case "check": checkAnswer(); break;
+    case "ref-mc": checkRefChoice(+t.dataset.i); break;
     case "giveup": gradeText(0); break;
         case "check-ref": checkRef(); break;
     case "giveup-ref": checkRef(true); break;
@@ -4924,7 +4986,7 @@ document.addEventListener("click", e=>{
       break;
     }
     case "mic": startMic(); break;
-    case "know-it": { const s = SESSION; if(!s || !s.q || s.q.done) break; s.knowCheck = s.knowCheck || {}; s.knowCheck[s.q.id] = true; s.modes = s.modes || {}; s.modes[s.q.id] = "write"; prepQuestion(); render(); const ta = $("#answer, textarea"); if(ta) ta.focus(); break; }
+    case "know-it": { const s = SESSION; if(!s || !s.q || s.q.done) break; s.knowCheck = s.knowCheck || {}; s.knowCheck[s.q.id] = true; { const kid = s.q.id; s.tasks = s.tasks.filter((x,i)=>i<s.t || !(x.type==="part" && x.id===kid)); } s.modes = s.modes || {}; s.modes[s.q.id] = "write"; prepQuestion(); render(); const ta = $("#answer, textarea"); if(ta) ta.focus(); break; }
     case "mic-write": switchToWrite(); break;
     case "mic-off": { S.noMicUntil = Date.now() + MIC_PAUSE; persist(); toast("Listo. Durante 15 minutos no te pediremos recitar; escribirás los versículos."); switchToWrite(); break; }
     case "reveal": reveal(); break;
