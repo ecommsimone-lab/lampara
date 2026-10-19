@@ -1534,7 +1534,8 @@ function startSession(ids, {title, review=false, listId=null}={}){
   VIEW = { name:"session" };
   render();
 }
-function cardIdsFor(ids){ const failed=new Set(S.lastFailed||[]), t=diffTier(), lim = t<=1 ? 3 : t<=3 ? 2 : 1; return ids.filter(id=>{ const p=prog(id); return !p || p.box<lim || failed.has(id); }); }
+/* Tarjetas: siempre para los versículos nuevos (menos de 2 aciertos seguidos) y para los que siguen con errores (último intento por debajo del 90 %), sin importar la fase */
+function cardIdsFor(ids){ const failed=new Set(S.lastFailed||[]); return ids.filter(id=>{ const p=prog(id); if(!p || !p.reps || p.box<2 || failed.has(id)) return true; const h=p.hist||[]; return h.length>0 && h[h.length-1]<90; }); }
 const MIC_PAUSE = 15*60*1000;
 const micPaused = () => !!(S && S.noMicUntil && Date.now() < S.noMicUntil);
 const micSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -1650,6 +1651,7 @@ function startQuiz(){
     counts.write = Math.max(0, n - counts.blanks - counts.recite);
     if(n>=3 && !counts.write){ if(counts.blanks>1) counts.blanks--; else counts.recite--; counts.write = 1; }
     let k = 0; ["blanks","write","recite"].forEach(t=>{ for(let c=0;c<counts[t];c++) s.modes[sorted[k++]] = t; });
+    s.ids.forEach(id=>{ if(((prog(id)||{box:0}).box)===0) s.modes[id] = "blanks"; });   // un versículo nuevo nunca empieza escribiéndolo completo
   }
   prepQuestion();
 }
