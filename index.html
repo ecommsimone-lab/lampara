@@ -177,6 +177,31 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .chart text{fill:var(--muted);font-size:10px;font-weight:600}
 
 .vlist{display:flex;flex-direction:column}
+.mood{display:flex;flex-direction:column;gap:10px}
+.mood>.spread b{font-size:16px}
+.mood-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.mood-row::-webkit-scrollbar{display:none}
+.mood-row button{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px;padding:10px 8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;font-weight:600;text-align:center}
+.mood-row button span{font-size:26px;line-height:1}
+.mood-row button:hover{border-color:var(--accent)}
+.pild-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.pild-grid button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.pild-grid button span{font-size:30px;line-height:1.1;margin-bottom:4px}
+.pild-grid button b{font-size:15.5px}
+.pild-grid button small{color:var(--muted);font-size:12.5px}
+.pild-grid button:hover{border-color:var(--accent)}
+.pild-head{display:flex;gap:16px;align-items:flex-start}
+.pild-head .pe{font-size:46px;line-height:1;flex:none;width:72px;height:72px;border-radius:22px;background:var(--surface-2);display:grid;place-items:center}
+.pild-head .pf{margin:0;font-family:var(--f-display);font-size:18px;line-height:1.45;font-style:italic;color:var(--muted)}
+.pild-verses{display:flex;flex-direction:column;gap:10px}
+.pild-verses .pv{cursor:pointer;padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.pild-verses .pv b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.pild-verses .pv p{margin:0;font-family:var(--f-display);font-size:17px;line-height:1.5}
+.pild-help{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:var(--accent-soft);font-size:14.5px;line-height:1.45}
+.pick-list{display:flex;flex-direction:column;gap:8px}
+.pick-list button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1.5px solid var(--line)}
+.pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
 .tm-chip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:600;background:var(--bg)}
 .tm-chip i,.tm-est i,.tm-estpick i{width:9px;height:9px;border-radius:50%;background:var(--ec)}
@@ -1113,6 +1138,7 @@ function render(){
   else if(VIEW.name==="avisos") v.innerHTML = mtop + viewAvisos();
   else if(VIEW.name==="racha") v.innerHTML = mtop + viewRacha();
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
+  else if(VIEW.name==="pildora") v.innerHTML = mtop + viewPildora(VIEW.id);
   else if(VIEW.name==="equipo") v.innerHTML = mtop + viewEquipo();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
@@ -1396,6 +1422,7 @@ function viewHome(){
   </section>
 
   ${heartCard()}
+  ${moodRowHTML()}
 
   ${pathCard()}
 
@@ -1444,12 +1471,64 @@ function viewLibrary(){
     <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Explora y practica</span><h1 style="font-size:clamp(30px,5vw,46px)">Biblioteca</h1></div>
     <div class="row"><button class="btn" data-act="new-list">${I.plus} Nueva lista</button><button class="btn primary" data-act="add-verse">${I.plus} Agregar versículo</button></div>
   </section>
+  ${pildorasSection()}
   ${topicsSection()}
   <section style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Tus colecciones</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Tus listas</h2></section>
   <section class="lists-grid">
     ${lists.map(l=>`<button class="lcard" data-list="${l.id}"><div class="cv ${l.cv}"><span>${esc(l.glyph)}</span></div><div><b>${esc(l.name)}</b><br><small>${l.ids.length} ${l.ids.length===1?"versículo":"versículos"}</small></div></button>`).join("")}
   </section>
   ${noticeHTML()}`;
+}
+
+/* ----- Píldoras de fe: versículos según cómo te sientes hoy (lo que eliges no se guarda ni lo ven tus amigos) ----- */
+const PILDORAS = [
+  { id:"ansiedad", e:"😰", l:"Ansiedad", t:"Para cuando sientes ansiedad", f:"No tienes que cargarlo todo hoy. Échalo sobre Él: Él tiene cuidado de ti.", ids:["flp-4-6-7","1p-5-7","is-26-3","mt-6-34","jn-14-27"] },
+  { id:"tristeza", e:"😢", l:"Tristeza", t:"Para cuando estás triste", f:"Dios no se aleja de tu tristeza: se acerca. Llorar también es orar.", ids:["jn-16-33","ap-21-4","rom-15-13","sal-46-1"] },
+  { id:"sinanimo", e:"🌧️", l:"Sin ánimo", t:"Para los días sin ánimo", f:"Sus misericordias son nuevas cada mañana, también esta.", ids:["lm-3-22-23","is-41-10","mt-11-28","rom-8-38-39"], ayuda:true },
+  { id:"cansancio", e:"😮‍💨", l:"Cansancio", t:"Para cuando estás cansado", f:"Descansar en Él no es rendirse: es recibir fuerzas nuevas.", ids:["mt-11-28","is-40-31","2co-12-9","sal-23-1"] },
+  { id:"tentacion", e:"🛡️", l:"Tentación", t:"Para la tentación · Pureza", f:"No estás solo en la lucha. Huye, pide ayuda y vuelve a empezar: su gracia te alcanza.", ids:["sal-119-11","1co-6-19","sal-51-10","1jn-1-9"] },
+  { id:"alegria", e:"😊", l:"Alegría", t:"Para un día de alegría", f:"Toda buena dádiva viene de lo alto. Disfrútala y dale gracias.", ids:["1ts-5-16-18","sal-37-4","sal-34-8"] },
+  { id:"gratitud", e:"🙏", l:"Gratitud", t:"Para dar gracias", f:"Hoy es un buen día para contar lo que Dios ha hecho.", ids:["1ts-5-16-18","lm-3-22-23","sal-139-14"] },
+  { id:"aburrimiento", e:"🥱", l:"Aburrimiento", t:"Para cuando todo parece igual", f:"Fuiste creado para buenas obras. Hoy también tiene propósito.", ids:["ef-2-10","col-3-23","jer-29-11"] },
+  { id:"postergando", e:"⏳", l:"Postergando", t:"Para cuando lo dejas para después", f:"Un paso pequeño hoy, hecho para el Señor, vale más que un gran plan para mañana.", ids:["col-3-23","stg-1-22","prov-3-5-6"] },
+  { id:"soledad", e:"🫂", l:"Soledad", t:"Para cuando te sientes solo", f:"No te dejará ni te desamparará. Nunca estás tan solo como parece.", ids:["dt-31-6","is-41-10","mt-28-19-20","jer-31-3"] },
+  { id:"miedo", e:"😨", l:"Miedo", t:"Para cuando tienes miedo", f:"El miedo no tiene la última palabra. Jehová es tu luz.", ids:["2tim-1-7","jos-1-9","sal-27-1","is-41-10"] },
+  { id:"enojo", e:"😤", l:"Enojo", t:"Para cuando estás enojado", f:"Antes de responder, respira y ora. El perdón también te libera a ti.", ids:["ef-4-32","col-3-13","gal-5-22-23"] },
+  { id:"culpa", e:"🤍", l:"Culpa", t:"Para cuando sientes culpa", f:"Si lo confiesas, Él es fiel para perdonar. No hay condenación en Cristo.", ids:["1jn-1-9","rom-8-1","sal-103-12","is-1-18"] }
+];
+const PILD_MAP = Object.fromEntries(PILDORAS.map(p=>[p.id,p]));
+function moodRowHTML(){
+  return `<section class="mood"><div class="spread" style="align-items:baseline"><b>¿Cómo te sientes hoy?</b><button class="linkbtn" data-go="library" style="font-size:13px">Ver todas</button></div>
+    <div class="mood-row">${PILDORAS.map(p=>`<button data-act="pild-open" data-id="${p.id}"><span>${p.e}</span>${esc(p.l)}</button>`).join("")}</div></section>`;
+}
+function pildorasSection(){
+  return `<section style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Para tu día a día</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Píldoras de fe</h2><p class="muted" style="margin:0;font-size:14.5px">Elige cómo te sientes y recibe versículos para ese momento.</p></section>
+  <section class="pild-grid">${PILDORAS.map(p=>`<button data-act="pild-open" data-id="${p.id}"><span>${p.e}</span><b>${esc(p.l)}</b><small>${p.ids.length} versículos</small></button>`).join("")}</section>`;
+}
+function viewPildora(id){
+  const p = PILD_MAP[id]; if(!p) return `<div class="empty"><b>No encontramos esta píldora</b></div>`;
+  return `
+  <button class="linkbtn" data-go="library" style="align-self:flex-start;padding:0">← Píldoras de fe</button>
+  <section class="pild-head"><span class="pe">${p.e}</span><div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Píldora de fe</span><h1 style="font-size:clamp(28px,5vw,42px)">${esc(p.t)}</h1><p class="pf">${esc(p.f)}</p></div></section>
+  <div class="row" style="gap:8px"><button class="btn primary" data-act="pild-learn" data-id="${p.id}">${I.play} Memorizar estos</button><button class="btn" data-act="pild-save" data-id="${p.id}">${I.listAdd} Guardar en una lista</button><button class="btn ghost" data-act="pild-send" data-id="${p.id}">${I.heart} Enviar a un amigo</button></div>
+  <section class="pild-verses">${p.ids.map(vid=>{ const v=verse(vid); return v?`<div class="pv" data-act="verse-open" data-id="${vid}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div>`:""; }).join("")}</section>
+  ${p.ayuda?`<div class="pild-help"><b>No tienes que pasarlo solo</b><span>Si llevas días o semanas así, habla con tu pastor, con alguien de confianza o con un profesional. En Colombia puedes llamar gratis a la línea de salud mental <b>[número por verificar]</b>.</span></div>`:""}`;
+}
+function pildSaveModal(id){
+  const p = PILD_MAP[id]; let pick = "fav";
+  modal(`<div class="spread"><h2 style="font-size:22px">Guardar ${p.ids.length} versículos</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0">¿En qué lista los quieres?</p>
+    <div class="pick-list" id="pkl">
+      <button type="button" data-l="fav" aria-pressed="true"><span class="cv cv-fav"><span>♡</span></span><b>Mis versículos</b></button>
+      ${S.lists.map((l,i)=>`<button type="button" data-l="${l.id}" aria-pressed="false"><span class="cv cv-c${(i%4)+1}"><span>${esc(l.name.charAt(0).toUpperCase())}</span></span><b>${esc(l.name)}</b></button>`).join("")}
+      <button type="button" data-l="new" aria-pressed="false"><span class="cv" style="background:var(--surface-2);color:var(--muted)">${I.plus}</span><b>Crear una lista nueva</b></button>
+    </div>
+    <div class="field" id="pkNew" hidden><label for="pkName">Nombre de la lista</label><input class="input" id="pkName" maxlength="40" value="${esc(p.l)}"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="pkOk">Guardar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelectorAll("#pkl [data-l]").forEach(b=>b.onclick=()=>{ pick=b.dataset.l; sc.querySelectorAll("#pkl [data-l]").forEach(x=>x.setAttribute("aria-pressed",x===b)); sc.querySelector("#pkNew").hidden = pick!=="new"; });
+    sc.querySelector("#pkOk").onclick=()=>{ closeModal(); toast("Guardados (boceto)."); };
+  });
 }
 
 function verseRow(id, i, list){
@@ -4550,6 +4629,10 @@ document.addEventListener("click", e=>{
     case "cal-next": VIEW.month=Math.min(0,(VIEW.month||0)+1); render(); break;
     case "verse-open": verseModal(t.dataset.id); break;
     case "heart-open": openHeart(); break;
+    case "pild-open": go("pildora",{id:t.dataset.id}); break;
+    case "pild-save": pildSaveModal(t.dataset.id); break;
+    case "pild-learn": toast("Se agregaron a tu cola: saldrán primero en tus próximas prácticas (boceto)."); break;
+    case "pild-send": toast("Enviar a un amigo (boceto)."); break;
     case "shield-pick": shieldPickModal(); break;
     case "shield-send": sendShield(t.dataset.id, t); break;
     case "shield-send-ask": { const uid = t.dataset.id; confirmBox("Regalar un escudo", `Le darás uno de tus escudos a ${personLabel(uid).split(" ")[0]}. Te quedarán ${(S.shields||1)-1}.`, "Regalar", ()=>sendShield(uid)); break; }
