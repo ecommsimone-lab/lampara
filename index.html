@@ -177,6 +177,27 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .chart text{fill:var(--muted);font-size:10px;font-weight:600}
 
 .vlist{display:flex;flex-direction:column}
+.tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.tm-chip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;font-weight:600;background:var(--bg)}
+.tm-chip i,.tm-est i,.tm-estpick i{width:9px;height:9px;border-radius:50%;background:var(--ec)}
+.tm-chip b{font-size:12px;color:var(--muted);font-weight:700}
+.tm-chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tm-chip[aria-pressed="true"] b{color:inherit;opacity:.7}
+.tm-list{display:flex;flex-direction:column;gap:10px}
+.tm-row{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--ec)}
+.tm-row:hover{border-color:var(--ec)}
+.tm-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.tm-est{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ec)}
+.tm-kind{padding:2px 8px;border-radius:999px;background:var(--surface-2);font-weight:600}
+.tm-kind.eq{background:var(--mid-soft);color:var(--mid)}
+.tm-when{margin-left:auto}
+.tm-msg{margin:0;font-size:15.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.tm-meta{font-size:12.5px;overflow-wrap:anywhere}
+.tm-note{font-size:13.5px;background:var(--surface-2);border-radius:10px;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tm-note b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+.tm-estpick{display:flex;gap:6px;flex-wrap:wrap}
+.tm-estpick button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;border:1.5px solid var(--line);font-size:14px;font-weight:600}
+.tm-estpick button[aria-pressed="true"]{border-color:var(--ec);background:color-mix(in srgb,var(--ec) 14%,transparent)}
 .vrow{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:10px 12px;border-radius:12px}
 .vrow:hover{background:var(--surface-2)}
 .vrow .idx{font-size:12px;font-weight:700;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
@@ -1038,7 +1059,7 @@ function render(){
   if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
   const badge = commBadge();
   const unread = unreadCount();
-  const navItem = (id,label,icon) => { const n = id==="community" ? badge : id==="avisos" ? unread : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="profile" && (VIEW.name==="logros" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
+  const navItem = (id,label,icon) => { const n = id==="community" ? badge : id==="avisos" ? unread : id==="equipo" ? teamCount() : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="profile" && (VIEW.name==="logros" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
   const lists = listDefs();
   root.innerHTML = `
   <div class="app">
@@ -1054,6 +1075,7 @@ function render(){
         ${cloudOn()?navItem("avisos","Avisos",I.bell):""}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
+        ${TEAM.on?navItem("equipo","Mejoras",I.list||I.review):""}
         <button data-act="feedback">${I.chat}<span>Enviar comentario</span></button>
       </nav>
       <div class="eyebrow" style="padding:0 10px">Tus listas</div>
@@ -1091,8 +1113,10 @@ function render(){
   else if(VIEW.name==="avisos") v.innerHTML = mtop + viewAvisos();
   else if(VIEW.name==="racha") v.innerHTML = mtop + viewRacha();
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
+  else if(VIEW.name==="equipo") v.innerHTML = mtop + viewEquipo();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
+  const tq = $("#teamQuery"); if(tq) tq.addEventListener("input", ()=>{ TEAM.q = tq.value; const l = $("#teamList"); if(l) l.innerHTML = teamListHTML(); });
   const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
   clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)){ checkShields(); checkBadges(); } }, 400);
 }
@@ -2892,7 +2916,7 @@ async function loadNotifs(){
 }
 function startNotifs(){
   stopNotifs(); if(!cloudOn()) return;
-  loadNotifs(); loadPrefs(); refreshPushState();
+  loadNotifs(); loadPrefs(); refreshPushState(); checkTeam().then(()=>{ if(TEAM.on) loadTeam(); });
   NOTIF.timer = setInterval(()=>{ if(document.visibilityState==="visible") loadNotifs(); }, 60000);
 }
 function stopNotifs(){ if(NOTIF.timer) clearInterval(NOTIF.timer); NOTIF.timer = null; }
@@ -3946,6 +3970,109 @@ async function flushFeedback(){
   LS.set("lampara.fbQueue", rest);
 }
 window.addEventListener("online", ()=>flushFeedback());
+
+/* ----- Equipo: lista de mejoras y arreglos (solo para los correos de la tabla team, SQL 11) ----- */
+const TEAM = { on:false, items:[], loaded:false, loading:false, err:"", filter:"pend", q:"" };
+const ESTADOS = [
+  ["⚪ nuevo","Nuevo","#98A2B3"], ["🔵 revisado","Revisado","#3B82F6"], ["🟡 en proceso","En proceso","#E0A100"],
+  ["🟢 corregido","Corregido","#16A36A"], ["⚫ descartado","Descartado","#5B6474"]
+];
+const EST = Object.fromEntries(ESTADOS.map(([v,l,c])=>[v,{l,c}]));
+const estOf = it => EST[it.estado] ? it.estado : "⚪ nuevo";
+const isPend = it => !["🟢 corregido","⚫ descartado"].includes(estOf(it));
+const TEAM_KINDS = [["arreglo","Arreglo"],["mejora","Mejora"],["idea","Idea"],["contenido","Texto o pregunta"]];
+const KIND_LABEL = { idea:"Idea", problema:"Algo no funciona", contenido:"Texto o pregunta", otro:"Otro", arreglo:"Arreglo", mejora:"Mejora" };
+async function checkTeam(){
+  TEAM.on = false;
+  if(!cloudOn()) return;
+  try{ TEAM.on = !!(await API.rpc("is_team")); }catch(e){ TEAM.on = false; }
+  if(TEAM.on && VIEW.name==="profile") render();
+}
+async function loadTeam(){
+  if(!TEAM.on || TEAM.loading) return;
+  TEAM.loading = true;
+  try{ TEAM.items = (await API.rpc("team_items")) || []; TEAM.err = ""; }
+  catch(e){ TEAM.err = "No se pudo cargar la lista. Revisa la conexión e inténtalo de nuevo."; }
+  TEAM.loading = false; TEAM.loaded = true;
+  if(["equipo","profile"].includes(VIEW.name)) render();
+}
+function teamCount(){ return TEAM.items.filter(isPend).length; }
+function teamRow(it){
+  const e = EST[estOf(it)], mine = it.origen==="equipo";
+  const who = mine ? `Equipo · ${it.name||""}` : `${it.name||"Usuario"}${it.email?` · ${it.email}`:""}`;
+  return `<button class="tm-row" data-act="team-open" data-id="${esc(String(it.id))}" style="--ec:${e.c}">
+    <div class="tm-top"><span class="tm-est"><i></i>${e.l}</span><span class="tm-kind ${mine?"eq":""}">${mine?"Equipo":"Usuario"} · ${esc(KIND_LABEL[it.kind]||it.kind||"")}</span><span class="muted tm-when">${timeAgo(it.created_at)}</span></div>
+    <p class="tm-msg">${esc(it.message||"")}</p>
+    <div class="tm-meta muted">${esc(who)}${!mine && it.context?` · ${esc(it.context)}`:""}</div>
+    ${it.nota?`<div class="tm-note"><b>Nota</b>${esc(it.nota)}${it.actualizado_por?`<small> — ${esc(it.actualizado_por)}${it.actualizado_at?`, ${timeAgo(it.actualizado_at)}`:""}</small>`:""}</div>`:""}
+  </button>`;
+}
+function viewEquipo(){
+  if(!TEAM.on) return `<div class="empty"><b>Esta sección es solo para el equipo</b></div>`;
+  if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
+  const all = TEAM.items, by = k => all.filter(it=>estOf(it)===k).length, f = TEAM.filter;
+  const chip = (k,l,n,c) => `<button class="tm-chip" data-act="team-filter" data-k="${k}" aria-pressed="${f===k}"${c?` style="--ec:${c}"`:""}>${c?"<i></i>":""}${l}<b>${n}</b></button>`;
+  return `
+  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Mejoras</h1></div>
+    <div class="row" style="gap:6px"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""} Actualizar</button><button class="btn primary" data-act="team-add">${I.plus} Agregar</button></div></section>
+  ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
+  <div class="tm-chips">${chip("pend","Pendientes",all.filter(isPend).length)}${ESTADOS.map(([v,l,c])=>chip(v,l,by(v),c)).join("")}${chip("all","Todos",all.length)}</div>
+  <input class="input" id="teamQuery" placeholder="Buscar en la lista…" value="${esc(TEAM.q||"")}" style="max-width:420px">
+  <div class="tm-list" id="teamList">${teamListHTML()}</div>`;
+}
+function teamListHTML(){
+  if(!TEAM.loaded) return `<div class="empty"><b>Cargando…</b></div>`;
+  const all = TEAM.items, f = TEAM.filter, q = normQ(TEAM.q||"");
+  let list = f==="pend" ? all.filter(isPend) : f==="all" ? all : all.filter(it=>estOf(it)===f);
+  if(q) list = list.filter(it=>normQ([it.message,it.nota,it.name,it.context].join(" ")).includes(q));
+  return list.length ? list.map(teamRow).join("") : `<div class="empty"><b>${q?"Nada coincide con la búsqueda":f==="pend"?"No hay nada pendiente 🎉":"No hay elementos aquí"}</b></div>`;
+}
+function teamItemModal(id){
+  const it = TEAM.items.find(x=>String(x.id)===String(id)); if(!it) return;
+  let est = estOf(it); const mine = it.origen==="equipo";
+  modal(`
+    <div class="spread"><h2 style="font-size:22px">${mine?"Del equipo":"Comentario de usuario"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="font-size:13px;margin:0">${esc(KIND_LABEL[it.kind]||it.kind||"")} · ${esc(it.name||"")}${it.email?` · ${esc(it.email)}`:""}${!mine&&it.context?` · ${esc(it.context)}`:""} · ${new Date(it.created_at).toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"})}</p>
+    <p style="font-size:16px;line-height:1.5;white-space:pre-wrap;margin:4px 0 0">${esc(it.message||"")}</p>
+    <div class="field"><label>Estado</label><div class="tm-estpick" id="tmEst">${ESTADOS.map(([v,l,c])=>`<button type="button" data-v="${v}" aria-pressed="${v===est}" style="--ec:${c}"><i></i>${l}</button>`).join("")}</div></div>
+    <div class="field"><label for="tmNota">Nota del equipo</label><textarea class="textarea" id="tmNota" maxlength="2000" placeholder="Qué se hizo, qué falta, quién lo toma…" style="min-height:90px;font-size:15px">${esc(it.nota||"")}</textarea>
+      ${it.actualizado_por?`<small class="muted">Última edición: ${esc(it.actualizado_por)}${it.actualizado_at?`, ${timeAgo(it.actualizado_at)}`:""}</small>`:""}</div>
+    <p id="tmErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="tmSave">Guardar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelectorAll("#tmEst button").forEach(b=>b.onclick=()=>{ est=b.dataset.v; sc.querySelectorAll("#tmEst button").forEach(x=>x.setAttribute("aria-pressed", x===b)); });
+    sc.querySelector("#tmSave").onclick = async ()=>{
+      const btn = sc.querySelector("#tmSave"), nota = sc.querySelector("#tmNota").value.trim();
+      btn.disabled = true; btn.textContent = "Guardando…";
+      try{
+        await API.rpc("team_update", { p_id:String(it.id), p_estado:est, p_nota:nota, p_name:displayName() });
+        Object.assign(it, { estado:est, nota:nota||null, actualizado_por:displayName(), actualizado_at:new Date().toISOString() });
+        closeModal(); render(); toast("Guardado.");
+      }catch(e){ btn.disabled=false; btn.textContent="Guardar"; sc.querySelector("#tmErr").textContent = "No se pudo guardar. Inténtalo de nuevo."; }
+    };
+  });
+}
+function teamAddModal(){
+  let kind = "arreglo";
+  modal(`
+    <div class="spread"><h2 style="font-size:22px">Agregar a la lista</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label>Tipo</label><div class="goal-grid" id="tmKinds">${TEAM_KINDS.map(([k,l],i)=>`<button type="button" class="goal" data-k="${k}" aria-pressed="${i===0}" style="padding:12px"><b style="font-size:14.5px;letter-spacing:0">${l}</b></button>`).join("")}</div></div>
+    <div class="field"><label for="tmMsg">¿Qué hay que hacer?</label><textarea class="textarea" id="tmMsg" maxlength="2000" placeholder="Describe la mejora o el arreglo…" style="min-height:110px;font-size:15px"></textarea></div>
+    <div class="field"><label for="tmNota2">Nota (opcional)</label><textarea class="textarea" id="tmNota2" maxlength="2000" placeholder="Detalles, quién lo toma…" style="min-height:70px;font-size:15px"></textarea></div>
+    <p id="tmErr2" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="tmAdd">Agregar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelectorAll("#tmKinds .goal").forEach(b=>b.onclick=()=>{ kind=b.dataset.k; sc.querySelectorAll("#tmKinds .goal").forEach(x=>x.setAttribute("aria-pressed", x===b)); });
+    sc.querySelector("#tmAdd").onclick = async ()=>{
+      const msg = sc.querySelector("#tmMsg").value.trim(), nota = sc.querySelector("#tmNota2").value.trim(), err = sc.querySelector("#tmErr2"), btn = sc.querySelector("#tmAdd");
+      if(msg.length < 3){ err.textContent = "Escribe qué hay que hacer."; return; }
+      btn.disabled = true; btn.textContent = "Agregando…";
+      try{ await API.rpc("team_add", { p_kind:kind, p_message:msg, p_nota:nota, p_name:displayName() }); closeModal(); TEAM.filter="pend"; toast("Agregado a la lista."); await loadTeam(); }
+      catch(e){ btn.disabled=false; btn.textContent="Agregar"; err.textContent = "No se pudo agregar. Inténtalo de nuevo."; }
+    };
+    setTimeout(()=>{ const t=sc.querySelector("#tmMsg"); if(t) t.focus(); }, 50);
+  });
+}
 function modal(html, onMount){
   closeModal();
   const sc = document.createElement("div"); sc.className="scrim"; sc.id="scrim";
@@ -4310,7 +4437,7 @@ async function signOut(){
   if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} await detachPushOnSignOut(); try{ await SB.auth.signOut(); }catch(e){} }
   localSignOut();
 }
-function localSignOut(){ stopNotifs(); BADGE_QUEUE = []; Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function localSignOut(){ stopNotifs(); Object.assign(TEAM, { on:false, items:[], loaded:false, err:"", filter:"pend", q:"" }); BADGE_QUEUE = []; Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
 async function deleteAccount(){
   if(ME.mode==="cloud" && SB){
     await API.removeAvatar();
@@ -4356,6 +4483,7 @@ function viewProfile(){
       ${cloudOn()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
   ${badgesSection()}
+  ${TEAM.on?`<section class="panel"><div class="set-row" style="padding:0"><div class="lbl"><b>Mejoras y arreglos</b><small>Solo para el equipo: comentarios de los usuarios y la lista de pendientes${TEAM.loaded?` · ${teamCount()} pendientes`:""}</small></div><button class="btn primary" data-go="equipo">Abrir</button></div></section>`:""}
   ${profileCommunityPanel()}
   ${notifPrefsPanel()}
   <section class="panel">
@@ -4403,6 +4531,10 @@ document.addEventListener("click", e=>{
   switch(a){
     case "logout": signOut(); break;
     case "feedback": feedbackModal(); break;
+    case "team-open": teamItemModal(t.dataset.id); break;
+    case "team-add": teamAddModal(); break;
+    case "team-reload": loadTeam(); break;
+    case "team-filter": TEAM.filter = t.dataset.k; render(); break;
     case "open-topic": go("topic", { topic: t.dataset.id }); break;
     case "play-topic": { const tp=TOPIC_MAP[t.dataset.id]; S.extraActive=[...new Set((S.extraActive||[]).concat(tp.ids.filter(x=>!activeIds().includes(x))))]; persist(); startSession(pickFor("topic:"+tp.id),{title:tp.name, source:"topic:"+tp.id}); break; }
     case "save-topic": { const tp=TOPIC_MAP[t.dataset.id]; let l=S.lists.find(x=>x.topic===tp.id); if(!l){ l={ id:"l-"+uid(), name:tp.name, ids:tp.ids.slice(), topic:tp.id }; S.lists.push(l); persist(); toast(`“${tp.name}” se guardó en tus listas.`); } else toast("Ya tienes este tema en tus listas."); go("list",{list:l.id}); break; }
