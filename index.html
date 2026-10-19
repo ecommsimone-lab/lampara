@@ -531,6 +531,8 @@ a.btn:not(.primary){color:var(--ink)}
 .crop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.55);pointer-events:none;outline:2px solid rgba(255,255,255,.8);outline-offset:-2px}
 .zoom{width:100%;accent-color:var(--accent)}
 /* ---------- Logros ---------- */
+@font-face{font-family:"Roboto";font-weight:900;font-display:swap;src:url("fonts/roboto-900.woff2") format("woff2")}
+@font-face{font-family:"Roboto";font-weight:500;font-display:swap;src:url("fonts/roboto-500.woff2") format("woff2")}
 @font-face{font-family:"Yellowtail";font-weight:400;font-display:swap;src:url("fonts/yellowtail-400.woff2") format("woff2")}
 @font-face{font-family:"Playfair Display";font-weight:500;font-display:swap;src:url("fonts/playfair-500.woff2") format("woff2")}
 @font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url("fonts/fraunces-600.woff2") format("woff2")}
@@ -1351,36 +1353,30 @@ const FONDOS = [
   ["bosque-secuoyas","Bosque",.5],["bosque-cascada","Bosque",.72],["bosque-corteza","Bosque",.5],["campo-flores","Bosque",.5],["montana-roca","Bosque",.24]
 ];
 const FONDO_TEMAS = ["Cielo","Universo","Mar","Bosque"];
-const TIPOS = { moderna:{ l:"Moderna", f:'700 {s}px "Inter", sans-serif', lh:1.22 }, elegante:{ l:"Elegante", f:'600 {s}px "Fraunces", serif', lh:1.24 } };
 function loadImg(src){ return new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = src; }); }
-async function verseImage(id, fondo, tipo){
+async function verseImage(id, fondo){
   const v = verse(id); if(!v) return null;
-  const F = FONDOS.find(x=>x[0]===fondo) || FONDOS[0], T = TIPOS[tipo] || TIPOS.moderna;
-  try{ await Promise.all([T.f.replace("{s}", "60"), '600 30px "Inter"', '700 30px "Inter"'].map(f=>document.fonts.load(f))); }catch(e){}
-  const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  const F = FONDOS.find(x=>x[0]===fondo) || FONDOS[0];
+  try{ await Promise.all(['900 80px "Roboto"', '500 30px "Roboto"'].map(f=>document.fonts.load(f))); }catch(e){}
+  const W = 1080, H = 1920, X = 96, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   try{ g.drawImage(await loadImg(`img/fondos/${F[0]}.jpg`), 0, 0, W, H); }catch(e){ g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H); }
-  // texto: el más grande que quepa, en la zona tranquila de cada foto
-  const text = `“${v.text}”`, maxW = 880, maxH = 760;
-  let fs = 92, lines = [];
-  for(; fs >= 40; fs -= 2){ g.font = T.f.replace("{s}", fs); lines = wrapLines(g, text, maxW); if(lines.length * fs * T.lh <= maxH) break; }
-  const lh = fs * T.lh, blockH = lines.length*lh + 120;
-  const cy = Math.min(H - 260 - blockH/2, Math.max(220 + blockH/2, H * F[2])), top = cy - blockH/2;
-  // velo oscuro suave para que el blanco se lea sobre cualquier foto
-  g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(0, 0, W, H);
-  const vg = g.createLinearGradient(0, top - 260, 0, top + blockH + 260);
-  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(.3, "rgba(0,0,0,.38)"); vg.addColorStop(.7, "rgba(0,0,0,.38)"); vg.addColorStop(1, "rgba(0,0,0,0)");
-  g.fillStyle = vg; g.fillRect(0, top - 260, W, blockH + 520);
-  g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillStyle = "#fff";
-  g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 18; g.shadowOffsetY = 2;
-  g.font = T.f.replace("{s}", fs); if("letterSpacing" in g) g.letterSpacing = tipo === "elegante" ? "0px" : "-1px";
-  lines.forEach((l,i)=>g.fillText(l, W/2, top + fs + i*lh));
-  if("letterSpacing" in g) g.letterSpacing = "0px";
-  const ry = top + lines.length*lh + 70;
-  g.shadowBlur = 0; g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(W/2 - 36, ry - 34, 72, 3);
-  g.shadowBlur = 12; g.fillStyle = "#fff"; g.font = '600 34px "Inter", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "7px";
-  g.fillText(v.ref.toUpperCase(), W/2 + 3, ry + 34);
-  g.font = '700 24px "Inter", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.globalAlpha = .8;
-  g.fillText(`${APP_NAME.toUpperCase()} · RVR1960`, W/2 + 3, H - 96);
+  // columna alineada a la izquierda: primero la cita pequeña (da contexto) y debajo el versículo grande
+  const maxW = W - X*2, maxH = 900;
+  let fs = 104, lines = [];
+  for(; fs >= 44; fs -= 2){ g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`; lines = wrapLines(g, v.text, maxW); if(lines.length * fs * 1.08 <= maxH) break; }
+  const lh = fs * 1.08, eyeH = 34 + 30, blockH = eyeH + lines.length*lh;
+  const cy = Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
+  g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(0, 0, W, H);
+  const vg = g.createLinearGradient(0, top - 300, 0, top + blockH + 300);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(.3, "rgba(0,0,0,.4)"); vg.addColorStop(.7, "rgba(0,0,0,.4)"); vg.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = vg; g.fillRect(0, top - 300, W, blockH + 600);
+  g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillStyle = "#fff"; g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 16; g.shadowOffsetY = 2;
+  g.font = '500 32px "Roboto", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.globalAlpha = .9;
+  g.fillText(v.ref.toUpperCase(), X, top + 32); g.globalAlpha = 1;
+  g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`;
+  lines.forEach((l,i)=>g.fillText(l, X - fs*.04, top + eyeH + fs*.92 + i*lh));
+  g.font = '500 24px "Roboto", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "5px"; g.globalAlpha = .75;
+  g.fillText(`${APP_NAME.toUpperCase()} · RVR1960`, X, H - 110);
   g.globalAlpha = 1; if("letterSpacing" in g) g.letterSpacing = "0px"; g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/jpeg", .9));
 }
@@ -1583,20 +1579,18 @@ function pildVerseModal(vid){
     </div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
 }
 function shareVerseModal(vid){
-  const v = verse(vid); if(!v) return; let tema = FONDO_TEMAS[0], fondo = FONDOS.find(x=>x[1]===tema)[0], tipo = "moderna", blob = null, seq = 0;
+  const v = verse(vid); if(!v) return; let tema = FONDO_TEMAS[0], fondo = FONDOS.find(x=>x[1]===tema)[0], blob = null, seq = 0;
   modal(`<div class="spread"><h2 style="font-size:22px">Compartir ${esc(v.ref)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
     <div class="share-prev"><img id="shImg" alt="Vista previa de la imagen"><span id="shWait">Creando imagen…</span></div>
     <div class="share-scenes" id="shTema">${FONDO_TEMAS.map((x,i)=>`<button type="button" data-t="${x}" aria-pressed="${i===0}">${x}</button>`).join("")}</div>
     <div class="share-thumbs" id="shFondos"></div>
-    <div class="share-scenes" id="shTipo">${Object.entries(TIPOS).map(([k,t])=>`<button type="button" data-k="${k}" aria-pressed="${k===tipo}">Letra ${t.l.toLowerCase()}</button>`).join("")}</div>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="shGo">${I.share} Compartir</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
     const img = sc.querySelector("#shImg"), wait = sc.querySelector("#shWait");
-    const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await verseImage(vid, fondo, tipo); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
+    const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await verseImage(vid, fondo); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
     const thumbs = ()=>{ sc.querySelector("#shFondos").innerHTML = FONDOS.filter(x=>x[1]===tema).map(x=>`<button type="button" data-f="${x[0]}" aria-pressed="${x[0]===fondo}" style="background-image:url('img/fondos/${x[0]}.jpg')" aria-label="Fondo"></button>`).join("");
       sc.querySelectorAll("#shFondos [data-f]").forEach(b=>b.onclick=()=>{ fondo = b.dataset.f; thumbs(); draw(); }); };
     sc.querySelectorAll("#shTema [data-t]").forEach(b=>b.onclick=()=>{ tema = b.dataset.t; fondo = FONDOS.find(x=>x[1]===tema)[0]; sc.querySelectorAll("#shTema [data-t]").forEach(x=>x.setAttribute("aria-pressed", x===b)); thumbs(); draw(); });
-    sc.querySelectorAll("#shTipo [data-k]").forEach(b=>b.onclick=()=>{ tipo = b.dataset.k; sc.querySelectorAll("#shTipo [data-k]").forEach(x=>x.setAttribute("aria-pressed", x===b)); draw(); });
     sc.querySelector("#shGo").onclick = async ()=>{ if(!blob) return; const name = v.ref.replace(/[^\wáéíóúñ]+/gi,"-").toLowerCase() + ".jpg"; const file = new File([blob], name, { type:"image/jpeg" });
       if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; } }
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast("Imagen descargada. Ya la puedes subir a tus estados."); };
