@@ -198,6 +198,19 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pild-verses .pv b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
 .pild-verses .pv p{margin:0;font-family:var(--f-display);font-size:17px;line-height:1.5}
 .pild-help{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:var(--accent-soft);font-size:14.5px;line-height:1.45}
+.pv-more{font-size:12.5px;font-weight:600;color:var(--muted)}
+.pv-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pv-acts button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--bg)}
+.pv-acts button svg{width:20px;height:20px;color:var(--accent);margin-bottom:4px}
+.pv-acts button b{font-size:14.5px}
+.pv-acts button small{font-size:12px;color:var(--muted);line-height:1.3}
+.pv-acts button:hover{border-color:var(--accent)}
+.share-prev{position:relative;align-self:center;width:min(230px,60vw);aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center}
+.share-prev img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.share-prev span{position:relative;font-size:13px;color:var(--muted)}
+.share-scenes{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.share-scenes button{all:unset;cursor:pointer;padding:7px 12px;border-radius:999px;border:1.5px solid var(--line);font-size:13.5px;font-weight:600}
+.share-scenes button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .pick-list{display:flex;flex-direction:column;gap:8px}
 .pick-list button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1.5px solid var(--line)}
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
@@ -515,6 +528,7 @@ a.btn:not(.primary){color:var(--ink)}
 .crop::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.55);pointer-events:none;outline:2px solid rgba(255,255,255,.8);outline-offset:-2px}
 .zoom{width:100%;accent-color:var(--accent)}
 /* ---------- Logros ---------- */
+@font-face{font-family:"Kalam";font-weight:700;font-display:swap;src:url("fonts/kalam-700.woff2") format("woff2")}
 @font-face{font-family:"Yellowtail";font-weight:400;font-display:swap;src:url("fonts/yellowtail-400.woff2") format("woff2")}
 @font-face{font-family:"Playfair Display";font-weight:500;font-display:swap;src:url("fonts/playfair-500.woff2") format("woff2")}
 @font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url("fonts/fraunces-600.woff2") format("woff2")}
@@ -1327,6 +1341,118 @@ async function shareHeart(btn){
   finally{ if(btn) btn.disabled = false; }
 }
 
+/* ---------- Imagen para compartir un versículo: paisajes ilustrados dibujados en el momento (sin fotos externas) ---------- */
+const SCENES = [
+  { id:"pradera", l:"Pradera" }, { id:"atardecer", l:"Atardecer" }, { id:"mar", l:"Mar" }, { id:"montana", l:"Montañas" }, { id:"noche", l:"Noche" }
+];
+function rng(seed){ let a = seed >>> 0; return ()=>{ a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hashStr(s){ let h = 2166136261; for(const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; }
+function grainDots(g, R, x, y, w, h, n, col, aMax, size){ for(let k=0; k<n; k++){ g.fillStyle = `rgba(${col},${(R()*aMax).toFixed(3)})`; const s = size || (R()<.7?2:3); g.fillRect(x + R()*w, y + R()*h, s, s); } }
+function skyGrad(g, W, top, mid, bottom, hy){ const gr = g.createLinearGradient(0, 0, 0, hy); gr.addColorStop(0, top); gr.addColorStop(.6, mid); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, W, hy + 40); }
+function cloud(g, R, cx, cy, sc, base, shade, dot){
+  const puffs = []; const n = 16 + Math.floor(R()*8);
+  for(let i=0; i<n; i++){ const t = (i/(n-1))*2 - 1; const r = (70 + R()*70) * sc * (1 - Math.abs(t)*0.45); puffs.push([cx + t*230*sc + (R()-.5)*40*sc, cy - (1 - t*t)*150*sc - R()*60*sc + r*.25, r]); }
+  for(let i=0; i<8; i++){ puffs.push([cx + (R()-.5)*300*sc, cy + 10*sc, (60 + R()*40)*sc]); }
+  g.save(); g.fillStyle = shade; puffs.forEach(([x,y,r])=>{ g.beginPath(); g.arc(x + 10*sc, y + 14*sc, r, 0, Math.PI*2); g.fill(); });
+  g.fillStyle = base; puffs.forEach(([x,y,r])=>{ g.beginPath(); g.arc(x - 3*sc, y - 5*sc, r*.98, 0, Math.PI*2); g.fill(); });
+  g.beginPath(); puffs.forEach(([x,y,r])=>{ g.moveTo(x + 10*sc + r, y + 14*sc); g.arc(x + 10*sc, y + 14*sc, r, 0, Math.PI*2); }); g.clip();
+  const minY = Math.min(...puffs.map(p=>p[1]-p[2])), maxY = Math.max(...puffs.map(p=>p[1]+p[2]));
+  for(let k=0; k<5200*sc; k++){ const y = minY + R()*(maxY-minY), f = (y - minY)/(maxY - minY); if(R() > .25 + f*.75) continue; g.fillStyle = `rgba(${dot},${(.08 + R()*.22).toFixed(2)})`; g.fillRect(cx - 420*sc + R()*840*sc, y, 3, 3); }
+  g.restore();
+}
+function hill(g, W, H, y0, amp, freq, phase, col, R, dotCol){
+  g.beginPath(); g.moveTo(0, H); g.lineTo(0, y0);
+  for(let x=0; x<=W; x+=8){ const y = y0 - Math.sin(x/W*Math.PI*freq + phase)*amp - Math.sin(x/W*Math.PI*freq*2.3 + phase*1.7)*amp*.25; g.lineTo(x, y); }
+  g.lineTo(W, H); g.closePath(); g.fillStyle = col; g.fill();
+  if(dotCol){ g.save(); g.clip(); grainDots(g, R, 0, y0 - amp*1.4, W, H - y0 + amp*1.4, 7000, dotCol, .16); g.restore(); }
+}
+const hillY = (W, x, y0, amp, freq, phase) => y0 - Math.sin(x/W*Math.PI*freq + phase)*amp - Math.sin(x/W*Math.PI*freq*2.3 + phase*1.7)*amp*.25;
+function trees(g, R, x, y, n, col, dark){ for(let i=0; i<n; i++){ const tx = x + (R()-.5)*n*38, ty = y + (R()-.5)*30, r = 26 + R()*30; g.fillStyle = dark; g.beginPath(); g.arc(tx + 6, ty + 8, r, 0, Math.PI*2); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(tx, ty, r*.9, 0, Math.PI*2); g.fill(); } }
+function sheep(g, x, y, s){ g.fillStyle = "rgba(40,60,30,.25)"; g.beginPath(); g.ellipse(x + 4*s, y + 14*s, 22*s, 5*s, 0, 0, Math.PI*2); g.fill(); g.fillStyle = "#F4EFE2"; g.beginPath(); g.ellipse(x, y, 20*s, 13*s, 0, 0, Math.PI*2); g.fill(); g.fillStyle = "#3A3A32"; g.beginPath(); g.ellipse(x - 19*s, y - 3*s, 6*s, 5*s, 0, 0, Math.PI*2); g.fill(); g.fillRect(x - 10*s, y + 9*s, 3*s, 7*s); g.fillRect(x + 8*s, y + 9*s, 3*s, 7*s); }
+function pine(g, x, y, h, col){ g.fillStyle = col; for(let i=0; i<3; i++){ const w = h*(.42 - i*.09), yy = y - i*h*.26; g.beginPath(); g.moveTo(x, yy - h*.45); g.lineTo(x - w, yy); g.lineTo(x + w, yy); g.closePath(); g.fill(); } g.fillRect(x - h*.03, y, h*.06, h*.1); }
+function drawScene(g, W, H, scene, R){
+  if(scene === "pradera" || scene === "montana"){
+    skyGrad(g, W, "#2C7896", "#4E9DB5", "#8BC3CB", 1300); grainDots(g, R, 0, 0, W, 1300, 26000, "255,250,230", .18);
+    cloud(g, R, 760, 620, 1.25, "#F3ECD6", "#DCCFAD", "60,120,140"); cloud(g, R, 290, 820, .95, "#F3ECD6", "#DCCFAD", "60,120,140"); cloud(g, R, 980, 1060, .7, "#F3ECD6", "#DCCFAD", "60,120,140");
+  }
+  if(scene === "pradera"){
+    hill(g, W, H, 1250, 30, 3, .4, "#6E9C8E", R, "30,60,50"); hill(g, W, H, 1300, 50, 2, 1.2, "#86AE63", R, "40,70,20");
+    trees(g, R, 980, hillY(W, 980, 1300, 50, 2, 1.2) - 10, 6, "#4F7D3A", "#365C2A"); trees(g, R, 120, hillY(W, 120, 1300, 50, 2, 1.2) + 10, 5, "#4F7D3A", "#365C2A");
+    hill(g, W, H, 1420, 90, 1.4, 2.4, "#9CC24F", R, "50,80,10"); hill(g, W, H, 1560, 110, 1.1, .2, "#86B43E", R, "40,70,10");
+    trees(g, R, 1040, hillY(W, 1040, 1560, 110, 1.1, .2) + 60, 5, "#3F6E30", "#2C5222");
+    sheep(g, 560, 1620, 1.5); sheep(g, 700, 1560, 1.2); sheep(g, 720, 1690, 1.4);
+    hill(g, W, H, 1800, 60, 1.6, 1.4, "#76A535", R, "30,60,10");
+    for(let k=0; k<260; k++){ g.fillStyle = R()<.6 ? "rgba(255,255,240,.9)" : "rgba(250,220,90,.9)"; g.fillRect(R()*W, 1760 + R()*160, 4, 4); }
+  } else if(scene === "montana"){
+    const mt = (pts, col, snow) => { g.fillStyle = col; g.beginPath(); g.moveTo(pts[0][0], 1500); pts.forEach(p=>g.lineTo(p[0], p[1])); g.lineTo(pts[pts.length-1][0], 1500); g.closePath(); g.fill();
+      if(snow) pts.forEach((p,i)=>{ if(i===0||i===pts.length-1||p[1]>1150) return; g.fillStyle = "#F4EFE4"; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0] - 70, p[1] + 110); g.lineTo(p[0] - 20, p[1] + 90); g.lineTo(p[0] + 15, p[1] + 120); g.lineTo(p[0] + 75, p[1] + 105); g.closePath(); g.fill(); }); };
+    mt([[-50,1400],[200,1000],[420,1260],[640,900],[900,1200],[1130,1020]], "#6F8FA6", true);
+    mt([[-50,1450],[150,1220],[380,1380],[560,1150],[820,1400],[1000,1250],[1130,1380]], "#56768D", false);
+    g.save(); g.beginPath(); g.rect(0, 800, W, 700); g.clip(); grainDots(g, R, 0, 800, W, 700, 9000, "20,40,60", .18); g.restore();
+    hill(g, W, H, 1500, 40, 2, .8, "#7FA65A", R, "30,60,10");
+    for(let i=0; i<26; i++){ const x = i*44 + R()*20, base = hillY(W, x, 1500, 40, 2, .8) + 30; pine(g, x, base, 120 + R()*90, i%2 ? "#2F5A3A" : "#3B6B45"); }
+    hill(g, W, H, 1700, 70, 1.3, 2, "#8DB65A", R, "40,70,10");
+    for(let i=0; i<9; i++){ const x = 60 + i*120 + R()*40; pine(g, x, hillY(W, x, 1700, 70, 1.3, 2) + 90, 200 + R()*80, "#2B5234"); }
+  } else if(scene === "atardecer"){
+    skyGrad(g, W, "#5B4C8C", "#E58A73", "#F6C27A", 1320); grainDots(g, R, 0, 0, W, 1320, 24000, "255,240,220", .16);
+    const sg = g.createRadialGradient(540, 1250, 0, 540, 1250, 420); sg.addColorStop(0, "rgba(255,236,170,1)"); sg.addColorStop(.35, "rgba(255,214,140,.85)"); sg.addColorStop(1, "rgba(255,200,140,0)"); g.fillStyle = sg; g.fillRect(0, 800, W, 700);
+    g.fillStyle = "#FFE7A8"; g.beginPath(); g.arc(540, 1260, 120, 0, Math.PI*2); g.fill();
+    cloud(g, R, 260, 560, .9, "#F7C9B2", "#D99A93", "120,70,110"); cloud(g, R, 830, 820, 1.05, "#F7C9B2", "#D99A93", "120,70,110");
+    hill(g, W, H, 1300, 40, 2.6, .3, "#8C5E86", R, "40,20,50"); hill(g, W, H, 1420, 80, 1.5, 1.9, "#6C4A73", R, "30,10,40");
+    trees(g, R, 900, hillY(W, 900, 1420, 80, 1.5, 1.9) + 10, 6, "#4D3558", "#3A2744");
+    hill(g, W, H, 1600, 100, 1.2, .6, "#4E3A63", R, "20,10,30"); hill(g, W, H, 1800, 60, 1.7, 2.6, "#3B2D50", R, "10,5,20");
+  } else if(scene === "mar"){
+    skyGrad(g, W, "#3E8FB3", "#7CC0D3", "#CDE8E6", 1250); grainDots(g, R, 0, 0, W, 1250, 22000, "255,255,240", .18);
+    cloud(g, R, 300, 640, 1.05, "#F6F1E1", "#D9D3BD", "70,130,160"); cloud(g, R, 860, 900, .85, "#F6F1E1", "#D9D3BD", "70,130,160");
+    const sea = g.createLinearGradient(0, 1250, 0, 1650); sea.addColorStop(0, "#2B7FA0"); sea.addColorStop(1, "#4FB0BE"); g.fillStyle = sea; g.fillRect(0, 1250, W, 420);
+    for(let k=0; k<140; k++){ const y = 1260 + Math.pow(R(), 1.4)*380, w = 20 + (y - 1250)*.25*R(); g.fillStyle = `rgba(255,255,255,${(.25 + R()*.45).toFixed(2)})`; g.fillRect(R()*W, y, w, 3); }
+    g.beginPath(); g.moveTo(0, H); g.lineTo(0, 1690); for(let x=0; x<=W; x+=8) g.lineTo(x, 1660 + Math.sin(x/120)*14 + Math.sin(x/47)*5); g.lineTo(W, H); g.closePath(); g.fillStyle = "#F2F7F3"; g.fill();
+    g.beginPath(); g.moveTo(0, H); g.lineTo(0, 1720); for(let x=0; x<=W; x+=8) g.lineTo(x, 1690 + Math.sin(x/120 + .6)*14 + Math.sin(x/47)*5); g.lineTo(W, H); g.closePath(); g.fillStyle = "#E8D3A4"; g.fill();
+    g.save(); g.clip(); grainDots(g, R, 0, 1680, W, 260, 9000, "120,90,40", .2); g.restore();
+  } else if(scene === "noche"){
+    skyGrad(g, W, "#0B1430", "#1B2C5A", "#34508A", 1350);
+    for(let k=0; k<420; k++){ const s = R()<.9 ? 2 : 4; g.fillStyle = `rgba(255,250,230,${(.3 + R()*.7).toFixed(2)})`; g.fillRect(R()*W, R()*1250, s, s); }
+    g.fillStyle = "#FFF3CF"; star(g, 200, 380, 18); star(g, 880, 260, 14); star(g, 960, 980, 12); star(g, 130, 1050, 10);
+    g.fillStyle = "#FFF1C9"; g.beginPath(); g.arc(820, 470, 90, 0, Math.PI*2); g.fill(); g.fillStyle = "#13204A"; g.beginPath(); g.arc(855, 445, 82, 0, Math.PI*2); g.fill();
+    grainDots(g, R, 0, 0, W, 1350, 16000, "180,200,255", .08);
+    hill(g, W, H, 1360, 40, 2.4, .9, "#22355E", R, "0,0,10"); hill(g, W, H, 1480, 90, 1.4, 2.1, "#1A2A4C", R, "0,0,10");
+    trees(g, R, 160, hillY(W, 160, 1480, 90, 1.4, 2.1) + 10, 6, "#13203C", "#0E182E");
+    hill(g, W, H, 1680, 100, 1.1, .4, "#121E38", R, "0,0,0");
+    for(let k=0; k<30; k++){ g.fillStyle = `rgba(255,236,150,${(.4 + R()*.6).toFixed(2)})`; g.beginPath(); g.arc(R()*W, 1500 + R()*400, 3 + R()*3, 0, Math.PI*2); g.fill(); }
+  }
+  grainDots(g, R, 0, 0, W, H, 30000, "0,0,0", .05);
+}
+async function verseImage(id, scene){
+  const v = verse(id); if(!v) return null;
+  const fam = '"Kalam", cursive';
+  try{ await Promise.all([`700 80px ${fam}`, '700 40px "Inter"'].map(f=>document.fonts.load(f))); }catch(e){}
+  const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  const R = rng(hashStr(id + scene));
+  drawScene(g, W, H, scene, R);
+  const dark = scene === "noche" || scene === "atardecer", ink = dark ? "#FFF8EA" : "#1E3020";
+  // texto: el más grande que quepa entre las nubes y el horizonte
+  const text = `“${v.text}”`, maxW = 900, maxH = 640;
+  let fs = 96, lines = [];
+  for(; fs >= 44; fs -= 2){ g.font = `700 ${fs}px ${fam}`; lines = wrapLines(g, text, maxW); if(lines.length * fs * 1.2 <= maxH) break; }
+  const lh = fs * 1.2, refFs = Math.max(56, Math.min(84, fs * .95));
+  const blockH = lines.length * lh + 40 + refFs;
+  const top = Math.max(260, 900 - blockH/2);
+  // halo suave detrás del texto para que se lea sobre el paisaje
+  const hg = g.createRadialGradient(540, top + blockH/2, 60, 540, top + blockH/2, Math.max(560, blockH*.95));
+  hg.addColorStop(0, dark ? "rgba(10,10,30,.42)" : "rgba(255,252,240,.62)"); hg.addColorStop(1, dark ? "rgba(10,10,30,0)" : "rgba(255,252,240,0)");
+  g.fillStyle = hg; g.fillRect(0, top - 400, W, blockH + 800);
+  g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillStyle = ink;
+  g.shadowColor = dark ? "rgba(0,0,0,.35)" : "rgba(255,255,240,.6)"; g.shadowBlur = 12;
+  g.font = `700 ${fs}px ${fam}`; lines.forEach((l,i)=>g.fillText(l, W/2, top + fs + i*lh));
+  g.font = `700 ${refFs}px ${fam}`; g.fillText(v.ref, W/2, top + lines.length*lh + 40 + refFs);
+  g.shadowBlur = 0;
+  // pie: app y versión
+  g.font = '700 30px "Inter", sans-serif'; const foot = `${APP_NAME} · Reina-Valera 1960`, fw = g.measureText(foot).width + 56;
+  g.fillStyle = "rgba(255,255,255,.82)"; rrect(g, W/2 - fw/2, H - 140, fw, 60, 30); g.fill();
+  g.fillStyle = "#1E3020"; g.fillText(foot, W/2, H - 99);
+  return new Promise(r=>c.toBlob(r, "image/png"));
+}
+
 /* ---------- Inicio / Dashboard ---------- */
 function ring(pct, size=92, stroke=10){
   const r=(size-stroke)/2, c=2*Math.PI*r, off=c*(1-pct/100);
@@ -1510,9 +1636,36 @@ function viewPildora(id){
   return `
   <button class="linkbtn" data-go="library" style="align-self:flex-start;padding:0">← Píldoras de fe</button>
   <section class="pild-head"><span class="pe">${p.e}</span><div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Píldora de fe</span><h1 style="font-size:clamp(28px,5vw,42px)">${esc(p.t)}</h1><p class="pf">${esc(p.f)}</p></div></section>
-  <div class="row" style="gap:8px"><button class="btn primary" data-act="pild-learn" data-id="${p.id}">${I.play} Memorizar estos</button><button class="btn" data-act="pild-save" data-id="${p.id}">${I.listAdd} Guardar en una lista</button><button class="btn ghost" data-act="pild-send" data-id="${p.id}">${I.heart} Enviar a un amigo</button></div>
-  <section class="pild-verses">${p.ids.map(vid=>{ const v=verse(vid); return v?`<div class="pv" data-act="verse-open" data-id="${vid}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div>`:""; }).join("")}</section>
+  <div class="row spread" style="gap:8px;align-items:center"><span class="muted" style="font-size:13.5px">Toca un versículo para memorizarlo, guardarlo, enviarlo o compartirlo.</span><button class="btn" data-act="pild-save" data-id="${p.id}">${I.listAdd} Guardar todos</button></div>
+  <section class="pild-verses">${p.ids.map(vid=>{ const v=verse(vid); return v?`<div class="pv" data-act="pild-verse" data-id="${vid}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p><span class="pv-more">Memorizar · Guardar · Enviar · Compartir</span></div>`:""; }).join("")}</section>
   ${p.ayuda?`<div class="pild-help"><b>No tienes que pasarlo solo</b><span>Si llevas días o semanas así, habla con tu pastor, con alguien de confianza o con un profesional. En Colombia puedes llamar gratis a la línea de salud mental <b>[número por verificar]</b>.</span></div>`:""}`;
+}
+function pildVerseModal(vid){
+  const v = verse(vid); if(!v) return;
+  modal(`<div class="spread" style="flex-wrap:nowrap"><span class="ref-line">${esc(v.ref)}</span><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="verse-full">${esc(v.text)}</p><p class="muted" style="font-size:12px;margin:0">Reina-Valera 1960</p>
+    <div class="pv-acts">
+      <button data-act="pv-learn" data-id="${vid}">${I.play}<b>Memorizar este</b><small>Sale primero en tus próximas prácticas</small></button>
+      <button data-act="pv-save" data-id="${vid}">${I.listAdd}<b>Guardar en una lista</b><small>Mis versículos o una lista tuya</small></button>
+      <button data-act="pv-send" data-id="${vid}">${I.users}<b>Enviar a un amigo</b><small>Con un mensaje corto si quieres</small></button>
+      <button data-act="pv-share" data-id="${vid}">${I.share}<b>Compartir imagen</b><small>Para tus estados o redes</small></button>
+    </div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
+}
+function shareVerseModal(vid){
+  const v = verse(vid); if(!v) return; let scene = SCENES[0].id, blob = null;
+  modal(`<div class="spread"><h2 style="font-size:22px">Compartir ${esc(v.ref)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="share-prev"><img id="shImg" alt="Vista previa de la imagen"><span id="shWait">Creando imagen…</span></div>
+    <div class="share-scenes" id="shSc">${SCENES.map((x,i)=>`<button type="button" data-s="${x.id}" aria-pressed="${i===0}">${x.l}</button>`).join("")}</div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="shGo">Compartir</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const img = sc.querySelector("#shImg"), wait = sc.querySelector("#shWait");
+    const draw = async ()=>{ wait.hidden = false; blob = await verseImage(vid, scene); if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
+    sc.querySelectorAll("#shSc [data-s]").forEach(b=>b.onclick=()=>{ scene = b.dataset.s; sc.querySelectorAll("#shSc [data-s]").forEach(x=>x.setAttribute("aria-pressed", x===b)); draw(); });
+    sc.querySelector("#shGo").onclick = async ()=>{ if(!blob) return; const name = v.ref.replace(/[^\wáéíóúñ]+/gi,"-").toLowerCase() + ".png"; const file = new File([blob], name, { type:"image/png" });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; } }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast("Imagen descargada. Ya la puedes subir a tus estados."); };
+    draw();
+  });
 }
 function pildSaveModal(id){
   const p = PILD_MAP[id]; let pick = "fav";
@@ -4631,8 +4784,11 @@ document.addEventListener("click", e=>{
     case "heart-open": openHeart(); break;
     case "pild-open": go("pildora",{id:t.dataset.id}); break;
     case "pild-save": pildSaveModal(t.dataset.id); break;
-    case "pild-learn": toast("Se agregaron a tu cola: saldrán primero en tus próximas prácticas (boceto)."); break;
-    case "pild-send": toast("Enviar a un amigo (boceto)."); break;
+    case "pild-verse": pildVerseModal(t.dataset.id); break;
+    case "pv-learn": closeModal(); toast("Listo: saldrá primero en tus próximas prácticas (boceto)."); break;
+    case "pv-save": closeModal(); toast("Elegir lista (boceto)."); break;
+    case "pv-send": closeModal(); sendVerseToFriend(t.dataset.id); break;
+    case "pv-share": shareVerseModal(t.dataset.id); break;
     case "shield-pick": shieldPickModal(); break;
     case "shield-send": sendShield(t.dataset.id, t); break;
     case "shield-send-ask": { const uid = t.dataset.id; confirmBox("Regalar un escudo", `Le darás uno de tus escudos a ${personLabel(uid).split(" ")[0]}. Te quedarán ${(S.shields||1)-1}.`, "Regalar", ()=>sendShield(uid)); break; }
