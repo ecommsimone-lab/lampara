@@ -540,8 +540,6 @@ a.btn:not(.primary){color:var(--ink)}
 @font-face{font-family:"Roboto";font-weight:900;font-display:swap;src:url("fonts/roboto-900.woff2") format("woff2")}
 @font-face{font-family:"Roboto";font-weight:500;font-display:swap;src:url("fonts/roboto-500.woff2") format("woff2")}
 @font-face{font-family:"Kaushan Script";font-weight:400;font-display:swap;src:url("fonts/kaushan-400.woff2") format("woff2")}
-@font-face{font-family:"Mr Dafoe";font-weight:400;font-display:swap;src:url("fonts/mrdafoe-400.woff2") format("woff2")}
-@font-face{font-family:"Caveat Brush";font-weight:400;font-display:swap;src:url("fonts/caveatbrush-400.woff2") format("woff2")}
 @font-face{font-family:"Yellowtail";font-weight:400;font-display:swap;src:url("fonts/yellowtail-400.woff2") format("woff2")}
 @font-face{font-family:"Playfair Display";font-weight:500;font-display:swap;src:url("fonts/playfair-500.woff2") format("woff2")}
 @font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url("fonts/fraunces-600.woff2") format("woff2")}
@@ -572,6 +570,7 @@ a.btn:not(.primary){color:var(--ink)}
 #heartx.lay-noche{background:radial-gradient(95% 70% at 50% 38%,var(--c-deep) 0%,var(--c-mid) 58%,var(--c-light) 100%);color:#fff}
 #heartx.lay-bruma{background:#F7F4EE;color:#fff}
 #heartx.lay-crema{background:#F8F3EA;color:var(--c-ink)}
+.lay-crema .hx-script{margin-top:6px}
 .hx-blob{position:absolute;left:50%;top:265px;width:min(600px,150vw);aspect-ratio:1/.92;transform:translate(-50%,-50%) rotate(-18deg);border-radius:50%;background:radial-gradient(closest-side,var(--c-mid) 0%,var(--c-mid) 36%,var(--c-light) 70%,rgba(247,244,238,0) 100%);filter:blur(10px);pointer-events:none}
 .hx-in{position:relative;z-index:1;width:100%;max-width:460px;min-height:100%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:max(64px,calc(env(safe-area-inset-top) + 52px)) 22px max(26px,env(safe-area-inset-bottom))}
 .hx-close{position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;z-index:3;background:rgba(255,255,255,.18);color:inherit}
@@ -582,7 +581,7 @@ a.btn:not(.primary){color:var(--ink)}
 .hx-row{display:block;width:max-content;margin:0 auto;white-space:nowrap}
 .hx-caps{font-family:"Playfair Display",Georgia,serif;font-weight:500;text-transform:uppercase;font-size:clamp(22px,7.2vw,30px);line-height:1.14}
 .hx-serif{font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:clamp(23px,7.6vw,32px);line-height:1.16}
-.hx-script{font-family:"Yellowtail","Brush Script MT",cursive;font-size:clamp(40px,12.5vw,56px);line-height:1.15;display:inline-block;padding:.06em .4em .16em;margin:0 -.4em;white-space:nowrap}
+.hx-script{font-family:"Kaushan Script","Brush Script MT",cursive;font-size:clamp(36px,11vw,50px);line-height:1.15;display:inline-block;padding:.06em .4em .16em;margin:0 -.4em;white-space:nowrap}
 .hx-wave{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(26px,8.6vw,36px);line-height:1.2;white-space:nowrap}
 .hx-wave.big{font-weight:900;font-size:clamp(64px,23vw,104px);line-height:1.1;margin-top:2px}
 .hx-wave .lt{display:inline-block}
@@ -619,9 +618,6 @@ a.btn:not(.primary){color:var(--ink)}
 .lay-aurora .hx-actions .btn,.lay-foto .hx-actions .btn{background:#fff;color:var(--c-ink);box-shadow:0 0 0 1.5px var(--c-ink) inset}
 .lay-aurora .hx-actions .btn.primary,.lay-foto .hx-actions .btn.primary{background:var(--c-ink);color:#fff;box-shadow:none}
 .lay-aurora .hx-close,.lay-foto .hx-close{background:rgba(255,255,255,.88);color:var(--c-ink)}
-#heartx[data-sf="kaushan"] .hx-script{font-family:"Kaushan Script",cursive;font-size:clamp(36px,11vw,50px)}
-#heartx[data-sf="dafoe"] .hx-script{font-family:"Mr Dafoe",cursive;font-size:clamp(48px,15vw,68px)}
-#heartx[data-sf="caveat"] .hx-script{font-family:"Caveat Brush",cursive;font-size:clamp(44px,13.5vw,60px)}
 #heartx.done .hx-row .hx-script,#heartx .hx-row .hx-script.tx{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -3.2 0 0 0 2.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -3.2 0 0 0 2.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");-webkit-mask-size:180px;mask-size:180px;-webkit-mask-repeat:repeat;mask-repeat:repeat}
 #heartx.done .w,#heartx.done .fd,#heartx.done .hx-ring.rg::before{animation:none;opacity:1;transform:none}
 #heartx.done .wr{animation:none;-webkit-mask-image:none;mask-image:none}
@@ -1205,7 +1201,13 @@ const HEART_VERSES = [
   ["mt-7-24","Mateo 7:24","Cualquiera, pues, que me oye estas palabras, y las hace, le compararé a un hombre prudente, que edificó su casa sobre la roca."],
   ["lc-11-28","Lucas 11:28","Y él dijo: Antes bienaventurados los que oyen la palabra de Dios, y la guardan."],
   ["1jn-3-18","1 Juan 3:18","Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad."],
-  ["jn-14-15","Juan 14:15","Si me amáis, guardad mis mandamientos."]
+  ["jn-14-15","Juan 14:15","Si me amáis, guardad mis mandamientos."],
+  // verificados con la RVR1960 de Blue Letter Bible el 20 de octubre de 2026
+  ["jn-17-3","Juan 17:3","Y esta es la vida eterna: que te conozcan a ti, el único Dios verdadero, y a Jesucristo, a quien has enviado."],
+  ["is-55-11","Isaías 55:11","así será mi palabra que sale de mi boca; no volverá a mí vacía, sino que hará lo que yo quiero, y será prosperada en aquello para que la envié."],
+  ["lc-6-45","Lucas 6:45","El hombre bueno, del buen tesoro de su corazón saca lo bueno; y el hombre malo, del mal tesoro de su corazón saca lo malo; porque de la abundancia del corazón habla la boca."],
+  ["is-40-8","Isaías 40:8","Sécase la hierba, marchítase la flor; mas la palabra del Dios nuestro permanece para siempre."],
+  ["flp-1-6","Filipenses 1:6","estando persuadido de esto, que el que comenzó en vosotros la buena obra, la perfeccionará hasta el día de Jesucristo;"]
 ];
 const HEART_MAP = Object.fromEntries(HEART_VERSES.map(([id,ref,text])=>[id,{ id, ref, text, theme:"Corazón", sug:true, heart:true }]));
 const APP_NAME = "Lámpara";
@@ -1217,23 +1219,93 @@ const HEART_PALS = [
   { deep:"#27186B", mid:"#7C5CFF", light:"#C4B6FF", ink:"#5B3FD6" },
   { deep:"#6A3B00", mid:"#D98A00", light:"#FFD27A", ink:"#A35F00" }
 ];
-// lines: [estilo, texto]; "script" va en letra cursiva y se escribe sola
-const HEART = [
-  { title:"Corazón nuevo", lay:"noche", snip:"sin un corazón transformado",
-    lines:[["caps","Mil versículos"],["caps","no sirven de nada"],["script","sin un corazón"],["script","transformado"]],
-    verses:["1co-13-2","ez-36-26","sal-51-10","rom-12-2"] },
-  { title:"El amor de Cristo", lay:"bruma", snip:"el amor de Cristo en ti",
-    lines:[["serif","Tu racha no mide tu fe:"],["serif","lo que importa es el"],["script","amor de Cristo"],["serif","en ti"]],
-    verses:["1s-16-7","ef-3-19","rom-5-5","1jn-4-19","jn-13-35"] },
-  { title:"Hacedor de la Palabra", lay:"crema", snip:"no solo la recites: vívela",
-    lines:[["wave","no solo la recites:"],["wavebig","vívela."]],
-    verses:["stg-1-22","mt-7-24","lc-11-28","1jn-3-18","jn-14-15"] }
+// Banco de frases: [título, frase, remate a mano, versículo]. Cada día sale una al azar (sin repetir hasta que salgan todas) con un diseño al azar.
+const HEART_BANK = [
+  ["Corazón nuevo","Mil versículos no sirven de nada","sin un corazón transformado","ez-36-26"],
+  ["Dios mira el corazón","Tu racha no mide tu fe:","Dios mira el corazón","1s-16-7"],
+  ["Hacedor de la Palabra","No solo la recites:","vívela.","stg-1-22"],
+  ["Guardada en ti","La Palabra que guardas hoy","te sostendrá mañana","sal-119-11"],
+  ["Conocerle","No se trata de cuánto sabes,","sino de a quién conoces","jn-17-3"],
+  ["Nuevas cada mañana","Sus misericordias","son nuevas cada mañana","lm-3-22-23"],
+  ["Semilla","Cada versículo","es una semilla","is-55-11"],
+  ["Habla, Señor","Antes de memorizarla,","pídele que te hable","jer-33-3"],
+  ["Fidelidad","Lo pequeño, hecho para Él,","es grande ante Dios","col-3-23"],
+  ["De la abundancia","Lo que guardas en el corazón","sale por tu boca","lc-6-45"],
+  ["Él va contigo","No estás solo:","Él va contigo","dt-31-6"],
+  ["El gran mandamiento","Ama a Dios","con todo tu corazón","mt-22-37"],
+  ["Para siempre","Su Palabra","permanece para siempre","is-40-8"],
+  ["La buena obra","El que comenzó en ti la buena obra","la perfeccionará","flp-1-6"],
+  ["Lámpara","Cuando no ves el camino,","su Palabra lo alumbra","sal-119-105"],
+  ["Descanso","Deja tus cargas","a sus pies","mt-11-28"],
+  ["Un día a la vez","No cargues el mañana","con las fuerzas de hoy","mt-6-34"],
+  ["Paz","Su paz no depende","de tus circunstancias","jn-14-27"],
+  ["Su gracia","Cuando no puedas más,","su gracia te basta","2co-12-9"],
+  ["Esperanza","Él tiene pensamientos","de paz para ti","jer-29-11"],
+  ["Primero Él","Antes de que lo amaras,","Él ya te amaba","1jn-4-19"],
+  ["Por gracia","No es por tus obras:","es por gracia","ef-2-8-9"],
+  ["Nueva criatura","Lo viejo pasó:","todo es hecho nuevo","2co-5-17"],
+  ["Perdón","Si lo confiesas,","Él es fiel para perdonar","1jn-1-9"],
+  ["Libre","Tu pasado no te condena:","estás en Cristo","rom-8-1"],
+  ["Valentía","No temas:","Él es tu luz","sal-27-1"],
+  ["Confianza","No te apoyes en lo que entiendes:","confía en Él","prov-3-5-6"],
+  ["Primero su reino","Busca primero","su reino","mt-6-33"],
+  ["Oración","Antes de afanarte,","ora","flp-4-6-7"],
+  ["Él cuida de ti","Echa sobre Él","toda tu ansiedad","1p-5-7"],
+  ["Para bien","Aun lo que no entiendes,","Dios lo usa para bien","rom-8-28"],
+  ["Inseparable","Nada te podrá separar","de su amor","rom-8-38-39"],
+  ["Fruto","Permanece en Él","y darás fruto","jn-15-5"],
+  ["Luz","Que tu vida","alumbre a otros","mt-5-16"],
+  ["Renovados","No te conformes:","deja que Él te renueve","rom-12-2"],
+  ["Hechura suya","Eres su obra,","creada con propósito","ef-2-10"],
+  ["Formidable","Dios no se equivocó","al formarte","sal-139-14"],
+  ["Vida abundante","Él vino a darte","vida en abundancia","jn-10-10"],
+  ["El camino","No hay otro camino:","Jesús es el camino","jn-14-6"],
+  ["La verdad","Su verdad","te hace libre","jn-8-32"],
+  ["Alas de águila","Los que esperan en Él","renuevan sus fuerzas","is-40-31"],
+  ["Sostenido","Él te sostiene","con su diestra","is-41-10"],
+  ["Refugio","En medio de la tormenta,","Él es tu refugio","sal-46-1"],
+  ["Mi pastor","Con Él como pastor","nada te falta","sal-23-1"],
+  ["Gozo","Aun en días difíciles,","gózate en el Señor","flp-4-4"],
+  ["Gratitud","Da gracias","en todo","1ts-5-16-18"],
+  ["Hoy","Este es el día","que hizo el Señor","sal-118-24"],
+  ["Corazón limpio","Pídele hoy","un corazón limpio","sal-51-10"],
+  ["Sabiduría","Si te falta sabiduría,","pídela","stg-1-5"],
+  ["El Consolador","No estás solo para recordar:","el Espíritu te enseña","jn-14-26"],
+  ["Amor real","Ama con hechos,","no solo con palabras","1jn-3-18"],
+  ["Obediencia","Amarle","es obedecerle","jn-14-15"],
+  ["Perdonar","Perdona","como fuiste perdonado","ef-4-32"],
+  ["Fe","La fe es la certeza","de lo que no ves","hb-11-1"],
+  ["Bienaventurados","Dichosos los que oyen la Palabra","y la guardan","lc-11-28"],
+  ["Sobre la roca","Edifica tu vida","sobre la roca","mt-7-24"],
+  ["Viva","La Palabra no es letra muerta:","es viva","hb-4-12"],
+  ["De tal manera","Así de grande","es su amor por ti","jn-3-16"],
+  ["En Cristo","Todo lo puedes","en Cristo","flp-4-13"],
+  ["Discípulos","Que te reconozcan","por tu amor","jn-13-35"]
 ];
+const HEART_PHOTOS = ["cielo-nubes","cielo-cumulo","cielo-amanecer","universo-via-lactea","universo-galaxia","universo-orion","universo-magallanes","universo-nebulosa","universo-luna","mar-acantilados","mar-montes","bosque-secuoyas","bosque-cascada","bosque-corteza","campo-flores","montana-roca"];
 const heartPhrase = h => h.lines.map(l=>l[1]).join(" ");
-function heartOfDay(date){
-  const d = date || new Date(), n = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY);
-  const h = HEART[n % HEART.length], id = h.verses[Math.floor(n / HEART.length) % h.verses.length];
-  const v = verse(id), pal = HEART_PALS[n % HEART_PALS.length];
+// Cada dispositivo guarda la del día; mañana elige otra frase al azar entre las que no han salido y un diseño al azar (foto o crema)
+function heartDeck(){
+  const k = todayKey(); let d = null;
+  try{ d = JSON.parse(localStorage.getItem("lampara.heartDeck") || "null"); }catch(e){}
+  if(d && d.day === k && HEART_BANK[d.i]) return d;
+  const seen = (d && Array.isArray(d.seen) ? d.seen : []).filter(i=>i < HEART_BANK.length);
+  let pool = HEART_BANK.map((_,i)=>i).filter(i=>!seen.includes(i)); if(!pool.length) pool = HEART_BANK.map((_,i)=>i).filter(i=>!d || i!==d.i);
+  const i = pool[Math.floor(Math.random()*pool.length)];
+  const photos = HEART_PHOTOS.filter(x=>!d || x!==d.photo);
+  const lay = Math.random() < .75 ? "foto" : "crema";
+  const nd = { day:k, i, lay, photo: lay==="foto" ? photos[Math.floor(Math.random()*photos.length)] : null, pal: Math.floor(Math.random()*HEART_PALS.length), caps: Math.random() < .4,
+    seen: (pool.length===HEART_BANK.length-seen.length ? seen : []).concat(i) };
+  try{ localStorage.setItem("lampara.heartDeck", JSON.stringify(nd)); }catch(e){}
+  return nd;
+}
+function heartOfDay(){
+  const d = heartDeck(), [title, top, emph, id] = HEART_BANK[d.i];
+  const lines = d.lay === "crema"
+    ? [["wave", top], [[...emph].length <= 12 ? "wavebig" : "script", emph]]
+    : [[d.caps && top.length <= 26 ? "caps" : "serif", top], ["script", emph]];
+  const h = { title, lay:d.lay, photo:d.photo, lines, verses:[id] };
+  const v = verse(id), pal = HEART_PALS[d.pal] || HEART_PALS[0];
   return { h, id, pal, ref: v ? v.ref : "", text: v ? v.text : "" };
 }
 const palVars = p => `--c-deep:${p.deep};--c-mid:${p.mid};--c-light:${p.light};--c-ink:${p.ink}`;
@@ -1283,7 +1355,7 @@ function openHeart(){
   const { html, total } = heartArt(h, true);
   const el = document.createElement("div"); el.id = "heartx"; el.className = "lay-" + h.lay; el.setAttribute("style", palVars(pal));
   el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", "Recuerda esto");
-  el.innerHTML = `${h.lay === "bruma" ? `<div class="hx-blob" aria-hidden="true"></div>` : ""}
+  el.innerHTML = `${h.lay === "foto" && h.photo ? `<div class="hx-photo" aria-hidden="true" style="background-image:url('img/fondos/${h.photo}.jpg')"></div>` : ""}
     <button class="icon-btn hx-close" data-act="heart-close" aria-label="Cerrar">${I.x}</button>
     <div class="hx-in">
       <span class="hx-ey fd" style="--d:100ms">Recuerda esto · ${esc(h.title)}</span>
@@ -1306,6 +1378,7 @@ function openHeart(){
       if(w > max){ const fs = parseFloat(getComputedStyle(tgt).fontSize); tgt.style.fontSize = Math.floor(fs * max / w) + "px"; } }); };
   fit(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit).catch(()=>{});
   const c = el.querySelector(".hx-close"); if(c) c.focus({ preventScroll:true });
+  setTimeout(()=>el.querySelectorAll(".hx-script").forEach(x=>x.classList.add("tx")), total + 200);   // textura de pincel cuando termina de escribirse
 }
 function closeHeart(){ const x = $("#heartx"); if(!x) return; x.remove(); document.body.style.overflow = ""; if(VIEW.name === "home") render(); }
 document.addEventListener("keydown", e=>{ if(e.key === "Escape" && $("#heartx")) closeHeart(); });
@@ -1316,17 +1389,24 @@ function wrapLines(g, text, maxW){ const words = text.split(" "), lines = []; le
 function star(g, x, y, r){ g.beginPath(); g.moveTo(x, y-r); g.quadraticCurveTo(x, y, x+r, y); g.quadraticCurveTo(x, y, x, y+r); g.quadraticCurveTo(x, y, x-r, y); g.quadraticCurveTo(x, y, x, y-r); g.fill(); }
 async function heartImage(){
   const { h, pal, ref, text } = heartOfDay();
-  try{ await Promise.all(['400 100px "Yellowtail"','500 60px "Playfair Display"','600 60px "Fraunces"','900 60px "Fraunces"','italic 400 40px "Inter"','700 40px "Inter"'].map(f=>document.fonts.load(f))); }catch(e){}
+  try{ await Promise.all(['400 100px "Kaushan Script"','500 60px "Playfair Display"','600 60px "Fraunces"','900 60px "Fraunces"','italic 400 40px "Inter"','700 40px "Inter"'].map(f=>document.fonts.load(f))); }catch(e){}
   const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   const light = h.lay !== "noche", ink = light ? pal.ink : "#fff";
   if(h.lay === "noche"){ const gr = g.createRadialGradient(540, 700, 0, 540, 700, 1250); gr.addColorStop(0, pal.deep); gr.addColorStop(.58, pal.mid); gr.addColorStop(1, pal.light); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  else if(h.lay === "foto"){
+    // foto arriba que se desvanece en blanco, con una sombra suave solo detrás de la frase
+    g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+    try{ const im = await loadImg(`img/fondos/${h.photo}.jpg`), Ah = H*.78, sc = Math.max(W/im.width, Ah/im.height), dw = im.width*sc, dh = im.height*sc; g.save(); g.beginPath(); g.rect(0, 0, W, Ah); g.clip(); g.drawImage(im, (W-dw)/2, (Ah-dh)/2, dw, dh); g.restore(); }catch(e){}
+    const fg = g.createLinearGradient(0, H*.78*.52, 0, H*.78); fg.addColorStop(0, "rgba(255,255,255,0)"); fg.addColorStop(1, "#fff"); g.fillStyle = fg; g.fillRect(0, H*.78*.52, W, H*.78*.48 + 2); g.fillStyle = "#fff"; g.fillRect(0, H*.78, W, H);
+    const sh = g.createRadialGradient(540, 560, 0, 540, 560, 620); sh.addColorStop(0, "rgba(0,0,0,.34)"); sh.addColorStop(1, "rgba(0,0,0,0)"); g.save(); g.scale(1, .62); g.fillStyle = sh; g.fillRect(0, 0, W, 1800); g.restore();
+  }
   else { g.fillStyle = h.lay === "bruma" ? "#F7F4EE" : "#F8F3EA"; g.fillRect(0, 0, W, H); }
   if(h.lay === "bruma"){ g.save(); g.translate(540, 700); g.rotate(-18*Math.PI/180); g.scale(1, .92); const gr = g.createRadialGradient(0, 0, 0, 0, 0, 760); gr.addColorStop(0, pal.mid); gr.addColorStop(.36, pal.mid); gr.addColorStop(.7, pal.light); gr.addColorStop(1, "rgba(247,244,238,0)"); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 760, 0, Math.PI*2); g.fill(); g.restore(); }
-  for(let k=0; k<9000; k++){ g.fillStyle = `rgba(${light?"0,0,0":"255,255,255"},${(Math.random()*0.04).toFixed(3)})`; g.fillRect(Math.random()*W, Math.random()*H, 2, 2); }
+  if(h.lay !== "foto") for(let k=0; k<9000; k++){ g.fillStyle = `rgba(${light?"0,0,0":"255,255,255"},${(Math.random()*0.04).toFixed(3)})`; g.fillRect(Math.random()*W, Math.random()*H, 2, 2); }
   g.textAlign = "center"; g.textBaseline = "alphabetic";
-  g.fillStyle = h.lay === "noche" ? "rgba(255,255,255,.85)" : pal.ink; g.font = '700 30px "Inter", sans-serif';
+  g.fillStyle = h.lay === "noche" || h.lay === "foto" ? "rgba(255,255,255,.92)" : pal.ink; g.font = '700 30px "Inter", sans-serif';
   if("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText(("Recuerda esto · " + h.title).toUpperCase(), W/2, 300); if("letterSpacing" in g) g.letterSpacing = "0px";
-  const spec = { caps:['500 76px "Playfair Display", serif', 1.18], serif:['500 82px "Playfair Display", serif', 1.18], script:['400 142px "Yellowtail", cursive', 1.12], wave:['600 92px "Fraunces", serif', 1.3], wavebig:['900 270px "Fraunces", serif', 1.12] };
+  const spec = { caps:['500 76px "Playfair Display", serif', 1.18], serif:['500 82px "Playfair Display", serif', 1.18], script:['400 120px "Kaushan Script", cursive', 1.22], wave:['600 92px "Fraunces", serif', 1.3], wavebig:['900 270px "Fraunces", serif', 1.12] };
   let y = 470; let ringY = null;
   h.lines.forEach(([kind, txt])=>{
     let [font, lh] = spec[kind]; const size = parseFloat(font.match(/(\d+)px/)[1]); let fs = size;
@@ -1334,12 +1414,21 @@ async function heartImage(){
     g.font = font; let w = g.measureText(shown).width; if(w > 940){ fs = Math.floor(size * 940 / w); font = font.replace(/\d+px/, fs + "px"); g.font = font; w = g.measureText(shown).width; }
     y += fs * (kind === "wavebig" ? 0.95 : 0.9);
     g.fillStyle = h.lay === "crema" ? pal.ink : "#fff";
-    if(kind === "wave" || kind === "wavebig"){
+    if(h.lay === "foto"){ g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 22; } else g.shadowBlur = 0;
+    if(kind === "script"){
+      // letra de pincel con textura: se dibuja aparte y se le quitan puntitos, como un trazo seco
+      const oc = document.createElement("canvas"); oc.width = W; oc.height = Math.ceil(fs*1.7); const o = oc.getContext("2d");
+      o.font = font; o.textAlign = "center"; o.textBaseline = "alphabetic"; o.fillStyle = g.fillStyle; o.fillText(shown, W/2, fs*1.2);
+      o.globalCompositeOperation = "destination-out";
+      for(let k=0; k<Math.round(w*fs*.012); k++){ o.globalAlpha = .35 + Math.random()*.65; const r = .8 + Math.random()*1.8; o.beginPath(); o.arc(W/2 - w/2 + Math.random()*w, Math.random()*oc.height, r, 0, Math.PI*2); o.fill(); }
+      g.drawImage(oc, 0, y - fs*1.2);
+    } else if(kind === "wave" || kind === "wavebig"){
       const amp = (kind === "wavebig" ? 9 : 5) * fs / (kind === "wavebig" ? 104 : 36), step = kind === "wavebig" ? .9 : .45;
       let x = W/2 - w/2, li = 0; g.textAlign = "left";
       [...shown].forEach(ch=>{ const cw = g.measureText(ch).width; if(ch !== " "){ g.save(); g.translate(x + cw/2, y + Math.sin(li*step)*amp); g.rotate(Math.cos(li*step)*amp*.9*Math.PI/180); g.fillText(ch, -cw/2, 0); g.restore(); } li++; x += cw; });
       g.textAlign = "center";
     } else g.fillText(shown, W/2, y);
+    g.shadowBlur = 0;
     if(kind === "script" && h.lay === "bruma") ringY = { y: y - fs*.3, w };
     y += fs * (lh - (kind === "wavebig" ? 0.95 : 0.9));
   });
