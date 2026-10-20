@@ -3244,7 +3244,7 @@ const CHEERS = ["¡Vamos a practicar hoy!", "Estoy orando por ti.", "«Esforzaos
 const PREF_ROWS = [
   ["amistad", "Amistad", "Solicitudes de amistad y cuando te aceptan"],
   ["retos", "Retos 1 a 1", "Cuando te retan y cuando tu rival ya jugó"],
-  ["rachas", "Rachas juntos", "Invitaciones a racha y cuando tu racha está en riesgo (8 p. m.)"],
+  ["rachas", "Rachas", "Cuando tu racha está en riesgo (9 p. m.), invitaciones y rachas juntos (8 p. m.)"],
   ["animos", "Ánimos de amigos", "Mensajes de ánimo que te envían tus amigos"]
 ];
 const NAPI = {
@@ -3298,7 +3298,16 @@ function startNotifs(){
 }
 function stopNotifs(){ if(NOTIF.timer) clearInterval(NOTIF.timer); NOTIF.timer = null; }
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && cloudOn()){ loadNotifs(); if(VIEW.name==="community") reloadCommunity(); } });
-async function loadPrefs(){ try{ NOTIF.prefs = await NAPI.prefs(); }catch(e){ NOTIF.prefs = null; } if(VIEW.name==="profile") render(); }
+const REMINDER_DEFAULT_SINCE = "2026-10-20T22:00:00Z";   // las cuentas creadas desde aquí tienen el recordatorio diario activado (7 p. m.)
+async function loadPrefs(){
+  let missing = false;
+  try{ NOTIF.prefs = await NAPI.prefs(); missing = !NOTIF.prefs; }catch(e){ NOTIF.prefs = null; }
+  if(missing && ME && ME.created && ME.created >= REMINDER_DEFAULT_SINCE){
+    const p = Object.assign(prefsNow(), { recordatorio:true, hora:19, tz:myTz() });
+    try{ await NAPI.savePrefs({ amistad:p.amistad, retos:p.retos, rachas:p.rachas, animos:p.animos, recordatorio:true, hora:19, tz:p.tz }); NOTIF.prefs = p; }catch(e){}
+  }
+  if(VIEW.name==="profile") render();
+}
 function myTz(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Bogota"; }catch(e){ return "America/Bogota"; } }
 function prefsNow(){ return Object.assign({ amistad:true, retos:true, rachas:true, animos:true, recordatorio:false, hora:19 }, NOTIF.prefs || {}); }
 async function savePref(k, v){
@@ -3386,7 +3395,7 @@ function notifPrefsPanel(){
 }
 
 /* ----- Lista de avisos ----- */
-const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
+const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", streak_mine:"flame", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
 function timeAgo(iso){
   const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime())/1000));
   if(s < 60) return "ahora"; const m = Math.round(s/60); if(m < 60) return `hace ${m} min`;
@@ -3410,7 +3419,7 @@ function notifActions(n){
       if(f.streak==="accepted") return done("🔥 Racha activa");
       if(f.streak==="pending") return done("Invitación enviada");
       return btn("streak-invite","Invitar a racha",f.id,true);
-    case "streak_accepted": case "streak_risk": case "reminder":
+    case "streak_accepted": case "streak_risk": case "streak_mine": case "reminder":
       return btn("start-due","Practicar ahora","",true);
     case "duel_challenge": case "duel_result":
       if(duel && myDuelTurn(duel)) return btn("duel-play","Jugar",duel.id,true);
@@ -4768,7 +4777,7 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   if(cached && (!state || (cached._savedAt||0) > (state._savedAt||0))) state = cached;
   const seeded = !state && seed;
   if(seeded) state = seed;
-  ME = { mode:"cloud", id:user.id, name:(row&&row.name) || name || meta.name || user.email.split("@")[0], email:user.email, color:colorFor(user.id), key };
+  ME = { mode:"cloud", created:user.created_at || null, id:user.id, name:(row&&row.name) || name || meta.name || user.email.split("@")[0], email:user.email, color:colorFor(user.id), key };
   S = Object.assign(freshState(), state || {});
   applyTheme(S.prefs.theme);
   WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
