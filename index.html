@@ -2333,13 +2333,16 @@ function startMic(){
     REC = new SR();
     REC.lang = "es-ES";            // el español de España usa "vosotros/os/pedid", como la RVR1960
     REC.continuous = true; REC.interimResults = true; REC.maxAlternatives = 1;
-    REC.onresult = e => { let interim = ""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalText += r[0].transcript + " "; else interim += r[0].transcript; } q.transcript = (finalText + interim).trim(); if(tr) tr.textContent = q.transcript; };
+    // Se arma de nuevo con todos los resultados en cada evento. Algunos Android repiten la frase acumulada como resultados nuevos
+    // ("por", "por cuanto", "por cuanto todos"…): si un trozo contiene al anterior, lo reemplaza en vez de sumarse (evita el "eco")
+    REC.onresult = e => { q.transcript = (finalText + mergeSpeech([...e.results].map(r=>r[0].transcript))).trim(); if(tr) tr.textContent = q.transcript; };
     REC.onerror = e => {
       if(e.error === "not-allowed" || e.error === "service-not-allowed"){ REC_ON = false; micFallback("No hay permiso para usar el micrófono. Actívalo en los ajustes del navegador para este sitio."); }
       else if(e.error === "audio-capture"){ REC_ON = false; micFallback("No encontramos un micrófono en este dispositivo."); }
       else if(e.error === "network"){ REC_ON = false; micFallback("El reconocimiento de voz necesita internet y no hay conexión."); }
     };
     REC.onend = () => {
+      finalText = q.transcript ? q.transcript.trim() + " " : "";   // lo dicho hasta aquí queda fijo antes de volver a escuchar
       // Safari y algunos Android cortan tras un silencio: si no tocaste para terminar, seguimos escuchando
       if(REC_ON && restarts < 8 && Date.now() - started < 90000 && SESSION && SESSION.q === q && !q.done){ restarts++; try{ begin(); return; }catch(err){} }
       REC_ON = false; REC = null; if(btn) btn.classList.remove("live");
@@ -2352,6 +2355,21 @@ function startMic(){
   };
   try{ REC_ON = true; begin(); btn.classList.add("live"); msg.textContent = "Escuchando… di el versículo y toca el micrófono al terminar."; }
   catch(e){ REC_ON = false; REC = null; micFallback("El micrófono no está disponible en esta vista."); }
+}
+function mergeSpeech(parts){
+  const key = t => norm(t);
+  const out = [];
+  parts.forEach(t=>{
+    t = String(t||"").trim(); if(!t) return;
+    const last = out[out.length-1];
+    if(last != null){
+      const a = key(last), b = key(t);
+      if(b.startsWith(a)){ out[out.length-1] = t; return; }   // el nuevo trozo trae lo anterior y algo más
+      if(a.startsWith(b) || a.endsWith(b)) return;             // repetido
+    }
+    out.push(t);
+  });
+  return out.join(" ");
 }
 /* Si el micrófono no funciona: ofrecer escribirlo en lugar de evaluarse uno mismo */
 function micFallback(text){
