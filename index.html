@@ -4444,7 +4444,7 @@ function teamItemModal(id){
         await API.rpc("team_update", { p_id:String(it.id), p_estado:est, p_nota:nota, p_name:displayName() });
         Object.assign(it, { estado:est, nota:nota||null, actualizado_por:displayName(), actualizado_at:new Date().toISOString() });
         closeModal(); render(); toast("Guardado.");
-      }catch(e){ btn.disabled=false; btn.textContent="Guardar"; sc.querySelector("#tmErr").textContent = "No se pudo guardar. Inténtalo de nuevo."; }
+      }catch(e){ btn.disabled=false; btn.textContent="Guardar"; sc.querySelector("#tmErr").textContent = "No se pudo guardar. Detalle: " + String((e&&e.message)||e).slice(0,120); }
     };
   });
 }
@@ -4464,7 +4464,7 @@ function teamAddModal(){
       if(msg.length < 3){ err.textContent = "Escribe qué hay que hacer."; return; }
       btn.disabled = true; btn.textContent = "Agregando…";
       try{ await API.rpc("team_add", { p_kind:kind, p_message:msg, p_nota:nota, p_name:displayName() }); closeModal(); TEAM.filter="pend"; toast("Agregado a la lista."); await loadTeam(); }
-      catch(e){ btn.disabled=false; btn.textContent="Agregar"; err.textContent = "No se pudo agregar. Inténtalo de nuevo."; }
+      catch(e){ btn.disabled=false; btn.textContent="Agregar"; err.textContent = "No se pudo agregar. " + (/check constraint|kind/i.test(String(e&&e.message)) ? "Falta ejecutar el código SQL 13 en Supabase." : "Detalle: " + String((e&&e.message)||e).slice(0,120)); }
     };
     setTimeout(()=>{ const t=sc.querySelector("#tmMsg"); if(t) t.focus(); }, 50);
   });
