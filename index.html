@@ -177,6 +177,60 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .chart text{fill:var(--muted);font-size:10px;font-weight:600}
 
 .vlist{display:flex;flex-direction:column}
+
+.pr-tabs{display:flex;background:var(--surface-2);border-radius:14px;padding:4px;gap:4px}
+.pr-tabs button{all:unset;cursor:pointer;flex:1;text-align:center;padding:9px;border-radius:10px;font-weight:700;font-size:14.5px;color:var(--muted)}
+.pr-tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ig-stories{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:4px 16px}
+.ig-stories::-webkit-scrollbar{display:none}
+.ig-stories button{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:66px}
+.ig-stories .ring{width:62px;height:62px;border-radius:50%;padding:3px;background:conic-gradient(var(--c),color-mix(in srgb,var(--c) 40%,#fff),var(--c));display:grid;place-items:center;box-sizing:border-box}
+.ig-stories .ring.seen{background:var(--line)}
+.ig-stories .ring i{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;font-style:normal;color:#fff;font-weight:800;font-size:20px;border:3px solid var(--bg);box-sizing:border-box;background:var(--accent)}
+.ig-stories small{font-size:11.5px;font-weight:600;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ig-stories .sel small{color:var(--accent)}
+.ig-list{display:flex;flex-direction:column;gap:14px;padding-bottom:70px}
+.ig{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.ig-h{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:12px 12px 8px 14px}
+.ig-h b{display:block;font-size:14.5px}.ig-h small{font-size:12px;color:var(--muted)}
+.ig-more{font-size:20px;width:30px;height:30px}
+.ig-t{margin:0;padding:2px 14px 8px;font-size:16px;line-height:1.5}
+.ig-bg{aspect-ratio:4/3;display:grid;place-items:center;padding:24px;text-align:center}
+.ig-bg p{margin:0;color:#fff;font-weight:800;font-size:clamp(22px,6.4vw,30px);line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,.18)}
+.ig .pr-answer,.ig .pr-verse{margin:0 14px 8px}
+.ig-bar{display:flex;gap:4px;padding:6px 8px 0}
+.ig-i{all:unset;cursor:pointer;font-size:24px;width:42px;height:40px;display:grid;place-items:center;border-radius:12px;filter:grayscale(.15)}
+.ig-i.on{background:var(--accent-soft);transform:scale(1.05)}
+.ig-s{padding:2px 14px;font-size:13.5px}
+.ig-c{all:unset;cursor:pointer;padding:4px 14px 0;font-size:13.5px;color:var(--muted)}
+.ig-c1{padding:2px 14px 4px;font-size:14px}
+.ig .pr-quick{padding:6px 14px 14px}
+.pr-fab{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 10px 24px -8px var(--accent);z-index:15;cursor:pointer}
+.pr-fab svg{width:26px;height:26px}
+@media (min-width:900px){.pr-fab{bottom:32px;right:32px}}
+.pr-swatch{all:unset;cursor:pointer;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;outline:2.5px solid transparent;outline-offset:2px}
+.pr-swatch.on{outline-color:var(--accent)}
+.pr-start{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#7C5CFF);color:#fff}
+.pr-start>span{font-size:30px}.pr-start b{display:block;font-size:17px}.pr-start small{opacity:.9;font-size:13px}
+.pd-sec{display:flex;flex-direction:column;gap:10px}
+.pd-sec h3{font-size:18px}
+.pd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.pd-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.pd-ch{display:flex;gap:8px;align-items:center}.pd-ch span{font-size:22px}.pd-ch b{font-size:14.5px}
+.pd-items{display:flex;flex-wrap:wrap;gap:5px}
+.pd-items span{font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--surface-2)}
+.pd-add{all:unset;cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:700;padding:3px 4px}
+.pd-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.pd-row b{display:block;font-size:15px}.pd-row small{display:block;font-size:12.5px}
+.pd-row.ans{background:var(--ok-soft);border-color:transparent}
+.pd-row.ans small{color:var(--ok)}.pd-row.ans span{display:block;font-size:14px;margin-top:4px}
+.acas{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.acas span{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
+.acas span b{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--ink);font-size:11px}
+.acas span.on{background:var(--accent);color:#fff}.acas span.on b{background:#fff;color:var(--accent)}
+.acas span.done{color:var(--ok)}.acas span.done b{background:var(--ok);color:#fff}
+.pn-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pn-items span{font-size:16px;font-weight:600;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
 .pr-groups{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
 .pr-groups::-webkit-scrollbar{display:none}
 .pr-groups button{all:unset;cursor:pointer;flex:none;width:150px;display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
@@ -1808,72 +1862,107 @@ function saveToListModal(ids, suggest){
 }
 
 /* ===== BOCETO: Oración (datos de ejemplo, sin guardar nada) ===== */
-const PR = { filter:"todo", now:0 };
-const PR_GROUPS = [ { id:"g1", name:"Célula jóvenes", n:12, admin:true, code:"NER-7K2Q" }, { id:"g2", name:"Familia Alarcón", n:6, admin:false, code:"NER-3MX9" } ];
+const PR = { tab:"comunidad", filter:"todo", now:0 };
+const PR_GROUPS = [ { id:"g1", name:"Célula jóvenes", n:12, admin:true, code:"NER-7K2Q", c:"#2FB5A0", nuevo:true }, { id:"g2", name:"Familia Alarcón", n:6, admin:false, code:"NER-3MX9", c:"#7C5CFF", nuevo:true }, { id:"g3", name:"Iglesia Central", n:48, admin:false, code:"NER-9PL2", c:"#D98A00", nuevo:false } ];
 const PR_CATS = { salud:["Salud","#E5484D"], familia:["Familia","#7C5CFF"], trabajo:["Trabajo","#D98A00"], fe:["Fe","#2F6FED"], estudios:["Estudios","#16A36A"], gratitud:["Gratitud","#16A36A"] };
 const PR_DEMO = [
-  { id:"p1", who:"Gabriel", color:"#7C5CFF", where:"g1", cat:"trabajo", t:"hace 2 h", text:"Oren por mí: el lunes tengo una entrevista de trabajo muy importante. Que Dios me dé paz y que se haga su voluntad.", verse:"flp-4-6-7", r:{ pray:5, amen:3, heart:2 }, comments:[["Juliana","Estoy orando por ti 🙏"],["Cristian","Dios es fiel, hermano"]] },
-  { id:"p2", anon:true, where:"g1", cat:"familia", t:"hace 5 h", text:"Pido oración por la restauración de mi familia. Estamos pasando un tiempo difícil.", r:{ pray:9, amen:4, heart:6 }, comments:[["Daniel","No estás solo"]] },
-  { id:"p3", who:"Juliana", color:"#E5484D", where:"friends", cat:"gratitud", t:"ayer", text:"Gracias a todos los que oraron por la salud de mi mamá. ¡Ya salió del hospital!", answered:"Los exámenes salieron bien y ya está en casa. ¡Gloria a Dios!", r:{ pray:7, amen:11, heart:9 }, comments:[] },
-  { id:"p4", who:"Tú", color:"#2F6FED", where:"private", cat:"fe", t:"hace 3 días", text:"Constancia para leer la Biblia cada mañana antes del trabajo.", verse:"sal-119-105", r:{ pray:0, amen:0, heart:0 }, comments:[] },
-  { id:"p5", who:"Cristian", color:"#16A36A", where:"g2", cat:"estudios", t:"hace 4 días", text:"Esta semana tengo parciales finales. Oren por sabiduría y calma.", r:{ pray:4, amen:2, heart:1 }, comments:[["Gabriel","¡Ánimo! Santiago 1:5"]] }
+  { id:"p1", who:"Gabriel", color:"#7C5CFF", where:"g1", cat:"trabajo", t:"2 h", text:"Oren por mí: el lunes tengo una entrevista de trabajo muy importante. Que Dios me dé paz y que se haga su voluntad.", verse:"flp-4-6-7", r:{ pray:5, amen:3, heart:2 }, praying:"Juliana", comments:[["Juliana","Estoy orando por ti 🙏"],["Cristian","Dios es fiel, hermano"]] },
+  { id:"p2", anon:true, where:"g1", cat:"familia", t:"5 h", text:"Restauración para mi familia.", bg:"linear-gradient(135deg,#7C5CFF,#E5484D)", r:{ pray:9, amen:4, heart:6 }, praying:"Daniel", comments:[["Daniel","No estás solo"]] },
+  { id:"p3", who:"Juliana", color:"#E5484D", where:"friends", cat:"gratitud", t:"1 d", text:"Gracias a todos los que oraron por la salud de mi mamá. ¡Ya salió del hospital!", answered:"Los exámenes salieron bien y ya está en casa. ¡Gloria a Dios!", r:{ pray:7, amen:11, heart:9 }, praying:"Gabriel", comments:[] },
+  { id:"p5", who:"Cristian", color:"#16A36A", where:"g2", cat:"estudios", t:"4 d", text:"Sabiduría y calma en los parciales finales.", bg:"linear-gradient(135deg,#16A36A,#2F6FED)", r:{ pray:4, amen:2, heart:1 }, praying:"Gabriel", comments:[["Gabriel","¡Ánimo! Santiago 1:5"]] }
 ];
-const prWhere = w => w==="private" ? "🔒 Privada" : w==="friends" ? "👥 Amigos" : "👪 " + ((PR_GROUPS.find(g=>g.id===w)||{}).name||"Grupo");
-function prCard(it){
-  const c = PR_CATS[it.cat], who = it.anon ? `<span class="avatar" style="width:40px;height:40px;background:var(--surface-2);color:var(--muted)">${I.pray}</span>` : avatarHTML(it.who, it.color, null, 40);
-  const rb = (k, ico, label) => `<button class="pr-r${it.mine&&it.mine[k]?" on":""}" data-act="pr-react" data-k="${k}" data-id="${it.id}">${ico}<span>${label}</span>${it.r[k]?`<b>${it.r[k]}</b>`:""}</button>`;
+const DIARY = {
+  plantilla:[
+    ["👨‍👩‍👧","Familia",["Mamá","Papá","Mi hermano Andrés"]],
+    ["⛪","Iglesia y pastores",["Pastor Luis","Célula de jóvenes"]],
+    ["🤝","Amigos",["Daniel","Laura"]],
+    ["💼","Trabajo o estudios",["Proyecto nuevo"]],
+    ["🇨🇴","País y autoridades",["Presidente y gobernantes","Paz en Colombia"]],
+    ["🌍","Misiones",["Misioneros de la iglesia"]],
+    ["🙋","Yo mismo",["Paciencia","Constancia en la Palabra"]]
+  ],
+  activas:[ { t:"La entrevista del lunes", d:"Desde el 18 oct", verse:"flp-4-6-7" }, { t:"Sanidad de la rodilla de mi papá", d:"Desde el 2 oct" } ],
+  respondidas:[ { t:"Salud de mi mamá", d:"Pedida el 20 sep · respondida el 21 oct", note:"Salió del hospital con buenos exámenes." }, { t:"Trabajo para Andrés", d:"Pedida el 1 ago · respondida el 3 sep", note:"Lo contrataron en la empresa que quería." } ]
+};
+const ACAS = [
+  ["Adoración","Alaba a Dios por quién es.","sal-34-8"],
+  ["Confesión","Pídele perdón por lo que te separó de Él hoy.","1jn-1-9"],
+  ["Acción de gracias","Agradece por lo que ha hecho, también por las oraciones respondidas.","1ts-5-16-18"],
+  ["Súplica","Presenta tus peticiones y ora por los demás.","flp-4-6-7"]
+];
+const prWhere = w => w==="friends" ? "Amigos" : ((PR_GROUPS.find(g=>g.id===w)||{}).name||"Grupo");
+function prPost(it){
+  const c = PR_CATS[it.cat], av = it.anon ? `<span class="avatar" style="width:38px;height:38px;background:var(--surface-2);color:var(--muted)">${I.pray}</span>` : avatarHTML(it.who, it.color, null, 38);
+  const ico = (k, e) => `<button class="ig-i${it.mine&&it.mine[k]?" on":""}" data-act="pr-react" data-k="${k}" data-id="${it.id}" aria-label="${k}">${e}</button>`;
+  const total = it.r.pray;
   const v = it.verse && verse(it.verse);
-  return `<article class="pr-card">
-    <div class="pr-top">${who}<div style="min-width:0"><b>${it.anon?"Un hermano pidió oración":esc(it.who)}</b><small class="muted">${prWhere(it.where)} · ${it.t}</small></div><span class="chip" style="background:color-mix(in srgb,${c[1]} 14%,transparent);color:${c[1]}">${c[0]}</span></div>
-    <p class="pr-text">${esc(it.text)}</p>
+  return `<article class="ig">
+    <header class="ig-h">${av}<div style="min-width:0"><b>${it.anon?"Un hermano":esc(it.who)}</b><small>${esc(prWhere(it.where))} · ${it.t}</small></div><span class="chip" style="background:color-mix(in srgb,${c[1]} 14%,transparent);color:${c[1]}">${c[0]}</span><button class="icon-btn ig-more" aria-label="Más opciones">⋯</button></header>
+    ${it.bg?`<div class="ig-bg" style="background:${it.bg}"><p>${esc(it.text)}</p></div>`:`<p class="ig-t">${esc(it.text)}</p>`}
     ${it.answered?`<div class="pr-answer"><b>✨ Dios respondió</b><span>${esc(it.answered)}</span></div>`:""}
-    ${v?`<div class="pr-verse"><b>${esc(v.ref)}</b> ${esc(v.text.slice(0,90))}${v.text.length>90?"…":""}</div>`:""}
-    ${it.where!=="private"?`<div class="pr-rs">${rb("pray","🙏","Estoy orando")}${rb("amen","🙌","Amén")}${rb("heart","❤️","")}</div>
-    ${it.comments.length?`<div class="pr-cm">${it.comments.map(([n,t])=>`<div><b>${esc(n)}</b> ${esc(t)}</div>`).join("")}</div>`:""}
-    <div class="pr-quick">${["Estoy orando por ti","Dios es fiel","No estás solo"].map(t=>`<button data-act="pr-cheer">${t}</button>`).join("")}<button data-act="pr-cheer">✏️ Escribir…</button></div>`
-    :`<div class="pr-priv"><span class="muted">Solo tú la ves.</span><button class="linkbtn">Compartir con un grupo</button><button class="linkbtn">✓ Dios respondió</button></div>`}
+    ${v?`<div class="pr-verse"><b>${esc(v.ref)}</b> ${esc(v.text.slice(0,80))}…</div>`:""}
+    <div class="ig-bar">${ico("pray","🙏")}${ico("heart","❤️")}${ico("amen","🙌")}<button class="ig-i" data-act="pr-cheer" aria-label="Comentar">💬</button></div>
+    <div class="ig-s"><b>${total ? `${esc(it.mine&&it.mine.pray?"Tú":it.praying)}${total>1?` y ${total-1} más`:""}` : "Nadie aún"}</b> ${total===1?"está":"están"} orando · ${it.r.amen} amén · ${it.r.heart} ❤️</div>
+    ${it.comments.length?`<button class="ig-c" data-act="pr-cheer">Ver ${it.comments.length===1?"el comentario":`los ${it.comments.length} comentarios`}</button><div class="ig-c1"><b>${esc(it.comments[0][0])}</b> ${esc(it.comments[0][1])}</div>`:""}
+    <div class="pr-quick">${["🙏 Estoy orando por ti","Dios es fiel","No estás solo"].map(t=>`<button data-act="pr-cheer">${t}</button>`).join("")}</div>
   </article>`;
 }
 function viewOracion(){
-  const f = PR.filter, list = PR_DEMO.filter(it=> f==="todo" ? true : f==="answered" ? !!it.answered : it.where===f);
-  const chip = (k,l) => `<button class="tm-chip" data-act="pr-filter" data-k="${k}" aria-pressed="${f===k}">${l}</button>`;
-  return `
-  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Orando unos por otros</span><h1 style="font-size:clamp(30px,5vw,46px)">Oración</h1></div>
-    <div class="row" style="gap:8px"><button class="btn" data-act="pr-now">🙏 Orar ahora</button><button class="btn primary" data-act="pr-new">${I.plus} Pedir oración</button></div></section>
-  <div class="pr-groups">${PR_GROUPS.map(g=>`<button data-act="pr-group" data-id="${g.id}"><span class="cv cv-c${g.id==="g1"?2:4}"><span>${esc(g.name.charAt(0))}</span></span><b>${esc(g.name)}</b><small>${g.n} miembros</small></button>`).join("")}<button data-act="pr-group" data-id="new"><span class="cv" style="background:var(--surface-2);color:var(--muted)">${I.plus}</span><b>Crear grupo</b><small>o unirme con código</small></button></div>
-  <div class="tm-chips">${chip("todo","Todo")}${PR_GROUPS.map(g=>chip(g.id,g.name)).join("")}${chip("friends","Amigos")}${chip("private","🔒 Mis privadas")}${chip("answered","✨ Respondidas")}</div>
-  <div class="pr-list">${list.map(prCard).join("") || `<div class="empty"><b>No hay peticiones aquí</b></div>`}</div>`;
+  const tab = PR.tab;
+  const tabs = `<div class="pr-tabs"><button data-act="pr-tab" data-k="comunidad" aria-pressed="${tab==="comunidad"}">Comunidad</button><button data-act="pr-tab" data-k="diario" aria-pressed="${tab==="diario"}">🔒 Mi diario</button></div>`;
+  if(tab==="diario"){
+    const v = id => verse(id);
+    return `<section class="spread" style="align-items:flex-end"><h1 style="font-size:clamp(30px,5vw,40px)">Oración</h1></section>${tabs}
+    <button class="pr-start" data-act="pr-now"><span>🙏</span><div><b>Orar ahora</b><small>Te guiamos con A·C·A·S por tu lista y tus peticiones</small></div>${I.play}</button>
+    <section class="pd-sec"><div class="spread"><h3>Por quiénes oro</h3><button class="linkbtn">Editar</button></div>
+      <div class="pd-grid">${DIARY.plantilla.map(([e,n,items])=>`<div class="pd-card"><div class="pd-ch"><span>${e}</span><b>${esc(n)}</b></div><div class="pd-items">${items.map(x=>`<span>${esc(x)}</span>`).join("")}<button class="pd-add">+ Agregar</button></div></div>`).join("")}</div></section>
+    <section class="pd-sec"><div class="spread"><h3>Peticiones activas</h3><button class="linkbtn">+ Nueva</button></div>
+      ${DIARY.activas.map(a=>`<div class="pd-row"><div style="min-width:0"><b>${esc(a.t)}</b><small class="muted">${a.d}${a.verse?` · ${esc(v(a.verse).ref)}`:""}</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost" style="padding:5px 10px;font-size:13px">Compartir</button><button class="btn" style="padding:5px 10px;font-size:13px">✓ Respondida</button></div></div>`).join("")}</section>
+    <section class="pd-sec"><h3>✨ Dios respondió</h3>
+      ${DIARY.respondidas.map(a=>`<div class="pd-row ans"><div><b>${esc(a.t)}</b><small>${a.d}</small><span>${esc(a.note)}</span></div></div>`).join("")}</section>`;
+  }
+  const f = PR.filter, list = PR_DEMO.filter(it=> f==="todo" ? true : it.where===f);
+  return `<section class="spread" style="align-items:flex-end"><h1 style="font-size:clamp(30px,5vw,40px)">Oración</h1></section>${tabs}
+  <div class="ig-stories"><button data-act="pr-filter" data-k="todo" class="${f==="todo"?"sel":""}"><span class="ring" style="--c:var(--accent)"><i>✦</i></span><small>Todo</small></button>${PR_GROUPS.map(g=>`<button data-act="pr-filter" data-k="${g.id}" class="${f===g.id?"sel":""}"><span class="ring${g.nuevo?"":" seen"}" style="--c:${g.c}"><i style="background:${g.c}">${esc(g.name.charAt(0))}</i></span><small>${esc(g.name.split(" ")[0])}</small></button>`).join("")}<button data-act="pr-filter" data-k="friends" class="${f==="friends"?"sel":""}"><span class="ring" style="--c:#2F6FED"><i style="background:#2F6FED">👥</i></span><small>Amigos</small></button><button data-act="pr-group" data-id="new"><span class="ring seen" style="--c:var(--line)"><i style="background:var(--surface-2);color:var(--muted)">+</i></span><small>Grupo</small></button></div>
+  <div class="ig-list">${list.map(prPost).join("")}</div>
+  <button class="pr-fab" data-act="pr-new" aria-label="Pedir oración">${I.plus}</button>`;
 }
 function prayerNewModal(){
   modal(`<div class="spread"><h2 style="font-size:22px">Pedir oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
     <div class="field"><label for="prTxt">¿Por qué quieres que oremos?</label><textarea class="textarea" id="prTxt" maxlength="500" placeholder="Escribe tu petición…" style="min-height:110px;font-size:15px"></textarea>
       <small class="muted">Consejo: evita nombres completos o detalles privados de otras personas.</small></div>
-    <div class="field"><label>¿Quién la ve?</label><div class="seg" id="prWho"><button aria-pressed="false">🔒 Solo yo</button><button aria-pressed="false">👥 Amigos</button>${PR_GROUPS.map((g,i)=>`<button aria-pressed="${i===0}">👪 ${esc(g.name)}</button>`).join("")}</div></div>
+    <div class="field"><label>¿Quién la ve?</label><div class="seg" id="prWho"><button aria-pressed="false">🔒 Solo yo (mi diario)</button><button aria-pressed="false">👥 Amigos</button>${PR_GROUPS.map((g,i)=>`<button aria-pressed="${i===0}">${esc(g.name)}</button>`).join("")}</div></div>
     <label class="check"><input type="checkbox"> Publicar sin mi nombre (solo en grupos)</label>
+    <div class="field"><label>Fondo (para peticiones cortas)</label><div class="row" style="gap:8px">${["none","linear-gradient(135deg,#7C5CFF,#E5484D)","linear-gradient(135deg,#16A36A,#2F6FED)","linear-gradient(135deg,#D98A00,#E5484D)","linear-gradient(135deg,#0E2A6E,#2F6FED)"].map((g,i)=>`<button class="pr-swatch${i===0?" on":""}" style="background:${g==="none"?"var(--surface-2)":g}">${g==="none"?"Aa":""}</button>`).join("")}</div></div>
     <div class="field"><label>Tema</label><div class="seg">${Object.values(PR_CATS).slice(0,5).map(([l],i)=>`<button aria-pressed="${i===0}">${l}</button>`).join("")}</div></div>
     <div class="field"><label>¿Por cuánto tiempo?</label><div class="seg"><button aria-pressed="true">7 días</button><button aria-pressed="false">30 días</button><button aria-pressed="false">Hasta que la cierre</button></div></div>
     <button class="linkbtn" style="align-self:flex-start">📖 Acompañar con un versículo (opcional)</button>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" data-close>Publicar</button></div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); sc.querySelectorAll(".seg").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>g.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)))); });
 }
 function prayerGroupModal(id){
-  if(id==="new"){ modal(`<div class="spread"><h2 style="font-size:22px">Grupos de oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+  modal(`<div class="spread"><h2 style="font-size:22px">Grupos de oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
     <div class="field"><label>Crear un grupo</label><input class="input" placeholder="Ej. Célula jóvenes, Familia, Iglesia…"></div><button class="btn primary">Crear grupo</button>
-    <div class="field" style="margin-top:8px"><label>Unirme con un código</label><input class="input" placeholder="NER-XXXX"></div><button class="btn">Unirme</button>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); }); return; }
-  const g = PR_GROUPS.find(x=>x.id===id);
-  modal(`<div class="spread"><h2 style="font-size:22px">${esc(g.name)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <p class="muted" style="margin:0">${g.n} miembros${g.admin?" · Eres administrador":""}</p>
-    <div class="panel" style="padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:none;background:var(--surface-2)"><b>Invita a tus hermanos</b><span class="muted" style="font-size:13.5px">Comparte el enlace o el código. Solo los miembros ven las peticiones del grupo.</span><div class="row" style="gap:8px"><span class="chip acc mono" style="font-size:15px">${g.code}</span><button class="btn">${I.share} Compartir enlace</button></div></div>
-    ${g.admin?`<div class="set-group"><div class="set-row"><div class="lbl"><b>Miembros</b><small>Ver, quitar o hacer administrador</small></div><button class="btn ghost">Ver</button></div><div class="set-row"><div class="lbl"><b>Peticiones reportadas</b><small>Revisa y decide si se quitan</small></div><span class="chip none">0</span></div></div>`:""}
-    <div class="row" style="justify-content:space-between"><button class="btn ghost" style="color:var(--bad)">Salir del grupo</button><button class="btn primary" data-close>Listo</button></div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
+    <div class="field" style="margin-top:8px"><label>Unirme con un código</label><input class="input" placeholder="NER-XXXX"></div><button class="btn">Unirme</button>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
+}
+// Orar ahora: A·C·A·S; en Súplica recorre la lista "Por quiénes oro" y las peticiones activas
+function prSteps(){
+  const st = [];
+  ACAS.forEach(([n,g,vid],i)=>{
+    if(i<3) st.push({ k:n, i, g, vid });
+    else { st.push({ k:n, i, g, vid }); DIARY.plantilla.forEach(([e,sec,items])=>st.push({ k:n, i, sub:`${e} ${sec}`, items })); st.push({ k:n, i, sub:"Peticiones activas", items:DIARY.activas.map(a=>a.t) }); }
+  });
+  return st;
 }
 function renderPrayNow(){
-  const items = PR_DEMO.filter(x=>!x.answered); let el = $("#praynow");
+  const steps = prSteps(); let el = $("#praynow");
   if(!el){ el = document.createElement("div"); el.id = "praynow"; document.body.appendChild(el); document.body.style.overflow = "hidden"; }
-  if(PR.now >= items.length){ el.innerHTML = `<div class="pn-in"><div style="font-size:54px">🙏</div><h2>Oraste por ${items.length} peticiones</h2><p class="muted">Les avisaremos a tus hermanos que estás orando por ellos.</p><button class="btn primary lg" data-act="pr-now-close">Terminar</button></div>`; return; }
-  const it = items[PR.now];
-  el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in"><div class="progress" style="width:100%"><i style="width:${PR.now/items.length*100}%"></i></div><span class="eyebrow">${PR.now+1} de ${items.length} · ${prWhere(it.where)}</span>
-    <h2 style="font-size:20px">${it.anon?"Un hermano":esc(it.who)}</h2><p class="pn-text">${esc(it.text)}</p>${it.verse?`<p class="muted" style="font-style:italic">${esc(verse(it.verse).text)} — ${esc(verse(it.verse).ref)}</p>`:""}
-    <p class="muted" style="font-size:13px">Tómate un momento para orar por esta petición.</p><button class="btn primary lg" data-act="pr-now-next">🙏 Oré por esto</button><button class="linkbtn" data-act="pr-now-next">Saltar</button></div>`;
+  if(PR.now >= steps.length){ el.innerHTML = `<div class="pn-in"><div style="font-size:54px">🙏</div><h2>Amén</h2><p class="muted">Terminaste tu tiempo de oración de hoy.</p><button class="btn primary lg" data-act="pr-now-close">Terminar</button></div>`; return; }
+  const s = steps[PR.now], v = s.vid && verse(s.vid);
+  el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in">
+    <div class="acas">${ACAS.map(([n],i)=>`<span class="${i<s.i?"done":i===s.i?"on":""}"><b>${n.charAt(0)}</b>${n}</span>`).join("")}</div>
+    <h2 style="font-size:26px">${esc(s.sub||s.k)}</h2>
+    ${s.items?`<div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`:`<p class="pn-text">${esc(s.g)}</p>${v?`<p class="muted" style="font-style:italic">“${esc(v.text)}” — ${esc(v.ref)}</p>`:""}`}
+    <button class="btn primary lg" data-act="pr-now-next">Siguiente</button></div>`;
 }
 
 function verseRow(id, i, list){
@@ -5045,6 +5134,7 @@ document.addEventListener("click", e=>{
     case "feedback": feedbackModal(); break;
     case "team-open": teamItemModal(t.dataset.id); break;
     case "pr-filter": PR.filter = t.dataset.k; render(); break;
+    case "pr-tab": PR.tab = t.dataset.k; render(); break;
     case "pr-react": { const it = PR_DEMO.find(x=>x.id===t.dataset.id), k = t.dataset.k; if(it){ it.mine = it.mine||{}; it.mine[k] = !it.mine[k]; it.r[k] += it.mine[k] ? 1 : -1; render(); if(k==="pray" && it.mine[k]) toast("Gracias. Le avisaremos que estás orando."); } break; }
     case "pr-new": prayerNewModal(); break;
     case "pr-now": PR.now = 0; renderPrayNow(); break;
