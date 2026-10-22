@@ -154,6 +154,14 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .today .btn:not(.primary){background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.28);box-shadow:none}
 .today .btn:not(.primary):hover{background:rgba(255,255,255,.2)}
 
+.btn.sm{padding:8px 12px;font-size:13.5px;min-height:0}
+.hsum{display:flex;flex-direction:column;gap:0;padding:6px 16px}
+.hsum-row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:12px 0;width:100%;cursor:pointer}
+.hsum-row+.hsum-row{border-top:1px solid var(--line)}
+.hsum-row>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hsum-row small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hsum-ic{font-size:22px;flex:none}
+.hsum-row .go{color:var(--muted);font-size:18px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .stat{background:var(--surface);border:1px solid var(--card-border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0}
 button.stat{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0;position:relative;transition:transform .12s}
@@ -1316,6 +1324,7 @@ function render(){
   else if(VIEW.name==="avisos") v.innerHTML = mtop + viewAvisos();
   else if(VIEW.name==="racha") v.innerHTML = mtop + viewRacha();
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
+  else if(VIEW.name==="progreso") v.innerHTML = mtop + viewProgreso();
   else if(VIEW.name==="pildora") v.innerHTML = mtop + viewPildora(VIEW.id);
   else if(VIEW.name==="equipo") v.innerHTML = mtop + viewEquipo();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
@@ -1713,17 +1722,20 @@ function viewHome(){
         <div class="eyebrow">Nivel</div>
         <div class="row" style="gap:10px;flex-wrap:nowrap"><span class="big" style="color:var(--accent)">${xi.lv}</span><small class="muted" style="font-weight:700">${xi.into}/${xi.need} XP</small></div>
         <div class="xpbar" style="height:10px"><i style="width:${xi.pct}%"></i></div>
+        <small class="muted">${pathStageLine()}</small>
       </button>
-      <div class="stat">
+      <button class="stat" data-go="progreso" aria-label="Ver mi estado de memorización">
+        <span class="go" aria-hidden="true">›</span>
         <div class="eyebrow">Aprendido</div>
         <div class="ring-wrap">${ring(pct,76,9)}</div>
         <small class="muted">${!counts.ok && counts.mid ? `${counts.mid} en proceso · 0 aprendidos` : `${counts.ok} de ${act.length} versículos`}</small>
-      </div>
-      <div class="stat">
+      </button>
+      <button class="stat" data-go="progreso" aria-label="Ver mi acierto y actividad">
+        <span class="go" aria-hidden="true">›</span>
         <div class="eyebrow">Acierto · 30 días</div>
         <span class="big">${acc===null?"—":acc}<small>${acc===null?"":"%"}</small></span>
         <small class="muted">Promedio de tus respuestas</small>
-      </div>
+      </button>
     </div>
   </section>
 
@@ -1731,8 +1743,32 @@ function viewHome(){
   ${moodRowHTML()}
   ${cloudOn() ? `<button class="pr-start home-pray" data-act="home-pray"><span>🙏</span><div><b>Orar ahora</b><small>Unos minutos con la guía del Padre Nuestro</small></div>${I.play}</button>` : ""}
 
-  ${pathCard()}
-
+  ${homeReviewCard(next, weakest)}
+  ${homeBooksCard()}`;
+}
+/* Resumen corto en Inicio: el detalle está en "Tu memorización" (toca Aprendido o Acierto) */
+function homeReviewCard(next, weakest){
+  if(!next.length && !weakest.length) return "";
+  const p0 = next[0] && prog(next[0]); const d0 = p0 ? Math.max(0,Math.round((dayStart(p0.due)-dayStart(Date.now()))/DAY)) : 0;
+  return `<section class="panel hsum">
+    ${next.length?`<button class="hsum-row" data-go="progreso"><span class="hsum-ic">📅</span><div><b>Próximo repaso</b><small>${esc(verse(next[0]).ref)} · ${d0<=1?"mañana":"en "+d0+" días"}${next.length>1?` · y ${next.length-1} más`:""}</small></div><span class="go">›</span></button>`:""}
+    ${weakest.length?`<div class="hsum-row"><span class="hsum-ic">💪</span><div data-go="progreso" role="button" tabindex="0" style="cursor:pointer"><b>Te cuestan ${weakest.length} ${weakest.length===1?"versículo":"versículos"}</b><small>${weakest.slice(0,3).map(id=>esc(verse(id).ref)).join(" · ")}${weakest.length>3?" …":""}</small></div><button class="btn sm" data-act="practice-hard">${I.play} Practicar</button></div>`:""}
+  </section>`;
+}
+function pathStageLine(){
+  const n = stageCount(), k = currentStage();
+  if(k >= n) return "Camino completo 🪔";
+  const ids = stageIds(k); return `Etapa ${k+1} · ${ids.filter(verseCleared).length}/${ids.length}`;
+}
+/* "Tu memorización": estado, acierto, actividad, próximos repasos y los que más cuestan */
+function viewProgreso(){
+  const act = activeIds();
+  const counts = { ok:0, mid:0, none:0 }; act.forEach(id=>counts[status(id)]++);
+  const total = act.length || 1, acc = accuracy();
+  const next = act.filter(id=>prog(id)&&prog(id).reps>0&&!isDue(id)).sort((a,b)=>prog(a).due-prog(b).due).slice(0,10);
+  const weakest = hardestIds(act);
+  return `<button class="linkbtn" data-go="home" style="align-self:flex-start;padding:0">← Inicio</button>
+  <section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Tu progreso</span><h1 style="font-size:clamp(30px,5vw,46px)">Tu memorización</h1></section>
   <section class="split">
     <div class="panel" style="display:flex;flex-direction:column;gap:18px">
       <div class="spread"><h3>Estado de memorización</h3></div>
@@ -1747,25 +1783,25 @@ function viewHome(){
         <div><b>${counts.none}</b><span><i class="dot" style="background:var(--none)"></i>Por aprender</span></div>
       </div>
       <p class="muted" style="font-size:13px">Un versículo pasa a <b style="color:var(--ink)">aprendido</b> cuando lo respondes bien en ${MASTER} repasos espaciados. Si fallas uno aprendido, vuelve a <b style="color:var(--ink)">en proceso</b>.</p>
+      ${counts.ok?`<button class="btn" data-go="review" style="align-self:flex-start">${I.review} Ver mis aprendidos</button>`:""}
     </div>
     <div class="panel chart" style="display:flex;flex-direction:column;gap:12px">
-      <div class="spread"><h3>Actividad</h3><span class="eyebrow">últimos 14 días</span></div>
+      <div class="spread"><h3>Acierto y actividad</h3><span class="eyebrow">últimos 14 días</span></div>
+      <div class="row" style="gap:8px;align-items:baseline"><span style="font-size:34px;font-weight:800;letter-spacing:-.03em">${acc===null?"—":acc+"%"}</span><span class="muted" style="font-size:13px">de acierto promedio en los últimos 30 días</span></div>
       ${activityChart()}
-      <div class="row" style="gap:16px;font-size:12px" class="muted"><span class="muted"><i class="dot" style="background:var(--ok)"></i> ≥90% acierto</span><span class="muted"><i class="dot" style="background:var(--mid)"></i> 60–89%</span><span class="muted"><i class="dot" style="background:var(--bad)"></i> &lt;60%</span></div>
+      <div class="row" style="gap:16px;font-size:12px"><span class="muted"><i class="dot" style="background:var(--ok)"></i> ≥90% acierto</span><span class="muted"><i class="dot" style="background:var(--mid)"></i> 60–89%</span><span class="muted"><i class="dot" style="background:var(--bad)"></i> &lt;60%</span></div>
     </div>
   </section>
-
-  ${homeBooksCard()}
   <section class="split">
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="spread"><h3>Los que más te cuestan</h3></div>
+      ${weakest.length? `<div class="vlist">${weakest.map(id=>{ const v=verse(id), p=prog(id); const h=(p.hist||[]).slice(-5); const avg=h.length?Math.round(h.reduce((a,b)=>a+b,0)/h.length):0; return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t open" data-act="verse-open" data-id="${id}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip ${p.lapses?"bad":"mid"}">${p.lapses?`${p.lapses} ${p.lapses===1?"fallo":"fallos"}`:`${avg}% acierto`}</span></div>`; }).join("")}</div><button class="btn primary" data-act="practice-hard" style="align-self:flex-start">${I.play} Practicar estos</button>`
+       : `<div class="empty"><b>¡Todo va bien por ahora!</b><span>Aquí aparecen los versículos que fallas o en los que sacas menos de 90%, desde tu primera práctica.</span></div>`}
+    </div>
     <div class="panel" style="display:flex;flex-direction:column;gap:10px">
       <div class="spread"><h3>Próximos repasos</h3></div>
       ${next.length? `<div class="vlist">${next.map(id=>{ const v=verse(id), p=prog(id); const d=Math.max(0,Math.round((dayStart(p.due)-dayStart(Date.now()))/DAY)); return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t open" data-act="verse-open" data-id="${id}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip none">${d<=1?"mañana":"en "+d+" días"}</span></div>`; }).join("")}</div>`
        : `<div class="empty"><b>Aún no hay repasos programados</b><span>Cuando practiques, aquí verás cuándo vuelve cada versículo.</span></div>`}
-    </div>
-    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
-      <div class="spread"><h3>Los que más te cuestan</h3></div>
-      ${weakest.length? `<div class="vlist">${weakest.map(id=>{ const v=verse(id), p=prog(id); const h=(p.hist||[]).slice(-5); const avg=h.length?Math.round(h.reduce((a,b)=>a+b,0)/h.length):0; return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t open" data-act="verse-open" data-id="${id}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip ${p.lapses?"bad":"mid"}">${p.lapses?`${p.lapses} ${p.lapses===1?"fallo":"fallos"}`:`${avg}% acierto`}</span></div>`; }).join("")}</div><button class="btn" data-act="practice-hard" style="align-self:flex-start">${I.play} Practicar estos</button>`
-       : `<div class="empty"><b>¡Todo va bien por ahora!</b><span>Aquí aparecen los versículos que fallas o en los que sacas menos de 90%, desde tu primera práctica.</span></div>`}
     </div>
   </section>`;
 }
