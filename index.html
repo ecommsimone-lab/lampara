@@ -240,6 +240,11 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pr-vres button{all:unset;cursor:pointer;font-size:13px;padding:6px 10px;border-radius:10px;background:var(--surface-2)}
 .pd-it{all:unset;cursor:pointer;font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--surface-2)}
 .pd-it:hover{background:var(--bad-soft);color:var(--bad);text-decoration:line-through}
+.pr-invite{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:12px;border-radius:16px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
+.pr-invite .cv{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:800}
+.pr-invite b{display:block;font-size:14.5px}.pr-invite small{font-size:12.5px}
+.pr-invite .row{grid-column:1 / -1;justify-content:flex-end}
+.pr-inv-row{cursor:pointer}
 .ans-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
 .ans-strip::-webkit-scrollbar{display:none}
 .ans-card{all:unset;cursor:pointer;flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--ok-soft),var(--surface));border:1px solid color-mix(in srgb,var(--ok) 25%,transparent)}
@@ -1893,7 +1898,7 @@ function saveToListModal(ids, suggest){
 /* =========================================================
    ORACIÓN (SQL 14): Comunidad (amigos y grupos) y Mi diario (privado)
    ========================================================= */
-const PR = { tab:"comunidad", filter:"todo", feed:null, mine:null, groups:null, loading:{}, err:"", now:0 };
+const PR = { tab:"comunidad", filter:"todo", feed:null, mine:null, groups:null, invites:[], loading:{}, err:"", now:0 };
 const PR_CATS = { salud:["Salud","#E5484D"], familia:["Familia","#7C5CFF"], trabajo:["Trabajo","#D98A00"], fe:["Fe","#2F6FED"], estudios:["Estudios","#16A36A"], gratitud:["Gratitud","#16A36A"] };
 const PR_BGS = ["", "linear-gradient(135deg,#7C5CFF,#E5484D)", "linear-gradient(135deg,#16A36A,#2F6FED)", "linear-gradient(135deg,#D98A00,#E5484D)", "linear-gradient(135deg,#0E2A6E,#2F6FED)"];
 const PR_QUICK = ["🙏 Estoy orando por ti", "Dios es fiel", "No estás solo"];
@@ -1925,7 +1930,7 @@ async function prLoad(kind){
   try{
     if(kind==="feed") PR.feed = (await API.rpc("prayer_feed", { p_filter: PR.filter })) || [];
     if(kind==="mine") PR.mine = (await API.rpc("prayer_mine")) || [];
-    if(kind==="groups") PR.groups = (await API.rpc("my_prayer_groups")) || [];
+    if(kind==="groups"){ PR.groups = (await API.rpc("my_prayer_groups")) || []; try{ PR.invites = (await API.rpc("prayer_invites_mine")) || []; }catch(e){ PR.invites = []; } }
     PR.err = "";
   }catch(e){ PR.err = prError(e); if(kind==="feed") PR.feed = PR.feed || []; if(kind==="mine") PR.mine = PR.mine || []; if(kind==="groups") PR.groups = PR.groups || []; }
   PR.loading[kind] = false;
@@ -1966,11 +1971,12 @@ function viewOracion(){
   const ring = (k, label, color, inner, seen) => `<button data-act="pr-filter" data-k="${k}" class="${f===k?"sel":""}"><span class="ring${seen?" seen":""}" style="--c:${color}"><i style="background:${color}">${inner}</i></span><small>${esc(label)}</small></button>`;
   const g = prGroup(f);
   const empty = !groups.length && !friendsAccepted().length
-    ? `<div class="empty"><b>Ora con tus hermanos</b><span>Crea un grupo para tu célula, tu familia o tu iglesia, o únete con un código. También verás las peticiones de tus amigos.</span><button class="btn primary" data-act="pr-group-new">${I.plus} Crear o unirme a un grupo</button></div>`
+    ? `<div class="empty"><b>Ora con tus hermanos</b><span>Crea un grupo para tu célula, tu familia o tu iglesia e invita a tus amigos, o pide a alguien que te invite al suyo. También verás las peticiones de tus amigos.</span><button class="btn primary" data-act="pr-group-new">${I.plus} Crear un grupo</button></div>`
     : `<div class="empty"><b>${f==="todo"?"Todavía no hay peticiones":"No hay peticiones aquí"}</b><span>Toca el botón + para pedir oración.</span></div>`;
   return head + `
   <div class="ig-stories">${ring("todo","Todo","var(--accent)","✦",false)}${groups.map(x=>ring(x.id, x.name, x.color, esc(x.name.charAt(0).toUpperCase()), !x.new)).join("")}${ring("friends","Amigos","#2F6FED","👥",true)}<button data-act="pr-group-new"><span class="ring seen" style="--c:var(--line)"><i style="background:var(--surface-2);color:var(--muted)">+</i></span><small>Grupo</small></button></div>
-  ${g ? `<div class="pr-ghead"><div><b>${esc(g.name)}</b><small class="muted">${g.members} ${+g.members===1?"miembro":"miembros"}${g.role==="admin"?" · Administrador":""}${+g.reported?` · ⚠️ ${g.reported} reportadas`:""}</small></div><button class="btn" data-act="pr-invite" data-id="${g.id}">${I.share} Invitar</button><button class="icon-btn" data-act="pr-group-open" data-id="${g.id}" aria-label="Opciones del grupo">⋯</button></div>` : ""}
+  ${(PR.invites||[]).map(i=>`<div class="pr-invite"><span class="cv" style="background:${i.color}"><span>${esc(i.group_name.charAt(0).toUpperCase())}</span></span><div style="min-width:0"><b>${esc(i.by_name)} te invitó a “${esc(i.group_name)}”</b><small class="muted">${i.members} ${+i.members===1?"miembro":"miembros"} · grupo de oración</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn primary" style="padding:6px 12px" data-act="pr-inv" data-id="${i.group_id}" data-ok="1">Unirme</button><button class="btn ghost" style="padding:6px 10px" data-act="pr-inv" data-id="${i.group_id}" data-ok="0">Ahora no</button></div></div>`).join("")}
+  ${g ? `<div class="pr-ghead"><div><b>${esc(g.name)}</b><small class="muted">${g.members} ${+g.members===1?"miembro":"miembros"}${g.role==="admin"?" · Administrador":""}${+g.reported?` · ⚠️ ${g.reported} reportadas`:""}</small></div><button class="btn" data-act="pr-invite" data-id="${g.id}">${I.users} Invitar</button><button class="icon-btn" data-act="pr-group-open" data-id="${g.id}" aria-label="Opciones del grupo">⋯</button></div>` : ""}
   <div class="ig-list">${PR.feed===null ? `<div class="empty"><b>Cargando…</b></div>` : PR.feed.length ? PR.feed.map(prPost).join("") : empty}</div>
   <button class="pr-fab" data-act="pr-new" aria-label="Pedir oración">${I.plus}</button>`;
 }
@@ -2112,31 +2118,43 @@ function prShareModal(id){
   });
 }
 function prGroupNewModal(){
-  modal(`<div class="spread"><h2 style="font-size:22px">Grupos de oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <div class="field"><label for="pgName">Crear un grupo</label><input class="input" id="pgName" maxlength="40" placeholder="Ej. Célula jóvenes, Familia, Iglesia…"></div><button class="btn primary" id="pgNew">Crear grupo</button>
-    <div class="field" style="margin-top:10px"><label for="pgCode">Unirme con un código</label><input class="input" id="pgCode" maxlength="12" placeholder="NER-XXXX" style="text-transform:uppercase"></div><button class="btn" id="pgJoin">Unirme</button>
-    <p id="pgErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>`, sc=>{
+  modal(`<div class="spread"><h2 style="font-size:22px">Crear un grupo de oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label for="pgName">Nombre del grupo</label><input class="input" id="pgName" maxlength="40" placeholder="Ej. Célula jóvenes, Familia, Iglesia…"></div>
+    <p class="muted" style="margin:0;font-size:13.5px">Después podrás invitar a tus amigos de la app. Para unirte a un grupo que ya existe, pídele a un miembro que te invite.</p>
+    <p id="pgErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="pgNew">Crear grupo</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
     const err = sc.querySelector("#pgErr");
-    sc.querySelector("#pgNew").onclick = async ()=>{ const n = sc.querySelector("#pgName").value.trim(); if(n.length < 2){ err.textContent = "Escribe el nombre del grupo."; return; }
+    const create = async ()=>{ const n = sc.querySelector("#pgName").value.trim(); if(n.length < 2){ err.textContent = "Escribe el nombre del grupo."; return; }
       try{ const g = await API.rpc("prayer_group_create", { p_name:n }); closeModal(); PR.groups = (PR.groups||[]).concat(g); PR.filter = g.id; PR.feed = null; PR.tab = "comunidad"; render(); prInviteModal(g.id, true); }catch(e){ err.textContent = prError(e); } };
-    sc.querySelector("#pgJoin").onclick = async ()=>{ const c = sc.querySelector("#pgCode").value.trim(); if(c.length < 4){ err.textContent = "Escribe el código."; return; } await prJoin(c, err); };
+    sc.querySelector("#pgNew").onclick = create; sc.querySelector("#pgName").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); create(); } });
+    setTimeout(()=>sc.querySelector("#pgName").focus(), 50);
   });
+}
+async function prRespond(gid, ok){
+  try{ const g = await API.rpc("prayer_invite_respond", { p_group:gid, p_accept:ok }); PR.invites = (PR.invites||[]).filter(i=>i.group_id!==gid);
+    if(ok && g){ PR.groups = null; PR.filter = g.id; PR.feed = null; PR.tab = "comunidad"; go("oracion"); prLoad("groups"); toast(`Te uniste a “${g.name}”.`); } else render(); }
+  catch(e){ toast(/prayer_invite|Could not find/i.test(String(e&&e.message)) ? "Falta ejecutar el código SQL 16 en Supabase." : prError(e)); PR.invites = (PR.invites||[]).filter(i=>i.group_id!==gid); render(); }
 }
 async function prJoin(code, errEl){
   try{ const g = await API.rpc("prayer_group_join", { p_code:code }); closeModal(); PR.groups = null; PR.filter = g.id; PR.feed = null; PR.tab = "comunidad"; go("oracion"); prLoad("groups"); toast(`Te uniste a “${g.name}”.`); }
   catch(e){ if(errEl) errEl.textContent = prError(e); else toast(prError(e)); }
 }
-function prInviteModal(gid, fresh){
-  const g = prGroup(gid); if(!g) return; const link = appLink("grupo", g.code);
-  modal(`<div class="spread"><h2 style="font-size:22px">${fresh?"¡Grupo creado!":"Invita a tus hermanos"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <p class="muted" style="margin:0">Comparte el enlace o el código de <b>${esc(g.name)}</b>. Solo los miembros ven sus peticiones.</p>
-    <div class="row" style="gap:8px"><span class="chip acc mono" style="font-size:17px;padding:8px 14px">${esc(g.code)}</span></div>
-    <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn" data-act="copy-link" data-link="${esc(link)}">Copiar enlace</button><button class="btn primary" id="pgShare">${I.share} Compartir</button></div>`, sc=>{
-    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
-    sc.querySelector("#pgShare").onclick = async ()=>{ const text = `Únete a “${g.name}” en ${APP_NAME} para orar juntos: ${link} (código ${g.code})`;
-      if(navigator.share){ try{ await navigator.share({ text }); return; }catch(e){ if(e && e.name==="AbortError") return; } }
-      try{ await navigator.clipboard.writeText(text); toast("Enlace copiado."); }catch(e){ toast("Copia este enlace: " + link); } };
+async function prInviteModal(gid, fresh){
+  const g = prGroup(gid); if(!g) return;
+  let list = null, err = "";
+  try{ list = await API.rpc("prayer_group_invitable", { p_group:gid }); }catch(e){ err = /prayer_group_invitable|Could not find/i.test(String(e&&e.message)) ? "Falta ejecutar el código SQL 16 en Supabase." : prError(e); list = []; }
+  const pick = new Set();
+  modal(`<div class="spread"><h2 style="font-size:22px">${fresh?"¡Grupo creado!":"Invitar amigos"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0">Elige a quiénes de tus amigos quieres invitar a <b>${esc(g.name)}</b>. Les llegará un aviso para unirse.</p>
+    ${err?`<div class="result-bar bad"><span>${esc(err)}</span></div>`:""}
+    <div class="vlist" style="max-height:46vh;overflow:auto">${list.length ? list.map(f=>`<label class="drow pr-inv-row">${avatarHTML(f.name, colorFor(f.user_id), f.avatar, 36)}<div style="min-width:0"><b>${esc(f.name)}</b></div><div>${f.status==="member"?`<span class="chip none">Ya está</span>`:f.status==="invited"?`<span class="chip none">Invitado</span>`:`<input type="checkbox" data-u="${f.user_id}" style="width:20px;height:20px">`}</div></label>`).join("") : err ? "" : `<div class="empty" style="padding:18px"><b>Aún no tienes amigos en la app</b><span>Agrégalos en Comunidad y después podrás invitarlos.</span><button class="btn" id="pgToComm">Ir a Comunidad</button></div>`}</div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>${fresh?"Más tarde":"Cancelar"}</button><button class="btn primary" id="pgInv" disabled>Invitar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", closeModal));
+    const tc = sc.querySelector("#pgToComm"); if(tc) tc.onclick = ()=>{ closeModal(); go("community"); };
+    const btn = sc.querySelector("#pgInv");
+    sc.querySelectorAll("[data-u]").forEach(c=>c.onchange=()=>{ if(c.checked) pick.add(c.dataset.u); else pick.delete(c.dataset.u); btn.disabled = !pick.size; btn.textContent = pick.size ? `Invitar (${pick.size})` : "Invitar"; });
+    btn.onclick = async ()=>{ btn.disabled = true; try{ const n = await API.rpc("prayer_group_invite", { p_group:gid, p_users:[...pick] }); closeModal(); toast(n===1 ? "Invitación enviada." : `${n} invitaciones enviadas.`); }catch(e){ btn.disabled = false; toast(prError(e)); } };
   });
 }
 async function prGroupModal(gid){
@@ -2144,7 +2162,8 @@ async function prGroupModal(gid){
   let members = [], reported = [];
   try{ members = await API.rpc("prayer_group_members", { p_group:gid }); if(g.role==="admin") reported = await API.rpc("prayer_group_reported", { p_group:gid }); }catch(e){}
   modal(`<div class="spread"><h2 style="font-size:22px">${esc(g.name)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <p class="muted" style="margin:0">${g.members} ${+g.members===1?"miembro":"miembros"}${g.role==="admin"?" · Eres administrador":""} · Código <b class="mono">${esc(g.code)}</b></p>
+    <p class="muted" style="margin:0">${g.members} ${+g.members===1?"miembro":"miembros"}${g.role==="admin"?" · Eres administrador":""}</p>
+    <button class="btn" id="pgInvite" style="align-self:flex-start">${I.users} Invitar amigos</button>
     ${g.role==="admin"?`<div class="field"><label for="pgRen">Nombre del grupo</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input" id="pgRen" maxlength="40" value="${esc(g.name)}"><button class="btn" id="pgRenGo">Guardar</button></div></div>`:""}
     ${reported.length?`<div class="pd-sec"><b>⚠️ Peticiones reportadas</b>${reported.map(r=>`<div class="pd-row"><div style="min-width:0"><b>${esc(r.body)}</b><small class="muted">${r.reports} reportes</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn" style="padding:5px 10px;font-size:13px" data-unhide="${r.id}">Mostrar</button><button class="btn ghost" style="padding:5px 10px;font-size:13px;color:var(--bad)" data-del="${r.id}">Quitar</button></div></div>`).join("")}</div>`:""}
     <div class="vlist" style="max-height:40vh;overflow:auto">${members.map(m=>`<div class="drow">${avatarHTML(m.name, colorFor(m.user_id), m.avatar, 36)}<div style="min-width:0"><b>${esc(m.name)}</b>${m.role==="admin"?` <span class="chip none">Admin</span>`:""}</div><div>${g.role==="admin" && m.user_id!==ME.id ? `<button class="btn ghost" style="padding:4px 10px;font-size:12.5px" data-rm="${m.user_id}">Quitar</button>` : ""}</div></div>`).join("")}</div>
@@ -2157,6 +2176,7 @@ async function prGroupModal(gid){
     const rn = sc.querySelector("#pgRenGo"); if(rn) rn.onclick = async ()=>{ const v = sc.querySelector("#pgRen").value.trim(); if(v.length < 2){ toast("Escribe un nombre de al menos 2 letras."); return; }
       try{ await API.rpc("prayer_group_rename", { p_group:gid, p_name:v }); g.name = v; toast("Nombre actualizado."); again(); }
       catch(e){ toast(/prayer_group_rename|Could not find/i.test(String(e&&e.message)) ? "Falta ejecutar el código SQL 15 en Supabase." : prError(e)); } };
+    sc.querySelector("#pgInvite").onclick = ()=>{ closeModal(); prInviteModal(gid); };
     sc.querySelector("#pgLeave").onclick = async ()=>{ if(!confirmInline(`¿Salir de “${g.name}”?`)) return; try{ await API.rpc("prayer_group_leave", { p_group:gid }); PR.filter = "todo"; again(); toast("Saliste del grupo."); }catch(e){ toast(prError(e)); } };
   });
 }
@@ -3832,7 +3852,7 @@ function notifPrefsPanel(){
 }
 
 /* ----- Lista de avisos ----- */
-const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", streak_mine:"flame", prayer_pray:"pray", prayer_comment:"pray", prayer_answered:"pray", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
+const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", streak_mine:"flame", prayer_pray:"pray", prayer_comment:"pray", prayer_answered:"pray", group_invite:"pray", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
 function timeAgo(iso){
   const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime())/1000));
   if(s < 60) return "ahora"; const m = Math.round(s/60); if(m < 60) return `hace ${m} min`;
@@ -3861,6 +3881,11 @@ function notifActions(n){
     case "duel_challenge": case "duel_result":
       if(duel && myDuelTurn(duel)) return btn("duel-play","Jugar",duel.id,true);
       return duel ? btn("duel-view","Ver resultado",duel.id) : "";
+    case "group_invite": {
+      const gid = n.data && n.data.group;
+      if((PR.groups||[]).some(x=>x.id===gid)) return done("Ya estás en el grupo");
+      return (PR.invites||[]).some(i=>i.group_id===gid) || PR.groups===null ? btn("pr-inv","Unirme",gid,true) + btn("pr-inv-no","Ahora no",gid) : "";
+    }
     case "prayer_pray": case "prayer_comment": case "prayer_answered":
       return btn("open-oracion", n.type==="prayer_answered" ? "Ver testimonio" : "Ver petición", (n.data && n.data.prayer) || "", true);
     case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
@@ -5380,6 +5405,8 @@ document.addEventListener("click", e=>{
     case "pr-answer": prAnswerModal(t.dataset.id); break;
     case "pr-share": prShareModal(t.dataset.id); break;
     case "pr-group-new": prGroupNewModal(); break;
+    case "pr-inv": prRespond(t.dataset.id, t.dataset.ok!=="0"); break;
+    case "pr-inv-no": prRespond(t.dataset.id, false); break;
     case "pr-group-open": prGroupModal(t.dataset.id); break;
     case "pr-invite": prInviteModal(t.dataset.id); break;
     case "pd-add": pdAddModal(+t.dataset.s); break;
