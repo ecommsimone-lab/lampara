@@ -313,11 +313,12 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .mood-row button{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px;padding:10px 8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;font-weight:600;text-align:center}
 .mood-row button span{font-size:26px;line-height:1}
 .mood-row button:hover{border-color:var(--accent)}
-.pild-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.pild-grid button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
-.pild-grid button span{font-size:30px;line-height:1.1;margin-bottom:4px}
-.pild-grid button b{font-size:15.5px}
-.pild-grid button small{color:var(--muted);font-size:12.5px}
+.pild-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.pild-grid button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.pild-grid button span{font-size:24px;line-height:1;flex:none}
+.pild-grid button div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pild-grid button b{font-size:14.5px;line-height:1.2}
+.pild-grid button small{color:var(--muted);font-size:12px}
 .pild-grid button:hover{border-color:var(--accent)}
 .pild-head{display:flex;gap:16px;align-items:flex-start}
 .pild-head .pe{font-size:46px;line-height:1;flex:none;width:72px;height:72px;border-radius:22px;background:var(--surface-2);display:grid;place-items:center}
@@ -1835,7 +1836,7 @@ function moodRowHTML(){
 }
 function pildorasSection(){
   return `<section style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Para tu día a día</span><h2 style="font-size:clamp(22px,3.4vw,30px)">Píldoras de fe</h2><p class="muted" style="margin:0;font-size:14.5px">Elige cómo te sientes y recibe versículos para ese momento.</p></section>
-  <section class="pild-grid">${PILDORAS.map(p=>`<button data-act="pild-open" data-id="${p.id}"><span>${p.e}</span><b>${esc(p.l)}</b><small>${p.ids.length} versículos</small></button>`).join("")}</section>`;
+  <section class="pild-grid">${PILDORAS.map(p=>`<button data-act="pild-open" data-id="${p.id}"><span>${p.e}</span><div><b>${esc(p.l)}</b><small>${p.ids.length} versículos</small></div></button>`).join("")}</section>`;
 }
 function viewPildora(id){
   const p = PILD_MAP[id]; if(!p) return `<div class="empty"><b>No encontramos esta píldora</b></div>`;
