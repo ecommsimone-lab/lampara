@@ -162,6 +162,9 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .hsum-row small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hsum-ic{font-size:22px;flex:none}
 .hsum-row .go{color:var(--muted);font-size:18px}
+.ini-box{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:16px;background:var(--accent-soft);border:1px dashed var(--accent)}
+.ini-box small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.ini-box p{margin:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:clamp(22px,5.4vw,30px);font-weight:700;letter-spacing:.14em;line-height:1.5;word-break:break-all;color:var(--ink)}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .stat{background:var(--surface);border:1px solid var(--card-border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0}
 button.stat{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0;position:relative;transition:transform .12s}
@@ -2400,14 +2403,25 @@ function cardIdsFor(ids){ const failed=new Set(S.lastFailed||[]); return ids.fil
 const MIC_PAUSE = 15*60*1000;
 const micPaused = () => !!(S && S.noMicUntil && Date.now() < S.noMicUntil);
 const micSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-function modeFor(id){ const m = modeFor0(id); return m === "recite" && (micPaused() || !micSupported()) ? "write" : m; }
+function modeFor(id){ const m = modeFor0(id), noMic = micPaused() || !micSupported(); return m === "recite" && noMic ? "write" : m === "ini" && noMic ? "iniw" : m; }
+/* Iniciales: la primera letra de cada palabra, con sus comas y puntos. Romanos 3:23 → "Pctp, yeddlgdD," */
+function initialsOf(text){
+  const out = String(text).trim().split(/\s+/).map(w=>{
+    const m = w.match(/^([¿¡"«“(]*)(.*?)([.,;:!?»”")]*)$/) || ["","",w,""];
+    const core = m[2]; const first = core ? [...core][0] : "";
+    return { t: m[1] + first + m[3], sp: !!m[3] };
+  });
+  let r = ""; out.forEach((o,i)=>{ r += o.t; if(o.sp && i < out.length-1) r += " "; });
+  return r.charAt(0).toUpperCase() + r.slice(1);
+}
 /* Escalera de ayuda de cada versículo, igual en cualquier etapa: tarjeta y pocos espacios → más espacios → escribir → escribir o recitar.
    Sube cuando lo haces bien y baja cuando fallas (la caja del versículo sube o baja con cada resultado). */
 function ladderMode(id){
   const b = (prog(id)||{box:0}).box;
   if(b <= 2) return "blanks";
-  if(b === 3) return "write";
-  return Math.random() < .5 ? "write" : "recite";
+  if(b === 3) return "ini";      // recítalo viendo las iniciales
+  if(b === 4) return "write";    // escríbelo completo sin pistas
+  return "recite";               // recítalo completo sin pistas
 }
 function modeFor0(id){
   const m = SESSION.mode;
@@ -2438,9 +2452,10 @@ function renderSession(){
     body = `
       <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${total} ${total===1?"versículo":"versículos"}</span><h1 style="font-size:clamp(30px,5vw,44px)">${s.review?"Repaso de memorizados":"¿Cómo quieres practicar?"}</h1><p class="muted">Tarjetas para los versículos nuevos, después las preguntas.</p></div>
       <div class="modes">
-        ${opt("mixto","Mixto","Incluye los tres: llenar espacios, escribir completo y recitar")}
+        ${opt("mixto","Mixto","Va subiendo según cada versículo: espacios, iniciales, escribir y recitar")}
         ${opt("blanks","Llenar espacios","Completa las palabras que faltan")}
         ${opt("write","Escribir completo","Escríbelo desde cero, palabra por palabra")}
+        ${opt("ini","Con iniciales","Recítalo viendo la primera letra de cada palabra")}
         ${opt("recite","Recitar en voz alta","Dilo de memoria con el micrófono")}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -2531,8 +2546,9 @@ function prepQuestion(){
     s.q = { id, mode:"blanks", stage:"text", isPart:true, part:task.part, of:task.of, phrase:ph, textDone:false, textScore:0, done:false, toks, blanks:[...pick].sort((a,b)=>a-b) };
     return;
   }
-  const mode = modeFor(id);
-  const q = { id, mode, stage:"text", textDone:false, textScore:0, done:false, score:null, transcript:"", spokenRef:"" };
+  let mode = modeFor(id); const ini = mode==="ini" || mode==="iniw";
+  if(ini) mode = mode==="ini" ? "recite" : "write";
+  const q = { id, mode, ini, stage:"text", textDone:false, textScore:0, done:false, score:null, transcript:"", spokenRef:"" };
   if(mode==="blanks"){
     const toks = v.text.split(/(\s+)/);
     const cand = [];
@@ -2585,7 +2601,8 @@ function quizBody(){
   const s = SESSION; const q = s.q; const v = verse(q.id);
   if(q.stage==="ref") return refBody();
   const fav = S.favs.includes(q.id);
-  const modeName = { blanks:"Llenar espacios", write:"Escribir completo", recite:"Recitar" }[q.mode];
+  const modeName = q.ini ? "Con iniciales" : { blanks:"Llenar espacios", write:"Escribir completo", recite:"Recitar" }[q.mode];
+  const iniBox = q.ini && !q.done ? `<div class="ini-box"><small>Iniciales de cada palabra</small><p>${esc(initialsOf(v.text))}</p></div>` : "";
   const favBtn = v.sug ? `<button class="btn ${fav?"":"ghost"}" data-act="fav" data-id="${q.id}" style="${fav?'color:var(--accent)':''}">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"Agregar a Mis versículos"}</button>` : "";
   let inner = "";
   if(q.mode==="blanks"){
@@ -2610,13 +2627,14 @@ function quizBody(){
   }
   let actions = "";
   if(!q.done){
-    if(q.mode==="recite") actions = `<div class="row"><button class="btn" data-act="hint">Primera palabra</button><button class="btn ghost" data-act="mic-off">🔇 No puedo hablar ahora</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Ver mi resultado</button></div>`;
-    else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}<button class="btn ghost" data-act="hint">Pista</button><button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
+    if(q.mode==="recite") actions = `<div class="row"><button class="btn ghost" data-act="mic-off">🔇 No puedo hablar ahora</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Ver mi resultado</button></div>`;
+    else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}${q.mode==="blanks" ? `<button class="btn ghost" data-act="hint">Pista</button>` : ""}<button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
   }
   return `
   <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
   <div class="q-card">
-    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.ini?(q.mode==="recite"?"Recítalo con ayuda de las iniciales":"Escríbelo con ayuda de las iniciales"):q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
+    ${iniBox}
     ${inner}
     <div id="feedback"></div>
     ${actions}
@@ -2914,7 +2932,7 @@ function micFallback(text){
 function switchToWrite(){
   const s = SESSION; if(!s || !s.q || s.q.done) return;
   if(REC){ REC_ON = false; try{ REC.stop(); }catch(e){} }
-  s.modes = s.modes || {}; s.modes[s.q.id] = "write"; if(s.mode === "recite") s.mode = "write";
+  s.modes = s.modes || {}; s.modes[s.q.id] = s.q.ini ? "iniw" : "write"; if(s.mode === "recite") s.mode = "write"; if(s.mode === "ini") s.mode = "iniw";
   prepQuestion(); render();
 }
 function reveal(){
@@ -5465,7 +5483,7 @@ function viewProfile(){
     <div class="set-group">
       <div class="set-row"><div class="lbl"><b>Tu ritmo</b><small>${esc(RITMOS[ritmo()].desc)}</small></div>${seg("ritmo",[["tranquilo","🌱 Tranquilo"],["constante","🔥 Constante"],["intensivo","⚡ Intensivo"]])}</div>
       <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>Define cuántos versículos entran</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20"],[30,"30 min"]])}</div>
-      <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto incluye los tres tipos</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["write","Escribir"],["recite","Recitar"]])}</div>
+      <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto va subiendo según cada versículo</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["ini","Iniciales"],["write","Escribir"],["recite","Recitar"]])}</div>
     </div>
   </section>
   <section class="panel">
