@@ -231,6 +231,26 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .acas span.done{color:var(--ok)}.acas span.done b{background:var(--ok);color:#fff}
 .pn-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .pn-items span{font-size:16px;font-weight:600;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.ans-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.ans-strip::-webkit-scrollbar{display:none}
+.ans-card{all:unset;cursor:pointer;flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--ok-soft),var(--surface));border:1px solid color-mix(in srgb,var(--ok) 25%,transparent)}
+.ans-ico{font-size:22px}.ans-card b{font-size:15px;line-height:1.3}
+.ans-note{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ans-card small{font-size:12px;color:var(--ok);font-weight:600}
+.ans-btn{all:unset;cursor:pointer;box-sizing:border-box;display:flex!important}
+.ans-btn small{font-size:12px;font-weight:700;margin-top:2px}
+.ans-tl{display:flex;align-items:center;gap:8px}
+.ans-tl>div:not(.ln){display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:90px}
+.ans-tl i{width:14px;height:14px;border-radius:50%;background:var(--accent)}.ans-tl i.ok{background:var(--ok)}
+.ans-tl b{font-size:13.5px}.ans-tl small{font-size:12px;color:var(--muted)}
+.ans-tl .ln{flex:1;height:2px;background:linear-gradient(90deg,var(--accent),var(--ok));position:relative;margin-bottom:28px}
+.ans-tl .ln span{position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:12px;font-weight:700;white-space:nowrap;color:var(--muted)}
+.ans-who{display:flex;flex-direction:column;gap:8px}
+.ans-av{display:flex;gap:10px;overflow-x:auto}
+.ans-av>span{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none}
+.ans-av small{font-size:11px;color:var(--muted)}
+.pn-dots{display:flex;gap:6px}.pn-dots i{width:28px;height:5px;border-radius:3px;background:var(--line)}.pn-dots i.on{background:var(--accent)}.pn-dots i.done{background:var(--ok)}
+.pn-quote{font-family:var(--f-display);font-size:22px;line-height:1.45;font-style:italic;margin:6px 0 0}
 .pr-groups{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
 .pr-groups::-webkit-scrollbar{display:none}
 .pr-groups button{all:unset;cursor:pointer;flex:none;width:150px;display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
@@ -1882,13 +1902,19 @@ const DIARY = {
     ["🙋","Yo mismo",["Paciencia","Constancia en la Palabra"]]
   ],
   activas:[ { t:"La entrevista del lunes", d:"Desde el 18 oct", verse:"flp-4-6-7" }, { t:"Sanidad de la rodilla de mi papá", d:"Desde el 2 oct" } ],
-  respondidas:[ { t:"Salud de mi mamá", d:"Pedida el 20 sep · respondida el 21 oct", note:"Salió del hospital con buenos exámenes." }, { t:"Trabajo para Andrés", d:"Pedida el 1 ago · respondida el 3 sep", note:"Lo contrataron en la empresa que quería." } ]
+  respondidas:[
+    { t:"Salud de mi mamá", hace:"hace 1 día", pedida:"20 de septiembre", resp:"21 de octubre", dias:31, note:"Salió del hospital con buenos exámenes. ¡Gloria a Dios!", shared:"Amigos", oraron:[["Gabriel","#7C5CFF"],["Cristian","#16A36A"],["Daniel","#2F6FED"],["Laura","#D98A00"],["Andrés","#E5484D"],["Pastor Luis","#2FB5A0"],["Sofía","#5B3FD6"]], amen:11, heart:9, comments:[["Gabriel","¡Dios es fiel!"],["Laura","Qué alegría, seguimos orando por su recuperación"]] },
+    { t:"Trabajo para Andrés", hace:"hace 7 semanas", pedida:"1 de agosto", resp:"3 de septiembre", dias:33, note:"Lo contrataron en la empresa que quería.", shared:null },
+    { t:"Paz en la familia", hace:"hace 3 meses", pedida:"2 de junio", resp:"28 de julio", dias:56, note:"Nos reconciliamos con mi tío después de años.", shared:"Célula jóvenes", oraron:[["Gabriel","#7C5CFF"],["Cristian","#16A36A"]], amen:5, heart:4, comments:[] }
+  ]
 };
-const ACAS = [
-  ["Adoración","Alaba a Dios por quién es.","sal-34-8"],
-  ["Confesión","Pídele perdón por lo que te separó de Él hoy.","1jn-1-9"],
-  ["Acción de gracias","Agradece por lo que ha hecho, también por las oraciones respondidas.","1ts-5-16-18"],
-  ["Súplica","Presenta tus peticiones y ora por los demás.","flp-4-6-7"]
+// Guía del Padre Nuestro (Mateo 6:9-13, RVR1960, verificado en Blue Letter Bible el 22 de octubre de 2026)
+const PADRE = [
+  ["Adoración","Padre nuestro que estás en los cielos, santificado sea tu nombre.","Alaba a Dios por quién es: tu Padre, santo y bueno."],
+  ["Su voluntad","Venga tu reino. Hágase tu voluntad, como en el cielo, así también en la tierra.","Ríndele tus planes y pídele que se haga su voluntad en tu vida."],
+  ["Necesidades","El pan nuestro de cada día, dánoslo hoy.","Presenta tus necesidades y ora por las personas de tu lista."],
+  ["Perdón","Y perdónanos nuestras deudas, como también nosotros perdonamos a nuestros deudores.","Pide perdón y perdona a quien te haya ofendido."],
+  ["Protección","Y no nos metas en tentación, mas líbranos del mal; porque tuyo es el reino, y el poder, y la gloria, por todos los siglos. Amén.","Pide fuerza ante la tentación y protección para ti y los tuyos."]
 ];
 const prWhere = w => w==="friends" ? "Amigos" : ((PR_GROUPS.find(g=>g.id===w)||{}).name||"Grupo");
 function prPost(it){
@@ -1899,7 +1925,7 @@ function prPost(it){
   return `<article class="ig">
     <header class="ig-h">${av}<div style="min-width:0"><b>${it.anon?"Un hermano":esc(it.who)}</b><small>${esc(prWhere(it.where))} · ${it.t}</small></div><span class="chip" style="background:color-mix(in srgb,${c[1]} 14%,transparent);color:${c[1]}">${c[0]}</span><button class="icon-btn ig-more" aria-label="Más opciones">⋯</button></header>
     ${it.bg?`<div class="ig-bg" style="background:${it.bg}"><p>${esc(it.text)}</p></div>`:`<p class="ig-t">${esc(it.text)}</p>`}
-    ${it.answered?`<div class="pr-answer"><b>✨ Dios respondió</b><span>${esc(it.answered)}</span></div>`:""}
+    ${it.answered?`<button class="pr-answer ans-btn" data-act="pr-ans" data-i="0"><b>✨ Dios respondió</b><span>${esc(it.answered.length>70?it.answered.slice(0,70)+"…":it.answered)}</span><small>Ver detalles: cuándo se pidió, quiénes oraron →</small></button>`:""}
     ${v?`<div class="pr-verse"><b>${esc(v.ref)}</b> ${esc(v.text.slice(0,80))}…</div>`:""}
     <div class="ig-bar">${ico("pray","🙏")}${ico("heart","❤️")}${ico("amen","🙌")}<button class="ig-i" data-act="pr-cheer" aria-label="Comentar">💬</button></div>
     <div class="ig-s"><b>${total ? `${esc(it.mine&&it.mine.pray?"Tú":it.praying)}${total>1?` y ${total-1} más`:""}` : "Nadie aún"}</b> ${total===1?"está":"están"} orando · ${it.r.amen} amén · ${it.r.heart} ❤️</div>
@@ -1913,13 +1939,13 @@ function viewOracion(){
   if(tab==="diario"){
     const v = id => verse(id);
     return `<section class="spread" style="align-items:flex-end"><h1 style="font-size:clamp(30px,5vw,40px)">Oración</h1></section>${tabs}
-    <button class="pr-start" data-act="pr-now"><span>🙏</span><div><b>Orar ahora</b><small>Te guiamos con A·C·A·S por tu lista y tus peticiones</small></div>${I.play}</button>
+    <button class="pr-start" data-act="pr-now"><span>🙏</span><div><b>Orar ahora</b><small>Con la guía del Padre Nuestro, por tu lista y tus peticiones</small></div>${I.play}</button>
     <section class="pd-sec"><div class="spread"><h3>Por quiénes oro</h3><button class="linkbtn">Editar</button></div>
       <div class="pd-grid">${DIARY.plantilla.map(([e,n,items])=>`<div class="pd-card"><div class="pd-ch"><span>${e}</span><b>${esc(n)}</b></div><div class="pd-items">${items.map(x=>`<span>${esc(x)}</span>`).join("")}<button class="pd-add">+ Agregar</button></div></div>`).join("")}</div></section>
     <section class="pd-sec"><div class="spread"><h3>Peticiones activas</h3><button class="linkbtn">+ Nueva</button></div>
       ${DIARY.activas.map(a=>`<div class="pd-row"><div style="min-width:0"><b>${esc(a.t)}</b><small class="muted">${a.d}${a.verse?` · ${esc(v(a.verse).ref)}`:""}</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost" style="padding:5px 10px;font-size:13px">Compartir</button><button class="btn" style="padding:5px 10px;font-size:13px">✓ Respondida</button></div></div>`).join("")}</section>
-    <section class="pd-sec"><h3>✨ Dios respondió</h3>
-      ${DIARY.respondidas.map(a=>`<div class="pd-row ans"><div><b>${esc(a.t)}</b><small>${a.d}</small><span>${esc(a.note)}</span></div></div>`).join("")}</section>`;
+    <section class="pd-sec"><div class="spread"><h3>✨ Dios respondió</h3><span class="muted" style="font-size:13px">${DIARY.respondidas.length} respondidas</span></div>
+      <div class="ans-strip">${DIARY.respondidas.map((a,i)=>`<button class="ans-card" data-act="pr-ans" data-i="${i}"><span class="ans-ico">✨</span><b>${esc(a.t)}</b><span class="ans-note">${esc(a.note)}</span><small>${a.hace} · ${a.dias} días orando</small>${a.shared?`<small>🙏 ${a.oraron.length} oraron</small>`:`<small>🔒 Privada</small>`}</button>`).join("")}</div></section>`;
   }
   const f = PR.filter, list = PR_DEMO.filter(it=> f==="todo" ? true : it.where===f);
   return `<section class="spread" style="align-items:flex-end"><h1 style="font-size:clamp(30px,5vw,40px)">Oración</h1></section>${tabs}
@@ -1944,12 +1970,12 @@ function prayerGroupModal(id){
     <div class="field"><label>Crear un grupo</label><input class="input" placeholder="Ej. Célula jóvenes, Familia, Iglesia…"></div><button class="btn primary">Crear grupo</button>
     <div class="field" style="margin-top:8px"><label>Unirme con un código</label><input class="input" placeholder="NER-XXXX"></div><button class="btn">Unirme</button>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
 }
-// Orar ahora: A·C·A·S; en Súplica recorre la lista "Por quiénes oro" y las peticiones activas
+// Orar ahora: guía del Padre Nuestro; en "El pan nuestro de cada día" recorre la lista "Por quiénes oro" y las peticiones activas
 function prSteps(){
   const st = [];
-  ACAS.forEach(([n,g,vid],i)=>{
-    if(i<3) st.push({ k:n, i, g, vid });
-    else { st.push({ k:n, i, g, vid }); DIARY.plantilla.forEach(([e,sec,items])=>st.push({ k:n, i, sub:`${e} ${sec}`, items })); st.push({ k:n, i, sub:"Peticiones activas", items:DIARY.activas.map(a=>a.t) }); }
+  PADRE.forEach(([n,q,g],i)=>{
+    st.push({ k:n, i, q, g });
+    if(i===2){ DIARY.plantilla.forEach(([e,sec,items])=>st.push({ k:n, i, sub:`${e} ${sec}`, items })); st.push({ k:n, i, sub:"Peticiones activas", items:DIARY.activas.map(a=>a.t) }); }
   });
   return st;
 }
@@ -1957,12 +1983,25 @@ function renderPrayNow(){
   const steps = prSteps(); let el = $("#praynow");
   if(!el){ el = document.createElement("div"); el.id = "praynow"; document.body.appendChild(el); document.body.style.overflow = "hidden"; }
   if(PR.now >= steps.length){ el.innerHTML = `<div class="pn-in"><div style="font-size:54px">🙏</div><h2>Amén</h2><p class="muted">Terminaste tu tiempo de oración de hoy.</p><button class="btn primary lg" data-act="pr-now-close">Terminar</button></div>`; return; }
-  const s = steps[PR.now], v = s.vid && verse(s.vid);
+  const s = steps[PR.now];
   el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in">
-    <div class="acas">${ACAS.map(([n],i)=>`<span class="${i<s.i?"done":i===s.i?"on":""}"><b>${n.charAt(0)}</b>${n}</span>`).join("")}</div>
-    <h2 style="font-size:26px">${esc(s.sub||s.k)}</h2>
-    ${s.items?`<div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`:`<p class="pn-text">${esc(s.g)}</p>${v?`<p class="muted" style="font-style:italic">“${esc(v.text)}” — ${esc(v.ref)}</p>`:""}`}
+    <span class="eyebrow">Guía del Padre Nuestro · ${s.i+1} de ${PADRE.length}</span>
+    <div class="pn-dots">${PADRE.map((_,i)=>`<i class="${i<s.i?"done":i===s.i?"on":""}"></i>`).join("")}</div>
+    ${s.items?`<h2 style="font-size:26px">${esc(s.sub)}</h2><div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`
+      :`<p class="pn-quote">“${esc(s.q)}”</p><span class="muted" style="font-size:13px">Mateo 6:${9+s.i} · RVR1960</span><h2 style="font-size:22px;margin-top:6px">${esc(s.k)}</h2><p class="pn-text">${esc(s.g)}</p>`}
     <button class="btn primary lg" data-act="pr-now-next">Siguiente</button></div>`;
+}
+// Detalle de una oración respondida
+function answeredModal(i){
+  const a = DIARY.respondidas[i];
+  modal(`<div class="spread"><h2 style="font-size:22px">✨ ${esc(a.t)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="ans-tl"><div><i></i><b>Pedida</b><small>${a.pedida}</small></div><div class="ln"><span>${a.dias} días orando</span></div><div><i class="ok"></i><b>Dios respondió</b><small>${a.resp}</small></div></div>
+    <div class="pr-answer"><b>Testimonio</b><span>${esc(a.note)}</span></div>
+    ${a.shared?`<p class="muted" style="margin:0;font-size:13.5px">Compartida con ${esc(a.shared)}</p>
+    <div class="ans-who"><b>🙏 ${a.oraron.length} oraron por esto</b><div class="ans-av">${a.oraron.map(([n,c])=>`<span title="${esc(n)}">${avatarHTML(n,c,null,34)}<small>${esc(n)}</small></span>`).join("")}</div></div>
+    <div class="row" style="gap:8px"><span class="chip none">🙌 ${a.amen} amén</span><span class="chip none">❤️ ${a.heart}</span><span class="chip none">💬 ${a.comments.length} comentarios</span></div>
+    ${a.comments.length?`<div class="pr-cm">${a.comments.map(([n,t])=>`<div><b>${esc(n)}</b> ${esc(t)}</div>`).join("")}</div>`:""}`:`<p class="muted" style="margin:0;font-size:13.5px">🔒 Solo en tu diario: no la compartiste.</p>`}
+    <div class="row" style="justify-content:flex-end"><button class="btn" >${I.share} Compartir testimonio</button><button class="btn primary" data-close>Listo</button></div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
 }
 
 function verseRow(id, i, list){
@@ -5135,6 +5174,7 @@ document.addEventListener("click", e=>{
     case "team-open": teamItemModal(t.dataset.id); break;
     case "pr-filter": PR.filter = t.dataset.k; render(); break;
     case "pr-tab": PR.tab = t.dataset.k; render(); break;
+    case "pr-ans": answeredModal(+t.dataset.i); break;
     case "pr-react": { const it = PR_DEMO.find(x=>x.id===t.dataset.id), k = t.dataset.k; if(it){ it.mine = it.mine||{}; it.mine[k] = !it.mine[k]; it.r[k] += it.mine[k] ? 1 : -1; render(); if(k==="pray" && it.mine[k]) toast("Gracias. Le avisaremos que estás orando."); } break; }
     case "pr-new": prayerNewModal(); break;
     case "pr-now": PR.now = 0; renderPrayNow(); break;
