@@ -255,6 +255,21 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pn-req{width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 .pn-who{display:flex;gap:10px;align-items:center}.pn-who b{display:block}.pn-who small{font-size:12.5px}
 .pn-mine{width:100%;display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow:auto}
+.pn-in.pn-step{text-align:left;align-items:stretch}
+.pn-top{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+.pn-h{font-size:22px;line-height:1.25;margin:4px 0 0}.pn-h.big{font-size:30px}.pn-h small{font-size:13px;color:var(--muted);font-weight:600;margin-left:6px}
+.pn-do{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.pn-do b{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.pn-do p{margin:0;font-size:17px;line-height:1.5;font-weight:600}
+.pn-do ul{margin:2px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:15px;line-height:1.45}
+.pn-verse{border-left:3px solid var(--accent);padding:4px 0 4px 14px;font-family:var(--f-display);font-style:italic;font-size:16px;line-height:1.5;display:flex;flex-direction:column;gap:4px}
+.pn-verse span{font-family:Inter,system-ui,sans-serif;font-style:normal;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pn-verse small{font-style:normal;font-size:12.5px;color:var(--muted);font-family:Inter,system-ui,sans-serif}
+.pn-overview{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.pn-overview li{display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.pn-overview span{font-size:14px;color:var(--muted)}
+.pn-tip{font-size:13.5px;margin:0;text-align:center}
+.pn-nav{display:flex;justify-content:center;gap:8px;margin-top:6px}
 .ans-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
 .ans-strip::-webkit-scrollbar{display:none}
 .ans-card{all:unset;cursor:pointer;flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--ok-soft),var(--surface));border:1px solid color-mix(in srgb,var(--ok) 25%,transparent)}
@@ -1912,11 +1927,11 @@ const PR_QUICK = ["🙏 Estoy orando por ti", "Dios es fiel", "No estás solo"];
 const PR_SECTIONS = [["👨‍👩‍👧","Familia"],["⛪","Iglesia y pastores"],["🤝","Amigos"],["💼","Trabajo o estudios"],["🇨🇴","País y autoridades"],["🌍","Misiones"],["🙋","Yo mismo"]];
 // Guía del Padre Nuestro (Mateo 6:9-13, RVR1960, verificado en Blue Letter Bible el 22 de octubre de 2026)
 const PADRE = [
-  ["Adoración","Padre nuestro que estás en los cielos, santificado sea tu nombre.","Alaba a Dios por quién es: tu Padre, santo y bueno."],
-  ["Su voluntad","Venga tu reino. Hágase tu voluntad, como en el cielo, así también en la tierra.","Ríndele tus planes y pídele que se haga su voluntad en tu vida."],
-  ["Necesidades","El pan nuestro de cada día, dánoslo hoy.","Presenta tus necesidades y ora por las personas de tu lista."],
-  ["Perdón","Y perdónanos nuestras deudas, como también nosotros perdonamos a nuestros deudores.","Pide perdón y perdona a quien te haya ofendido."],
-  ["Protección","Y no nos metas en tentación, mas líbranos del mal; porque tuyo es el reino, y el poder, y la gloria, por todos los siglos. Amén.","Pide fuerza ante la tentación y protección para ti y los tuyos."]
+  { k:"Adoración", q:"Padre nuestro que estás en los cielos, santificado sea tu nombre.", d:"Habla con Dios como tu Padre y alábalo por quién es.", ideas:["Dale gracias por ser tu Padre.","Alaba su amor, su santidad y su fidelidad.","Si quieres, lee un salmo y conviértelo en oración."] },
+  { k:"Su voluntad", q:"Venga tu reino. Hágase tu voluntad, como en el cielo, así también en la tierra.", d:"Ríndele tus planes y pídele que se haga lo que Él quiere.", ideas:["Entrégale tus decisiones de hoy.","Pide que su reino avance en tu familia, tu iglesia y tu país."] },
+  { k:"Necesidades", q:"El pan nuestro de cada día, dánoslo hoy.", d:"Preséntale lo que necesitas y ora por los demás.", ideas:["Cuéntale lo que necesitas hoy, aunque parezca pequeño.","Enseguida te mostramos tu lista, tus peticiones y las de tus hermanos."] },
+  { k:"Perdón", q:"Y perdónanos nuestras deudas, como también nosotros perdonamos a nuestros deudores.", d:"Pide perdón y perdona.", ideas:["Confiésale con sinceridad lo que te alejó de Él.","Perdona a quien te haya ofendido y pídele ayuda para hacerlo."] },
+  { k:"Protección", q:"Y no nos metas en tentación, mas líbranos del mal; porque tuyo es el reino, y el poder, y la gloria, por todos los siglos. Amén.", d:"Pide fuerza y protección, y termina reconociendo su gloria.", ideas:["Pide ayuda ante las tentaciones que conoces.","Ora por protección para ti y los tuyos.","Termina dándole gracias: todo es suyo."] }
 ];
 function prayerList(){ if(!Array.isArray(S.prayerList)) S.prayerList = PR_SECTIONS.map(([e,n])=>({ e, n, items:[] })); return S.prayerList; }
 function prError(e){
@@ -2206,8 +2221,8 @@ async function startPrayNow(){
   renderPrayNow();
 }
 function prSteps(){
-  const st = [], act = (PR.mine||[]).filter(r=>!r.answered_at);
-  PADRE.forEach(([n,q,g],i)=>{
+  const st = [{ intro:true, i:-1 }], act = (PR.mine||[]).filter(r=>!r.answered_at);
+  PADRE.forEach(({k:n,q,d:g},i)=>{
     st.push({ k:n, i, q, g });
     if(i===2){
       prayerList().filter(s=>s.items.length).forEach(s=>st.push({ k:n, i, sub:`${s.e} ${s.n}`, items:s.items }));
@@ -2221,21 +2236,43 @@ function prSteps(){
 function renderPrayNow(){
   const steps = prSteps(); let el = $("#praynow");
   if(!el){ el = document.createElement("div"); el.id = "praynow"; el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); document.body.appendChild(el); document.body.style.overflow = "hidden"; }
-  if(PR.now >= steps.length){ el.innerHTML = `<div class="pn-in"><div style="font-size:54px">🙏</div><h2>Amén</h2><p class="muted">Terminaste tu tiempo de oración de hoy.</p><button class="btn primary lg" data-act="pr-now-close">Terminar</button></div>`; return; }
+  const nav = (first, label) => `<div class="pn-nav">${first?"":`<button class="btn ghost" data-act="pr-now-back">Atrás</button>`}<button class="btn primary lg" data-act="pr-now-next">${label||"Siguiente"}</button></div>`;
+  if(PR.now >= steps.length){ el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in"><div style="font-size:54px">🙏</div><h2>Amén</h2><p class="muted">Terminaste tu tiempo de oración. Dios escucha cada palabra que le dijiste.</p><button class="btn primary lg" data-act="pr-now-close">Terminar</button></div>`; el.scrollTop = 0; return; }
   const s = steps[PR.now];
-  el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in">
-    <span class="eyebrow">Guía del Padre Nuestro · ${s.i+1} de ${PADRE.length}</span>
-    <div class="pn-dots">${PADRE.map((_,i)=>`<i class="${i<s.i?"done":i===s.i?"on":""}"></i>`).join("")}</div>
-    ${s.other ? (()=>{ const r = s.other, v = r.verse_id && verse(r.verse_id), prayed = (r.my||[]).includes("pray");
-        return `<h2 style="font-size:22px">Peticiones de tus hermanos</h2><span class="muted" style="font-size:13px">${s.j+1} de ${s.of}</span>
-        <div class="pn-req"><div class="pn-who">${prAvatar(r, 36)}<div style="text-align:left;min-width:0"><b>${r.anon?"Un hermano":esc(r.author_name||"")}</b><small class="muted">${esc(prWhere(r))} · ${timeAgo(r.created_at)}</small></div></div>
-        <p class="pn-text" style="text-align:left">${esc(r.body)}</p>${v?`<p class="muted" style="font-style:italic;text-align:left;margin:0">“${esc(v.text)}” — ${esc(v.ref)}</p>`:""}</div>
-        <button class="btn ${prayed?"":"primary"} lg" data-act="pn-pray" data-id="${r.id}" ${prayed?"disabled":""}>${prayed?"✓ Estás orando por esto":"🙏 Oré por esto"}</button>`; })()
-    : s.mine ? `<h2 style="font-size:24px">Tus peticiones</h2><div class="pn-mine">${s.mine.map(r=>`<div class="pn-req"><p style="margin:0;text-align:left;font-size:16px;line-height:1.5">${esc(r.body)}</p><small class="muted" style="text-align:left;display:block">${esc(prWhere(r))}${r.scope!=="private"&&+r.pray?` · 🙏 ${r.pray} orando contigo`:""}</small></div>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada una con calma.</p>`
-    : s.items?`<h2 style="font-size:26px">${esc(s.sub)}</h2><div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`
-      :`<p class="pn-quote">“${esc(s.q)}”</p><span class="muted" style="font-size:13px">Mateo 6:${9+s.i} · RVR1960</span><h2 style="font-size:22px;margin-top:6px">${esc(s.k)}</h2><p class="pn-text">${esc(s.g)}</p>`}
-    <div class="row" style="justify-content:center;gap:8px">${PR.now>0?`<button class="btn ghost" data-act="pr-now-back">Atrás</button>`:""}<button class="btn primary lg" data-act="pr-now-next">Siguiente</button></div>
-    ${s.i===2 && !s.items && !s.mine && !s.other && !prayerList().some(x=>x.items.length) ? `<p class="muted" style="font-size:13px">Consejo: agrega nombres en “Por quiénes oro” y aparecerán aquí.</p>` : ""}</div>`;
+  // pantalla inicial: qué es la guía y qué no es
+  if(s.intro){
+    el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in" style="text-align:left;align-items:stretch">
+      <span class="eyebrow">Guía de oración</span>
+      <h2 style="font-size:26px;line-height:1.2">Ora con tus propias palabras</h2>
+      <p style="margin:0;font-size:16px;line-height:1.55">Esta guía <b>no es para repetirla de memoria</b>. Usa el orden del Padre Nuestro, el modelo que Jesús enseñó, para ayudarte a hablar con Dios de forma sincera.</p>
+      <div class="pn-verse"><span>Jesús dijo</span>“Y orando, no uséis vanas repeticiones, como los gentiles, que piensan que por su palabrería serán oídos.”<small>Mateo 6:7 · RVR1960</small></div>
+      <p class="muted" style="margin:0;font-size:14px">Son 5 pasos. Tómate el tiempo que necesites en cada uno:</p>
+      <ol class="pn-overview">${PADRE.map((p,i)=>`<li><b>${i+1}. ${esc(p.k)}</b><span>${esc(p.d)}</span></li>`).join("")}</ol>
+      ${nav(true, "Empezar")}</div>`;
+    el.scrollTop = 0; return;
+  }
+  const P = PADRE[s.i];
+  const top = `<div class="pn-top"><span class="eyebrow">Paso ${s.i+1} de ${PADRE.length} · ${esc(P.k)}</span><div class="pn-dots">${PADRE.map((_,i)=>`<i class="${i<s.i?"done":i===s.i?"on":""}"></i>`).join("")}</div></div>`;
+  let body;
+  if(s.other){
+    const r = s.other, v = r.verse_id && verse(r.verse_id), prayed = (r.my||[]).includes("pray");
+    body = `<h2 class="pn-h">Peticiones de tus hermanos <small>${s.j+1} de ${s.of}</small></h2>
+      <div class="pn-req"><div class="pn-who">${prAvatar(r, 36)}<div style="min-width:0"><b>${r.anon?"Un hermano":esc(r.author_name||"")}</b><small class="muted">${esc(prWhere(r))} · ${timeAgo(r.created_at)}</small></div></div>
+      <p style="margin:0;font-size:17px;line-height:1.55">${esc(r.body)}</p>${v?`<p class="muted" style="font-style:italic;margin:0">“${esc(v.text)}” — ${esc(v.ref)}</p>`:""}</div>
+      <p class="muted pn-tip">Ora por esta petición con tus palabras. Al terminar, avísale que oraste por él o ella.</p>
+      <button class="btn ${prayed?"":"primary"}" data-act="pn-pray" data-id="${r.id}" ${prayed?"disabled":""} style="align-self:center">${prayed?"✓ Estás orando por esto":"🙏 Oré por esto"}</button>`;
+  } else if(s.mine){
+    body = `<h2 class="pn-h">Tus peticiones</h2><div class="pn-mine">${s.mine.map(r=>`<div class="pn-req"><p style="margin:0;font-size:16px;line-height:1.5">${esc(r.body)}</p><small class="muted">${esc(prWhere(r))}${r.scope!=="private"&&+r.pray?` · 🙏 ${r.pray} orando contigo`:""}</small></div>`).join("")}</div><p class="muted pn-tip">Preséntale cada una con confianza.</p>`;
+  } else if(s.items){
+    body = `<h2 class="pn-h">${esc(s.sub)}</h2><div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted pn-tip">Ora por cada uno con calma y con tus palabras.</p>`;
+  } else {
+    body = `<h2 class="pn-h big">${esc(P.k)}</h2>
+      <div class="pn-do"><b>Qué hacer</b><p>${esc(P.d)}</p><ul>${P.ideas.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div class="pn-verse"><span>Jesús enseñó</span>“${esc(P.q)}”<small>Mateo 6:${9+s.i} · RVR1960</small></div>
+      ${s.i===2 && !prayerList().some(x=>x.items.length) ? `<p class="muted pn-tip">Consejo: agrega nombres en “Por quiénes oro” (Mi diario) y aparecerán aquí.</p>` : ""}`;
+  }
+  el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in pn-step">${top}${body}${nav(false, PR.now===steps.length-1?"Terminar":"Siguiente")}</div>`;
+  el.scrollTop = 0;
 }
 
 function verseRow(id, i, list){
