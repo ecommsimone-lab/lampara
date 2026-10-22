@@ -1956,7 +1956,7 @@ function saveToListModal(ids, suggest){
 /* =========================================================
    ORACIÓN (SQL 14): Comunidad (amigos y grupos) y Mi diario (privado)
    ========================================================= */
-const PR = { tab:"comunidad", filter:"todo", feed:null, mine:null, groups:null, invites:[], loading:{}, err:"", now:0 };
+const PR = { tab:"comunidad", filter:"todo", feed:null, mine:null, groups:null, invites:[], loading:{}, again:{}, feedCache:{}, err:"", now:0 };
 const PR_CATS = { salud:["Salud","#E5484D"], familia:["Familia","#7C5CFF"], trabajo:["Trabajo","#D98A00"], fe:["Fe","#2F6FED"], estudios:["Estudios","#16A36A"], gratitud:["Gratitud","#16A36A"] };
 const PR_BGS = ["", "linear-gradient(135deg,#7C5CFF,#E5484D)", "linear-gradient(135deg,#16A36A,#2F6FED)", "linear-gradient(135deg,#D98A00,#E5484D)", "linear-gradient(135deg,#0E2A6E,#2F6FED)"];
 const PR_QUICK = ["🙏 Estoy orando por ti", "Dios es fiel", "No estás solo"];
@@ -1983,16 +1983,18 @@ function prError(e){
   return "No se pudo completar. Revisa tu conexión e inténtalo de nuevo.";
 }
 async function prLoad(kind){
-  if(!cloudOn() || PR.loading[kind]) return;
+  if(!cloudOn()) return;
+  if(PR.loading[kind]){ PR.again[kind] = true; return; }
   PR.loading[kind] = true;
   try{
-    if(kind==="feed") PR.feed = (await API.rpc("prayer_feed", { p_filter: PR.filter })) || [];
+    if(kind==="feed"){ const f = PR.filter, rows = (await API.rpc("prayer_feed", { p_filter: f })) || []; PR.feedCache[f] = rows; if(PR.filter===f) PR.feed = rows; }
     if(kind==="mine") PR.mine = (await API.rpc("prayer_mine")) || [];
-    if(kind==="groups"){ PR.groups = (await API.rpc("my_prayer_groups")) || []; try{ PR.invites = (await API.rpc("prayer_invites_mine")) || []; }catch(e){ PR.invites = []; } }
+    if(kind==="groups"){ const [g, inv] = await Promise.all([API.rpc("my_prayer_groups"), API.rpc("prayer_invites_mine").catch(()=>[])]); PR.groups = g || []; PR.invites = inv || []; }
     PR.err = "";
   }catch(e){ PR.err = prError(e); if(kind==="feed") PR.feed = PR.feed || []; if(kind==="mine") PR.mine = PR.mine || []; if(kind==="groups") PR.groups = PR.groups || []; }
   PR.loading[kind] = false;
-  if(VIEW.name==="oracion") render();
+  if(VIEW.name==="oracion" || VIEW.name==="community") render();
+  if(PR.again[kind]){ PR.again[kind] = false; prLoad(kind); }
 }
 function prReloadAll(){ PR.feed = null; PR.mine = null; PR.groups = null; prLoad("groups"); prLoad("feed"); prLoad("mine"); }
 const prGroup = id => (PR.groups||[]).find(g=>g.id===id);
@@ -2130,7 +2132,7 @@ function prayerNewModal(forceScope){
         await API.rpc("prayer_post", { p_body:body, p_scope:scope, p_group:group, p_anon: scope==="group" && sc.querySelector("#prAnon").checked, p_cat:cat, p_bg: scope==="private" || !bg || body.length>140 ? null : bg, p_verse: vid || null, p_days: scope==="private" ? 0 : days });
         if(needConsent){ S.prayConsent = Date.now(); persist(); }
         closeModal(); toast(scope==="private" ? "Guardada en tu diario." : "Tu petición se publicó. ¡Vamos a orar!");
-        if(scope==="private") PR.tab = "diario"; PR.feed = null; PR.mine = null; prLoad("mine"); prLoad("feed"); render();
+        if(scope==="private") PR.tab = "diario"; prLoad("mine"); prLoad("feed"); render();
       }catch(e){ btn.disabled = false; btn.textContent = "Publicar"; err.textContent = prError(e); }
     };
     setTimeout(()=>{ const t = sc.querySelector("#prTxt"); if(t) t.focus(); }, 50);
@@ -2150,7 +2152,7 @@ function prMenu(id){
       const k = b.dataset.o; closeModal();
       if(k==="answer") return prAnswerModal(id);
       if(k==="share") return prShareModal(id);
-      if(k==="delete"){ if(!confirmInline(r.mine ? "¿Eliminar esta petición? No se puede deshacer." : "¿Quitar esta petición del grupo?")) return; try{ await API.rpc("prayer_delete", { p_id:id }); toast("Listo."); PR.feed = null; PR.mine = null; prLoad("feed"); prLoad("mine"); }catch(e){ toast(prError(e)); } }
+      if(k==="delete"){ if(!confirmInline(r.mine ? "¿Eliminar esta petición? No se puede deshacer." : "¿Quitar esta petición del grupo?")) return; try{ await API.rpc("prayer_delete", { p_id:id }); toast("Listo."); prLoad("feed"); prLoad("mine"); }catch(e){ toast(prError(e)); } }
       if(k==="report"){ try{ await API.rpc("prayer_report", { p_id:id, p_reason:"" }); toast("Gracias. La revisará el administrador."); }catch(e){ toast(prError(e)); } }
     });
   });
@@ -2162,7 +2164,7 @@ function prAnswerModal(id){
     <p class="muted" style="margin:0;font-size:13px">Si la compartiste, avisaremos a quienes oraron por ella.</p>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="prAnsGo">Guardar</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
-    sc.querySelector("#prAnsGo").onclick = async ()=>{ try{ await API.rpc("prayer_answer", { p_id:id, p_text: sc.querySelector("#prAns").value }); closeModal(); toast("¡Gloria a Dios! Quedó en tu diario."); PR.feed = null; PR.mine = null; prLoad("mine"); prLoad("feed"); }catch(e){ toast(prError(e)); } };
+    sc.querySelector("#prAnsGo").onclick = async ()=>{ try{ await API.rpc("prayer_answer", { p_id:id, p_text: sc.querySelector("#prAns").value }); closeModal(); toast("¡Gloria a Dios! Quedó en tu diario."); prLoad("mine"); prLoad("feed"); }catch(e){ toast(prError(e)); } };
   });
 }
 function prShareModal(id){
@@ -2171,7 +2173,7 @@ function prShareModal(id){
     <div class="field"><label>¿Con quién?</label>${prSegHTML("prSh", [["friends","👥 Amigos"]].concat(groups.map(g=>["g:"+g.id, g.name])), where)}</div>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="prShGo">Compartir</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); prSeg(sc, "prSh", v=>where = v);
-    sc.querySelector("#prShGo").onclick = async ()=>{ const scope = where==="friends" ? "friends" : "group"; try{ await API.rpc("prayer_share", { p_id:id, p_scope:scope, p_group: scope==="group" ? where.slice(2) : null }); closeModal(); toast("Compartida."); PR.feed = null; PR.mine = null; prLoad("mine"); prLoad("feed"); }catch(e){ toast(prError(e)); } };
+    sc.querySelector("#prShGo").onclick = async ()=>{ const scope = where==="friends" ? "friends" : "group"; try{ await API.rpc("prayer_share", { p_id:id, p_scope:scope, p_group: scope==="group" ? where.slice(2) : null }); closeModal(); toast("Compartida."); prLoad("mine"); prLoad("feed"); }catch(e){ toast(prError(e)); } };
   });
 }
 function prGroupNewModal(){
@@ -3600,28 +3602,47 @@ const friendsOutgoing = () => COMM.friends.filter(f=>f.status==="pending" && !f.
 function myDuelTurn(d){ return (d.creator===ME.id ? d.creator_score : d.opponent_score) == null; }
 function commBadge(){ return COMM.loaded ? friendsIncoming().length + COMM.duels.filter(myDuelTurn).length : 0; }
 
-async function loadCommunity(){
-  if(!cloudOn() || COMM.loading) return;
-  COMM.loading = true; COMM.err = "";
-  try{
-    COMM.friends = await API.myFriends();
-    COMM.friends.forEach(f=>COMM.profiles[f.user_id] = f);
-    COMM.duels = await API.myDuels();
-    const missing = COMM.duels.flatMap(d=>[d.creator, d.opponent]).filter(x=>x && x!==ME.id && !COMM.profiles[x]);
-    if(missing.length) (await API.profiles(missing)).forEach(p=>COMM.profiles[p.user_id] = p);
-    const ids = [ME.id, ...friendsAccepted().map(f=>f.user_id)];
-    const rows = await API.days(ids, dayKey(new Date(Date.now() - 60*DAY)));
-    COMM.days = {}; ids.forEach(id=>COMM.days[id] = new Set());
-    COMM.sdays = {};
-    rows.forEach(r=>{ (COMM.days[r.user_id] = COMM.days[r.user_id] || new Set()).add(r.day); if(r.shield) (COMM.sdays[r.user_id] = COMM.sdays[r.user_id] || new Set()).add(r.day); });
-    syncShieldDays();
-    COMM.counts[ME.id] = friendsAccepted().length;
-    COMM.loaded = true;
-  }catch(e){ COMM.err = commError(e); }
-  COMM.loading = false;
-  if(["community","friend","amigos","profile","home","library","books","avisos"].includes(VIEW.name)) render();
+/* Comunidad: muestra al instante lo último guardado en este celular y actualiza en segundo plano.
+   Las consultas van en paralelo (2 viajes a la nube en vez de 4). */
+const commCacheKey = () => "lampara.comm." + (ME && ME.id);
+function commSaveCache(){
+  try{ const days = {}, sdays = {}; Object.keys(COMM.days||{}).forEach(k=>days[k]=[...COMM.days[k]]); Object.keys(COMM.sdays||{}).forEach(k=>sdays[k]=[...COMM.sdays[k]]);
+    localStorage.setItem(commCacheKey(), JSON.stringify({ t:Date.now(), friends:COMM.friends, duels:COMM.duels, profiles:COMM.profiles, days, sdays })); }catch(e){}
 }
-function reloadCommunity(){ COMM.loaded = false; COMM.counts = {}; return loadCommunity(); }
+function commLoadCache(){
+  try{ const c = JSON.parse(localStorage.getItem(commCacheKey())||"null"); if(!c || !c.friends) return false;
+    COMM.friends = c.friends; COMM.duels = c.duels||[]; Object.assign(COMM.profiles, c.profiles||{});
+    COMM.days = {}; Object.keys(c.days||{}).forEach(k=>COMM.days[k]=new Set(c.days[k]));
+    COMM.sdays = {}; Object.keys(c.sdays||{}).forEach(k=>COMM.sdays[k]=new Set(c.sdays[k]));
+    COMM.counts[ME.id] = friendsAccepted().length; COMM.loaded = true; return true; }catch(e){ return false; }
+}
+async function loadCommunity(){
+  if(!cloudOn()) return;
+  if(COMM.loading){ COMM.again = true; return COMM.loading; }
+  if(!COMM.loaded && commLoadCache() && ["community","friend","amigos","profile","home","library","books","avisos"].includes(VIEW.name)) render();
+  COMM.loading = (async()=>{
+    COMM.err = "";
+    try{
+      const [friends, duels] = await Promise.all([API.myFriends(), API.myDuels()]);
+      friends.forEach(f=>COMM.profiles[f.user_id] = f);
+      const missing = duels.flatMap(d=>[d.creator, d.opponent]).filter(x=>x && x!==ME.id && !COMM.profiles[x]);
+      const ids = [ME.id, ...friends.filter(f=>f.status==="accepted").map(f=>f.user_id)];
+      const [profs, rows] = await Promise.all([missing.length ? API.profiles(missing) : [], API.days(ids, dayKey(new Date(Date.now() - 60*DAY)))]);
+      profs.forEach(p=>COMM.profiles[p.user_id] = p);
+      COMM.friends = friends; COMM.duels = duels;
+      COMM.days = {}; ids.forEach(id=>COMM.days[id] = new Set());
+      COMM.sdays = {};
+      rows.forEach(r=>{ (COMM.days[r.user_id] = COMM.days[r.user_id] || new Set()).add(r.day); if(r.shield) (COMM.sdays[r.user_id] = COMM.sdays[r.user_id] || new Set()).add(r.day); });
+      syncShieldDays();
+      COMM.counts[ME.id] = friendsAccepted().length;
+      COMM.loaded = true; commSaveCache();
+    }catch(e){ if(!COMM.loaded) COMM.err = commError(e); }
+  })();
+  await COMM.loading; COMM.loading = null;
+  if(["community","friend","amigos","profile","home","library","books","avisos"].includes(VIEW.name)) render();
+  if(COMM.again){ COMM.again = false; return loadCommunity(); }
+}
+function reloadCommunity(){ COMM.counts = {}; return loadCommunity(); }
 function personLabel(uid){ const p = COMM.profiles[uid]; return p ? (p.display_name || "Alguien") : "Alguien"; }
 function personAvatar(uid, size){ const p = COMM.profiles[uid] || {}; return avatarHTML(p.display_name || "?", colorFor(uid), p.avatar_url, size); }
 
@@ -4672,12 +4693,13 @@ function startDuelPlay(duel){
 async function finishDuel(){
   const ms = Date.now() - BQ.started;
   BQ.done = true; BQ.saving = true; render();
+  const ids = [BQ.duel.creator, BQ.duel.opponent].filter(x=>x && x!==ME.id && !COMM.profiles[x]);
+  const profs = ids.length ? API.profiles(ids).then(r=>r.forEach(p=>COMM.profiles[p.user_id]=p)).catch(()=>{}) : null;
   try{ await API.submitDuel(BQ.duel.id, BQ.score, ms); BQ.duel = await API.getDuel(BQ.duel.id) || BQ.duel; }
   catch(e){ BQ.err = commError(e); }
-  BQ.saving = false; COMM.loaded = false;
-  const ids = [BQ.duel.creator, BQ.duel.opponent].filter(x=>x && x!==ME.id);
-  try{ (await API.profiles(ids)).forEach(p=>COMM.profiles[p.user_id]=p); }catch(e){}
-  render();
+  if(profs) await profs;
+  BQ.saving = false; render();
+  loadCommunity();
 }
 function duelResultHTML(d){
   const iAmCreator = d.creator===ME.id, other = iAmCreator ? d.opponent : d.creator;
@@ -4716,7 +4738,7 @@ async function handlePendingLink(){
       let msg;
       if(u.status==="accepted") msg = `Ya eres amigo de ${u.display_name}.`;
       else { const r = await API.sendRequest(u.user_id); msg = r==="accepted" ? `¡Ahora eres amigo de ${u.display_name}!` : `Le enviamos una solicitud de amistad a ${u.display_name}.`; }
-      COMM.loaded = false; go("community"); toast(msg);
+      go("community"); loadCommunity(); toast(msg);
     }
   }catch(e){ toast(commError(e)); }
 }
@@ -5484,7 +5506,7 @@ document.addEventListener("click", e=>{
     case "logout": signOut(); break;
     case "feedback": feedbackModal(); break;
     case "team-open": teamItemModal(t.dataset.id); break;
-    case "pr-filter": PR.filter = t.dataset.k; PR.feed = null; if(prGroup(PR.filter)){ API.rpc("prayer_group_seen", { p_group:PR.filter }).then(()=>{ const g = prGroup(PR.filter); if(g) g.new = false; }).catch(()=>{}); } render(); break;
+    case "pr-filter": PR.filter = t.dataset.k; PR.feed = PR.feedCache[PR.filter] || null; prLoad("feed"); if(prGroup(PR.filter)){ API.rpc("prayer_group_seen", { p_group:PR.filter }).then(()=>{ const g = prGroup(PR.filter); if(g) g.new = false; }).catch(()=>{}); } render(); break;
     case "pr-tab": PR.tab = t.dataset.k; render(); break;
     case "comm-seg": COMM.seg = t.dataset.k; if(VIEW.name!=="community") go("community"); else render(); break;
     case "lib-seg": LIB.seg = t.dataset.k; if(VIEW.name!=="library") go("library"); else render(); break;
