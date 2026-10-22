@@ -3381,6 +3381,9 @@ function viewTopic(id){
    ========================================================= */
 const COMM = { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, loaded:false, loading:false, err:"" };
 let PENDING_LINK = (()=>{ try{ const q=new URLSearchParams(location.search); const d=q.get("duelo"), a=q.get("amigo"), g=q.get("grupo"); return d?{type:"duel",code:d}:a?{type:"friend",code:a}:g?{type:"group",code:g}:null; }catch(e){ return null; } })();
+// Si la app está instalada y alguien abre un enlace de invitación, se usa la ventana que ya estaba abierta (Chrome y Edge)
+function linkFromURL(u){ try{ const q = new URL(u).searchParams; const d=q.get("duelo"), a=q.get("amigo"), g=q.get("grupo"); return d?{type:"duel",code:d}:a?{type:"friend",code:a}:g?{type:"group",code:g}:null; }catch(e){ return null; } }
+try{ if("launchQueue" in window) window.launchQueue.setConsumer(params=>{ const l = params && params.targetURL && linkFromURL(params.targetURL); if(l){ PENDING_LINK = l; if(cloudOn()) handlePendingLink(); } }); }catch(e){}
 function cloudOn(){ return !!(SB && ME && ME.mode==="cloud"); }
 function shortCode(n=6){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; const r=crypto.getRandomValues(new Uint32Array(n)); let s=""; for(const x of r) s+=a[x%a.length]; return s; }
 function appLink(param, code){ return location.origin + location.pathname + "?" + param + "=" + encodeURIComponent(code); }
