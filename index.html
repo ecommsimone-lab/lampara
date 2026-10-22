@@ -252,6 +252,9 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pr-sub button{all:unset;cursor:pointer;padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:700;color:var(--muted);border:1.5px solid var(--line)}
 .pr-sub button[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 .home-pray{background:linear-gradient(135deg,#7C5CFF,#2F6FED)}
+.pn-req{width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.pn-who{display:flex;gap:10px;align-items:center}.pn-who b{display:block}.pn-who small{font-size:12.5px}
+.pn-mine{width:100%;display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow:auto}
 .ans-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
 .ans-strip::-webkit-scrollbar{display:none}
 .ans-card{all:unset;cursor:pointer;flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--ok-soft),var(--surface));border:1px solid color-mix(in srgb,var(--ok) 25%,transparent)}
@@ -2193,12 +2196,24 @@ function pdAddModal(si){
     setTimeout(()=>sc.querySelector("#pdIt").focus(), 50);
   });
 }
-// Orar ahora: guía del Padre Nuestro; en "El pan nuestro de cada día" recorre la lista y las peticiones activas
+// Orar ahora: guía del Padre Nuestro. En "El pan nuestro de cada día" recorre tu lista, tus peticiones (completas)
+// y luego, una por una, las peticiones de tus amigos y grupos, con el botón "Oré por esto"
+async function startPrayNow(){
+  PR.now = 0; PR.nowOthers = [];
+  try{ const [mine, all] = await Promise.all([ PR.mine===null ? API.rpc("prayer_mine") : Promise.resolve(PR.mine), API.rpc("prayer_feed", { p_filter:"todo" }) ]);
+    PR.mine = mine || []; PR.nowOthers = (all || []).filter(r=>!r.mine && !r.answered_at); }catch(e){}
+  renderPrayNow();
+}
 function prSteps(){
-  const st = [], act = (PR.mine||[]).filter(r=>!r.answered_at).map(r=>r.body.length>70 ? r.body.slice(0,70)+"…" : r.body);
+  const st = [], act = (PR.mine||[]).filter(r=>!r.answered_at);
   PADRE.forEach(([n,q,g],i)=>{
     st.push({ k:n, i, q, g });
-    if(i===2){ prayerList().filter(s=>s.items.length).forEach(s=>st.push({ k:n, i, sub:`${s.e} ${s.n}`, items:s.items })); if(act.length) st.push({ k:n, i, sub:"Peticiones activas", items:act }); }
+    if(i===2){
+      prayerList().filter(s=>s.items.length).forEach(s=>st.push({ k:n, i, sub:`${s.e} ${s.n}`, items:s.items }));
+      if(act.length) st.push({ k:n, i, sub:"Tus peticiones", mine:act });
+      const others = PR.nowOthers || [];
+      others.forEach((r,j)=>st.push({ k:n, i, other:r, j, of:others.length }));
+    }
   });
   return st;
 }
@@ -2210,10 +2225,16 @@ function renderPrayNow(){
   el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in">
     <span class="eyebrow">Guía del Padre Nuestro · ${s.i+1} de ${PADRE.length}</span>
     <div class="pn-dots">${PADRE.map((_,i)=>`<i class="${i<s.i?"done":i===s.i?"on":""}"></i>`).join("")}</div>
-    ${s.items?`<h2 style="font-size:26px">${esc(s.sub)}</h2><div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`
+    ${s.other ? (()=>{ const r = s.other, v = r.verse_id && verse(r.verse_id), prayed = (r.my||[]).includes("pray");
+        return `<h2 style="font-size:22px">Peticiones de tus hermanos</h2><span class="muted" style="font-size:13px">${s.j+1} de ${s.of}</span>
+        <div class="pn-req"><div class="pn-who">${prAvatar(r, 36)}<div style="text-align:left;min-width:0"><b>${r.anon?"Un hermano":esc(r.author_name||"")}</b><small class="muted">${esc(prWhere(r))} · ${timeAgo(r.created_at)}</small></div></div>
+        <p class="pn-text" style="text-align:left">${esc(r.body)}</p>${v?`<p class="muted" style="font-style:italic;text-align:left;margin:0">“${esc(v.text)}” — ${esc(v.ref)}</p>`:""}</div>
+        <button class="btn ${prayed?"":"primary"} lg" data-act="pn-pray" data-id="${r.id}" ${prayed?"disabled":""}>${prayed?"✓ Estás orando por esto":"🙏 Oré por esto"}</button>`; })()
+    : s.mine ? `<h2 style="font-size:24px">Tus peticiones</h2><div class="pn-mine">${s.mine.map(r=>`<div class="pn-req"><p style="margin:0;text-align:left;font-size:16px;line-height:1.5">${esc(r.body)}</p><small class="muted" style="text-align:left;display:block">${esc(prWhere(r))}${r.scope!=="private"&&+r.pray?` · 🙏 ${r.pray} orando contigo`:""}</small></div>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada una con calma.</p>`
+    : s.items?`<h2 style="font-size:26px">${esc(s.sub)}</h2><div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`
       :`<p class="pn-quote">“${esc(s.q)}”</p><span class="muted" style="font-size:13px">Mateo 6:${9+s.i} · RVR1960</span><h2 style="font-size:22px;margin-top:6px">${esc(s.k)}</h2><p class="pn-text">${esc(s.g)}</p>`}
     <div class="row" style="justify-content:center;gap:8px">${PR.now>0?`<button class="btn ghost" data-act="pr-now-back">Atrás</button>`:""}<button class="btn primary lg" data-act="pr-now-next">Siguiente</button></div>
-    ${s.i===2 && !s.items && !prayerList().some(x=>x.items.length) ? `<p class="muted" style="font-size:13px">Consejo: agrega nombres en “Por quiénes oro” y aparecerán aquí.</p>` : ""}</div>`;
+    ${s.i===2 && !s.items && !s.mine && !s.other && !prayerList().some(x=>x.items.length) ? `<p class="muted" style="font-size:13px">Consejo: agrega nombres en “Por quiénes oro” y aparecerán aquí.</p>` : ""}</div>`;
 }
 
 function verseRow(id, i, list){
@@ -5393,7 +5414,7 @@ document.addEventListener("click", e=>{
     case "pr-tab": PR.tab = t.dataset.k; render(); break;
     case "comm-seg": COMM.seg = t.dataset.k; if(VIEW.name!=="community") go("community"); else render(); break;
     case "lib-seg": LIB.seg = t.dataset.k; if(VIEW.name!=="library") go("library"); else render(); break;
-    case "home-pray": { PR.tab = "diario"; COMM.seg = "oracion"; go("community"); PR.now = 0; if(PR.mine===null) prLoad("mine").then(()=>renderPrayNow()); else renderPrayNow(); break; }
+    case "home-pray": { PR.tab = "diario"; COMM.seg = "oracion"; go("community"); startPrayNow(); break; }
     case "pr-react": prReact(t.dataset.id, t.dataset.k); break;
     case "pr-quick": prComment(t.dataset.id, PR_QUICK[+t.dataset.i]); break;
     case "pr-comments": prCommentsModal(t.dataset.id); break;
@@ -5410,10 +5431,11 @@ document.addEventListener("click", e=>{
     case "pr-invite": prInviteModal(t.dataset.id); break;
     case "pd-add": pdAddModal(+t.dataset.s); break;
     case "pd-rm": { const sec = prayerList()[+t.dataset.s]; if(sec){ sec.items.splice(+t.dataset.i, 1); persist(); render(); } break; }
-    case "pr-now": PR.now = 0; renderPrayNow(); break;
+    case "pr-now": startPrayNow(); break;
+    case "pn-pray": { const r = (PR.nowOthers||[]).find(x=>x.id===t.dataset.id); if(r && !(r.my||[]).includes("pray")){ r.my = (r.my||[]).concat("pray"); r.pray = (+r.pray||0)+1; const f = prFind(r.id); if(f && f!==r){ f.my = r.my.slice(); f.pray = r.pray; } API.rpc("prayer_react", { p_id:r.id, p_kind:"pray" }).catch(e=>toast(prError(e))); PR.now++; renderPrayNow(); } break; }
     case "pr-now-next": PR.now++; renderPrayNow(); break;
     case "pr-now-back": PR.now = Math.max(0, PR.now-1); renderPrayNow(); break;
-    case "pr-now-close": { const x = $("#praynow"); if(x) x.remove(); document.body.style.overflow=""; break; }
+    case "pr-now-close": { const x = $("#praynow"); if(x) x.remove(); document.body.style.overflow=""; if(VIEW.name==="community"||VIEW.name==="oracion") render(); break; }
     case "open-oracion": { PR.tab = "comunidad"; PR.feed = null; go("oracion"); const pid = t.dataset.id; if(pid) setTimeout(()=>prDetailModal(pid), 300); break; }
     case "team-add": teamAddModal(); break;
     case "team-reload": loadTeam(); break;
