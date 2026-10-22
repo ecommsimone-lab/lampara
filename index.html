@@ -101,7 +101,7 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
   .side{display:none}
   main{padding-block:18px 110px}
   .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around}
-  .tabbar button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 10px;border-radius:10px}
+  .tabbar button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--muted);padding:6px 4px;border-radius:10px;min-width:0}
   .tabbar button[aria-current="true"]{color:var(--accent)}
   .tabbar button[aria-current="true"] svg{transform:scale(1.08)}
   .mtop{display:flex!important}
@@ -177,6 +177,114 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .chart text{fill:var(--muted);font-size:10px;font-weight:600}
 
 .vlist{display:flex;flex-direction:column}
+
+.pr-tabs{display:flex;background:var(--surface-2);border-radius:14px;padding:4px;gap:4px}
+.pr-tabs button{all:unset;cursor:pointer;flex:1;text-align:center;padding:9px;border-radius:10px;font-weight:700;font-size:14.5px;color:var(--muted)}
+.pr-tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.ig-stories{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:4px 16px}
+.ig-stories::-webkit-scrollbar{display:none}
+.ig-stories button{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:66px}
+.ig-stories .ring{width:62px;height:62px;border-radius:50%;padding:3px;background:conic-gradient(var(--c),color-mix(in srgb,var(--c) 40%,#fff),var(--c));display:grid;place-items:center;box-sizing:border-box}
+.ig-stories .ring.seen{background:var(--line)}
+.ig-stories .ring i{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;font-style:normal;color:#fff;font-weight:800;font-size:20px;border:3px solid var(--bg);box-sizing:border-box;background:var(--accent)}
+.ig-stories small{font-size:11.5px;font-weight:600;max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ig-stories .sel small{color:var(--accent)}
+.ig-list{display:flex;flex-direction:column;gap:14px;padding-bottom:70px}
+.ig{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.ig-h{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:12px 12px 8px 14px}
+.ig-h b{display:block;font-size:14.5px}.ig-h small{font-size:12px;color:var(--muted)}
+.ig-more{font-size:20px;width:30px;height:30px}
+.ig-t{margin:0;padding:2px 14px 8px;font-size:16px;line-height:1.5}
+.ig-bg{aspect-ratio:4/3;display:grid;place-items:center;padding:24px;text-align:center}
+.ig-bg p{margin:0;color:#fff;font-weight:800;font-size:clamp(22px,6.4vw,30px);line-height:1.25;text-shadow:0 2px 12px rgba(0,0,0,.18)}
+.ig .pr-answer,.ig .pr-verse{margin:0 14px 8px}
+.ig-bar{display:flex;gap:4px;padding:6px 8px 0}
+.ig-i{all:unset;cursor:pointer;font-size:24px;width:42px;height:40px;display:grid;place-items:center;border-radius:12px;filter:grayscale(.15)}
+.ig-i.on{background:var(--accent-soft);transform:scale(1.05)}
+.ig-s{padding:2px 14px;font-size:13.5px}
+.ig-c{all:unset;cursor:pointer;padding:4px 14px 0;font-size:13.5px;color:var(--muted)}
+.ig-c1{padding:2px 14px 4px;font-size:14px}
+.ig .pr-quick{padding:6px 14px 14px}
+.pr-fab{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 10px 24px -8px var(--accent);z-index:15;cursor:pointer}
+.pr-fab svg{width:26px;height:26px}
+@media (min-width:900px){.pr-fab{bottom:32px;right:32px}}
+.pr-swatch{all:unset;cursor:pointer;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;outline:2.5px solid transparent;outline-offset:2px}
+.pr-swatch.on{outline-color:var(--accent)}
+.pr-start{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:16px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#7C5CFF);color:#fff}
+.pr-start>span{font-size:30px}.pr-start b{display:block;font-size:17px}.pr-start small{opacity:.9;font-size:13px}
+.pd-sec{display:flex;flex-direction:column;gap:10px}
+.pd-sec h3{font-size:18px}
+.pd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.pd-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.pd-ch{display:flex;gap:8px;align-items:center}.pd-ch span{font-size:22px}.pd-ch b{font-size:14.5px}
+.pd-items{display:flex;flex-wrap:wrap;gap:5px}
+.pd-items span{font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--surface-2)}
+.pd-add{all:unset;cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:700;padding:3px 4px}
+.pd-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.pd-row b{display:block;font-size:15px}.pd-row small{display:block;font-size:12.5px}
+.pd-row.ans{background:var(--ok-soft);border-color:transparent}
+.pd-row.ans small{color:var(--ok)}.pd-row.ans span{display:block;font-size:14px;margin-top:4px}
+.acas{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.acas span{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
+.acas span b{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--ink);font-size:11px}
+.acas span.on{background:var(--accent);color:#fff}.acas span.on b{background:#fff;color:var(--accent)}
+.acas span.done{color:var(--ok)}.acas span.done b{background:var(--ok);color:#fff}
+.pn-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pn-items span{font-size:16px;font-weight:600;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.pr-ghead{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.pr-ghead b{display:block}.pr-ghead small{font-size:12.5px}
+.pr-cmlist{display:flex;flex-direction:column;gap:10px;max-height:45vh;overflow:auto}
+.pr-cmrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:flex-start;font-size:14.5px}
+.pr-cmrow small{display:block;font-size:12px}
+.pr-vres{display:flex;flex-direction:column;gap:4px}
+.pr-vres button{all:unset;cursor:pointer;font-size:13px;padding:6px 10px;border-radius:10px;background:var(--surface-2)}
+.pd-it{all:unset;cursor:pointer;font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--surface-2)}
+.pd-it:hover{background:var(--bad-soft);color:var(--bad);text-decoration:line-through}
+.ans-strip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.ans-strip::-webkit-scrollbar{display:none}
+.ans-card{all:unset;cursor:pointer;flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--ok-soft),var(--surface));border:1px solid color-mix(in srgb,var(--ok) 25%,transparent)}
+.ans-ico{font-size:22px}.ans-card b{font-size:15px;line-height:1.3}
+.ans-note{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ans-card small{font-size:12px;color:var(--ok);font-weight:600}
+.ans-btn{all:unset;cursor:pointer;box-sizing:border-box;display:flex!important}
+.ans-btn small{font-size:12px;font-weight:700;margin-top:2px}
+.ans-tl{display:flex;align-items:center;gap:8px}
+.ans-tl>div:not(.ln){display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:90px}
+.ans-tl i{width:14px;height:14px;border-radius:50%;background:var(--accent)}.ans-tl i.ok{background:var(--ok)}
+.ans-tl b{font-size:13.5px}.ans-tl small{font-size:12px;color:var(--muted)}
+.ans-tl .ln{flex:1;height:2px;background:linear-gradient(90deg,var(--accent),var(--ok));position:relative;margin-bottom:28px}
+.ans-tl .ln span{position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:12px;font-weight:700;white-space:nowrap;color:var(--muted)}
+.ans-who{display:flex;flex-direction:column;gap:8px}
+.ans-av{display:flex;gap:10px;overflow-x:auto}
+.ans-av>span{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none}
+.ans-av small{font-size:11px;color:var(--muted)}
+.pn-dots{display:flex;gap:6px}.pn-dots i{width:28px;height:5px;border-radius:3px;background:var(--line)}.pn-dots i.on{background:var(--accent)}.pn-dots i.done{background:var(--ok)}
+.pn-quote{font-family:var(--f-display);font-size:22px;line-height:1.45;font-style:italic;margin:6px 0 0}
+.pr-groups{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}
+.pr-groups::-webkit-scrollbar{display:none}
+.pr-groups button{all:unset;cursor:pointer;flex:none;width:150px;display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.pr-groups .cv{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;margin-bottom:4px}
+.pr-groups b{font-size:14.5px}.pr-groups small{color:var(--muted);font-size:12px}
+.pr-list{display:flex;flex-direction:column;gap:12px}
+.pr-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.pr-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.pr-top b{display:block;font-size:15px}.pr-top small{font-size:12.5px}
+.pr-text{margin:0;font-size:16px;line-height:1.5}
+.pr-answer{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--ok-soft);color:var(--ok);font-size:14px}
+.pr-verse{font-size:13.5px;padding:8px 12px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 10px 10px 0;color:var(--muted)}
+.pr-verse b{color:var(--accent)}
+.pr-rs{display:flex;gap:6px;flex-wrap:wrap}
+.pr-r{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1.5px solid var(--line);font-size:13.5px;font-weight:600}
+.pr-r b{font-size:12.5px;color:var(--muted)}
+.pr-r.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pr-cm{display:flex;flex-direction:column;gap:4px;font-size:14px;padding:8px 12px;border-radius:12px;background:var(--surface-2)}
+.pr-quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.pr-quick button{all:unset;cursor:pointer;flex:none;font-size:12.5px;font-weight:600;color:var(--accent);padding:5px 10px;border-radius:999px;background:var(--accent-soft)}
+.pr-priv{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+#praynow{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;justify-content:center;overflow:auto}
+#praynow .pn-x{position:fixed;top:14px;right:14px}
+.pn-in{width:100%;max-width:460px;padding:64px 22px 30px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.pn-text{font-size:19px;line-height:1.55;margin:0}
 .mc-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .mc-opt{all:unset;cursor:pointer;text-align:center;padding:14px 10px;border-radius:14px;border:2px solid var(--line);background:var(--surface);font-weight:700;font-size:16px;box-shadow:0 2px 0 var(--line)}
 .mc-opt:hover:not(:disabled){border-color:var(--accent)}
@@ -803,6 +911,7 @@ const I = {
   speaker:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a3.5 3.5 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11"/></svg>',
   mic:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
   logout:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>',
+  pray:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v8.2"/><path d="M12 4.5c-1-1.4-3-1-3 .8v5.4L5.6 15a2 2 0 0 0 .3 2.6L9.5 21"/><path d="M12 4.5c1-1.4 3-1 3 .8v5.4l3.4 4.3a2 2 0 0 1-.3 2.6L14.5 21"/></svg>',
   share:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
   x:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   lamp:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c1.2 2 3 3.2 3 5.2A3 3 0 0 1 12 11a3 3 0 0 1-3-2.8C9 6.2 10.8 5 12 3z"/><path d="M4 14h16l-2 3H6zM8 18h8l-1 3H9z" opacity=".85"/></svg>',
@@ -1137,6 +1246,7 @@ function render(){
         ${navItem("books","Libros",I.book)}
         ${navItem("library","Biblioteca",I.lib)}
         ${navItem("community","Comunidad",I.users)}
+        ${navItem("oracion","Oración",I.pray)}
         ${cloudOn()?navItem("avisos","Avisos",I.bell):""}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
@@ -1158,6 +1268,7 @@ function render(){
       ${navItem("home","Inicio",I.home)}
       ${navItem("library","Biblioteca",I.lib)}
       ${navItem("books","Libros",I.book)}
+      ${navItem("oracion","Oración",I.pray)}
       ${navItem("community","Comunidad",I.users)}
       ${navItem("profile","Perfil",I.user)}
     </nav>
@@ -1180,6 +1291,7 @@ function render(){
   else if(VIEW.name==="camino") v.innerHTML = mtop + viewCamino();
   else if(VIEW.name==="pildora") v.innerHTML = mtop + viewPildora(VIEW.id);
   else if(VIEW.name==="equipo") v.innerHTML = mtop + viewEquipo();
+  else if(VIEW.name==="oracion") v.innerHTML = mtop + viewOracion();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
   const tq = $("#teamQuery"); if(tq) tq.addEventListener("input", ()=>{ TEAM.q = tq.value; const l = $("#teamList"); if(l) l.innerHTML = teamListHTML(); });
@@ -1776,6 +1888,306 @@ function saveToListModal(ids, suggest){
       persist(); closeModal(); toast(`Guardado en “${name}”.`); render();
     };
   });
+}
+
+/* =========================================================
+   ORACIÓN (SQL 14): Comunidad (amigos y grupos) y Mi diario (privado)
+   ========================================================= */
+const PR = { tab:"comunidad", filter:"todo", feed:null, mine:null, groups:null, loading:{}, err:"", now:0 };
+const PR_CATS = { salud:["Salud","#E5484D"], familia:["Familia","#7C5CFF"], trabajo:["Trabajo","#D98A00"], fe:["Fe","#2F6FED"], estudios:["Estudios","#16A36A"], gratitud:["Gratitud","#16A36A"] };
+const PR_BGS = ["", "linear-gradient(135deg,#7C5CFF,#E5484D)", "linear-gradient(135deg,#16A36A,#2F6FED)", "linear-gradient(135deg,#D98A00,#E5484D)", "linear-gradient(135deg,#0E2A6E,#2F6FED)"];
+const PR_QUICK = ["🙏 Estoy orando por ti", "Dios es fiel", "No estás solo"];
+const PR_SECTIONS = [["👨‍👩‍👧","Familia"],["⛪","Iglesia y pastores"],["🤝","Amigos"],["💼","Trabajo o estudios"],["🇨🇴","País y autoridades"],["🌍","Misiones"],["🙋","Yo mismo"]];
+// Guía del Padre Nuestro (Mateo 6:9-13, RVR1960, verificado en Blue Letter Bible el 22 de octubre de 2026)
+const PADRE = [
+  ["Adoración","Padre nuestro que estás en los cielos, santificado sea tu nombre.","Alaba a Dios por quién es: tu Padre, santo y bueno."],
+  ["Su voluntad","Venga tu reino. Hágase tu voluntad, como en el cielo, así también en la tierra.","Ríndele tus planes y pídele que se haga su voluntad en tu vida."],
+  ["Necesidades","El pan nuestro de cada día, dánoslo hoy.","Presenta tus necesidades y ora por las personas de tu lista."],
+  ["Perdón","Y perdónanos nuestras deudas, como también nosotros perdonamos a nuestros deudores.","Pide perdón y perdona a quien te haya ofendido."],
+  ["Protección","Y no nos metas en tentación, mas líbranos del mal; porque tuyo es el reino, y el poder, y la gloria, por todos los siglos. Amén.","Pide fuerza ante la tentación y protección para ti y los tuyos."]
+];
+function prayerList(){ if(!Array.isArray(S.prayerList)) S.prayerList = PR_SECTIONS.map(([e,n])=>({ e, n, items:[] })); return S.prayerList; }
+function prError(e){
+  const m = String((e && e.message) || e || "");
+  if(/prayer_|Could not find the function|does not exist/i.test(m) && /function|relation/i.test(m)) return "Falta activar Oración en Supabase (código SQL 14).";
+  if(/codigo_invalido/.test(m)) return "Ese código de grupo no existe. Revísalo e inténtalo otra vez.";
+  if(/grupo_lleno/.test(m)) return "Ese grupo ya está lleno.";
+  if(/demasiadas_peticiones/.test(m)) return "Ya publicaste muchas peticiones hoy. Inténtalo mañana.";
+  if(/demasiados_comentarios/.test(m)) return "Escribiste muchos comentarios seguidos. Espera un rato.";
+  if(/demasiados_grupos/.test(m)) return "Ya creaste el máximo de grupos.";
+  if(/no_disponible/.test(m)) return "Esa petición ya no está disponible.";
+  if(/no_eres_miembro|no_permitido/.test(m)) return "No tienes permiso para hacer eso en este grupo.";
+  return "No se pudo completar. Revisa tu conexión e inténtalo de nuevo.";
+}
+async function prLoad(kind){
+  if(!cloudOn() || PR.loading[kind]) return;
+  PR.loading[kind] = true;
+  try{
+    if(kind==="feed") PR.feed = (await API.rpc("prayer_feed", { p_filter: PR.filter })) || [];
+    if(kind==="mine") PR.mine = (await API.rpc("prayer_mine")) || [];
+    if(kind==="groups") PR.groups = (await API.rpc("my_prayer_groups")) || [];
+    PR.err = "";
+  }catch(e){ PR.err = prError(e); if(kind==="feed") PR.feed = PR.feed || []; if(kind==="mine") PR.mine = PR.mine || []; if(kind==="groups") PR.groups = PR.groups || []; }
+  PR.loading[kind] = false;
+  if(VIEW.name==="oracion") render();
+}
+function prReloadAll(){ PR.feed = null; PR.mine = null; PR.groups = null; prLoad("groups"); prLoad("feed"); prLoad("mine"); }
+const prGroup = id => (PR.groups||[]).find(g=>g.id===id);
+function prAvatar(row, size){
+  if(!row.author) return `<span class="avatar" style="width:${size}px;height:${size}px;background:var(--surface-2);color:var(--muted)">${I.pray}</span>`;
+  const p = COMM.profiles[row.author] || {}; return avatarHTML(row.author_name || p.display_name || "?", colorFor(row.author), p.avatar_url, size);
+}
+const prWhere = r => r.scope==="private" ? "🔒 Privada" : r.scope==="friends" ? "Amigos" : (r.group_name || "Grupo");
+function prPost(r){
+  const c = PR_CATS[r.cat] || PR_CATS.fe, my = r.my || [];
+  const ico = (k, e, l) => `<button class="ig-i${my.includes(k)?" on":""}" data-act="pr-react" data-k="${k}" data-id="${r.id}" aria-label="${l}" aria-pressed="${my.includes(k)}">${e}</button>`;
+  const v = r.verse_id && verse(r.verse_id), n = +r.pray || 0;
+  const who = my.includes("pray") ? "Tú" : (r.pray_name || "Alguien");
+  return `<article class="ig">
+    <header class="ig-h">${prAvatar(r, 38)}<div style="min-width:0"><b>${r.anon ? (r.mine ? "Tú (anónimo)" : "Un hermano") : esc(r.author_name||"")}</b><small>${esc(prWhere(r))} · ${timeAgo(r.created_at)}</small></div><span class="chip" style="background:color-mix(in srgb,${c[1]} 14%,transparent);color:${c[1]}">${c[0]}</span><button class="icon-btn ig-more" data-act="pr-menu" data-id="${r.id}" aria-label="Más opciones">⋯</button></header>
+    ${r.bg && PR_BGS[r.bg] ? `<div class="ig-bg" style="background:${PR_BGS[r.bg]}"><p>${esc(r.body)}</p></div>` : `<p class="ig-t">${esc(r.body)}</p>`}
+    ${r.answered_at ? `<button class="pr-answer ans-btn" data-act="pr-detail" data-id="${r.id}"><b>✨ Dios respondió</b>${r.answer?`<span>${esc(r.answer.length>90?r.answer.slice(0,90)+"…":r.answer)}</span>`:""}<small>Ver detalles: cuándo se pidió y quiénes oraron →</small></button>` : ""}
+    ${v ? `<div class="pr-verse"><b>${esc(v.ref)}</b> ${esc(v.text.length>90?v.text.slice(0,90)+"…":v.text)}</div>` : ""}
+    <div class="ig-bar">${ico("pray","🙏","Estoy orando")}${ico("heart","❤️","Me encanta")}${ico("amen","🙌","Amén")}<button class="ig-i" data-act="pr-comments" data-id="${r.id}" aria-label="Comentarios">💬</button></div>
+    <div class="ig-s">${n ? `<b>${esc(who)}${n>1?` y ${n-1} más`:""}</b> ${n===1 ? (my.includes("pray") ? "estás" : "está") : "están"} orando` : "Sé el primero en orar"}${+r.amen?` · ${r.amen} amén`:""}${+r.heart?` · ${r.heart} ❤️`:""}</div>
+    ${+r.comments ? `<button class="ig-c" data-act="pr-comments" data-id="${r.id}">Ver ${+r.comments===1?"el comentario":`los ${r.comments} comentarios`}</button>${r.first_comment?`<div class="ig-c1"><b>${esc(r.first_comment.name)}</b> ${esc(r.first_comment.body)}</div>`:""}` : ""}
+    ${r.mine ? "" : `<div class="pr-quick">${PR_QUICK.map((t,i)=>`<button data-act="pr-quick" data-id="${r.id}" data-i="${i}">${esc(t)}</button>`).join("")}</div>`}
+  </article>`;
+}
+function viewOracion(){
+  if(!cloudOn()) return `<section class="spread"><h1 style="font-size:clamp(30px,5vw,40px)">Oración</h1></section><div class="empty"><b>Oración necesita tu cuenta en la nube</b><span>Entra con tu correo para orar con tus amigos y grupos y llevar tu diario de oración.</span></div>`;
+  if(PR.groups===null) setTimeout(()=>prLoad("groups"),0);
+  const tab = PR.tab;
+  const tabs = `<div class="pr-tabs"><button data-act="pr-tab" data-k="comunidad" aria-pressed="${tab==="comunidad"}">Comunidad</button><button data-act="pr-tab" data-k="diario" aria-pressed="${tab==="diario"}">🔒 Mi diario</button></div>`;
+  const head = `<section class="spread" style="align-items:flex-end"><h1 style="font-size:clamp(30px,5vw,40px)">Oración</h1></section>${tabs}${PR.err?`<div class="result-bar bad"><span>${esc(PR.err)}</span></div>`:""}`;
+  if(tab==="diario") return head + viewDiario();
+  if(PR.feed===null) setTimeout(()=>prLoad("feed"),0);
+  const f = PR.filter, groups = PR.groups || [];
+  const ring = (k, label, color, inner, seen) => `<button data-act="pr-filter" data-k="${k}" class="${f===k?"sel":""}"><span class="ring${seen?" seen":""}" style="--c:${color}"><i style="background:${color}">${inner}</i></span><small>${esc(label)}</small></button>`;
+  const g = prGroup(f);
+  const empty = !groups.length && !friendsAccepted().length
+    ? `<div class="empty"><b>Ora con tus hermanos</b><span>Crea un grupo para tu célula, tu familia o tu iglesia, o únete con un código. También verás las peticiones de tus amigos.</span><button class="btn primary" data-act="pr-group-new">${I.plus} Crear o unirme a un grupo</button></div>`
+    : `<div class="empty"><b>${f==="todo"?"Todavía no hay peticiones":"No hay peticiones aquí"}</b><span>Toca el botón + para pedir oración.</span></div>`;
+  return head + `
+  <div class="ig-stories">${ring("todo","Todo","var(--accent)","✦",false)}${groups.map(x=>ring(x.id, x.name, x.color, esc(x.name.charAt(0).toUpperCase()), !x.new)).join("")}${ring("friends","Amigos","#2F6FED","👥",true)}<button data-act="pr-group-new"><span class="ring seen" style="--c:var(--line)"><i style="background:var(--surface-2);color:var(--muted)">+</i></span><small>Grupo</small></button></div>
+  ${g ? `<div class="pr-ghead"><div><b>${esc(g.name)}</b><small class="muted">${g.members} ${+g.members===1?"miembro":"miembros"}${g.role==="admin"?" · Administrador":""}${+g.reported?` · ⚠️ ${g.reported} reportadas`:""}</small></div><button class="btn" data-act="pr-invite" data-id="${g.id}">${I.share} Invitar</button><button class="icon-btn" data-act="pr-group-open" data-id="${g.id}" aria-label="Opciones del grupo">⋯</button></div>` : ""}
+  <div class="ig-list">${PR.feed===null ? `<div class="empty"><b>Cargando…</b></div>` : PR.feed.length ? PR.feed.map(prPost).join("") : empty}</div>
+  <button class="pr-fab" data-act="pr-new" aria-label="Pedir oración">${I.plus}</button>`;
+}
+function viewDiario(){
+  if(PR.mine===null) setTimeout(()=>prLoad("mine"),0);
+  const mine = PR.mine || [], act = mine.filter(r=>!r.answered_at), ans = mine.filter(r=>r.answered_at).sort((a,b)=>a.answered_at<b.answered_at?1:-1);
+  const days = r => Math.max(1, Math.round((new Date(r.answered_at) - new Date(r.created_at))/DAY));
+  return `
+  <button class="pr-start" data-act="pr-now"><span>🙏</span><div><b>Orar ahora</b><small>Con la guía del Padre Nuestro, por tu lista y tus peticiones</small></div>${I.play}</button>
+  <section class="pd-sec"><div class="spread"><h3>Por quiénes oro</h3><span class="muted" style="font-size:12.5px">Toca un nombre para quitarlo</span></div>
+    <div class="pd-grid">${prayerList().map((sec,si)=>`<div class="pd-card"><div class="pd-ch"><span>${sec.e}</span><b>${esc(sec.n)}</b></div><div class="pd-items">${sec.items.map((x,ii)=>`<button class="pd-it" data-act="pd-rm" data-s="${si}" data-i="${ii}" title="Quitar">${esc(x)}</button>`).join("")}<button class="pd-add" data-act="pd-add" data-s="${si}">+ Agregar</button></div></div>`).join("")}</div></section>
+  <section class="pd-sec"><div class="spread"><h3>Peticiones activas</h3><button class="linkbtn" data-act="pr-new-private">+ Nueva</button></div>
+    ${PR.mine===null ? `<div class="empty"><b>Cargando…</b></div>` : act.length ? act.map(r=>`<div class="pd-row"><div style="min-width:0"><b>${esc(r.body)}</b><small class="muted">${esc(prWhere(r))} · desde ${new Date(r.created_at).toLocaleDateString("es-CO",{day:"numeric",month:"short"})}${r.verse_id&&verse(r.verse_id)?` · ${esc(verse(r.verse_id).ref)}`:""}${r.scope!=="private"&&+r.pray?` · 🙏 ${r.pray}`:""}</small></div><div class="row" style="gap:6px;flex-wrap:nowrap">${r.scope==="private"?`<button class="btn ghost" style="padding:5px 10px;font-size:13px" data-act="pr-share" data-id="${r.id}">Compartir</button>`:""}<button class="btn" style="padding:5px 10px;font-size:13px" data-act="pr-answer" data-id="${r.id}">✓ Respondida</button><button class="icon-btn" data-act="pr-menu" data-id="${r.id}" aria-label="Más">⋯</button></div></div>`).join("") : `<div class="empty" style="padding:18px"><span>Cuando pidas oración (privada o compartida), aparecerá aquí.</span></div>`}</section>
+  <section class="pd-sec"><div class="spread"><h3>✨ Dios respondió</h3><span class="muted" style="font-size:13px">${ans.length} ${ans.length===1?"respondida":"respondidas"}</span></div>
+    ${ans.length ? `<div class="ans-strip">${ans.map(r=>`<button class="ans-card" data-act="pr-detail" data-id="${r.id}"><span class="ans-ico">✨</span><b>${esc(r.body.length>60?r.body.slice(0,60)+"…":r.body)}</b>${r.answer?`<span class="ans-note">${esc(r.answer)}</span>`:""}<small>${timeAgo(r.answered_at)} · ${days(r)} ${days(r)===1?"día":"días"} orando</small><small>${r.scope==="private"?"🔒 Privada":`🙏 ${r.pray} oraron`}</small></button>`).join("")}</div>` : `<div class="empty" style="padding:18px"><span>Cuando Dios responda una petición, márcala como respondida y quedará aquí como testimonio.</span></div>`}</section>`;
+}
+const prFind = id => (PR.feed||[]).find(x=>x.id===id) || (PR.mine||[]).find(x=>x.id===id);
+async function prReact(id, kind){
+  const r = prFind(id); if(!r) return;
+  r.my = r.my || []; const on = !r.my.includes(kind);
+  r.my = on ? r.my.concat(kind) : r.my.filter(k=>k!==kind); r[kind] = Math.max(0, (+r[kind]||0) + (on?1:-1)); render();
+  try{ await API.rpc("prayer_react", { p_id:id, p_kind:kind }); if(on && kind==="pray") toast("Gracias. Le avisaremos que estás orando."); }
+  catch(e){ r.my = on ? r.my.filter(k=>k!==kind) : r.my.concat(kind); r[kind] = Math.max(0, (+r[kind]||0) + (on?-1:1)); render(); toast(prError(e)); }
+}
+async function prComment(id, body, after){
+  body = String(body||"").trim(); if(!body) return;
+  try{ await API.rpc("prayer_comment", { p_id:id, p_body:body }); const r = prFind(id); if(r){ r.comments = (+r.comments||0)+1; if(!r.first_comment) r.first_comment = { name: displayName(), body }; } toast("Comentario enviado."); if(after) after(); else render(); }
+  catch(e){ toast(prError(e)); }
+}
+async function prCommentsModal(id){
+  let d; try{ d = await API.rpc("prayer_detail", { p_id:id }); }catch(e){ toast(prError(e)); return; }
+  const list = d.comment_list || [];
+  modal(`<div class="spread"><h2 style="font-size:22px">Comentarios</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0;font-size:14px">${esc(d.body.length>120?d.body.slice(0,120)+"…":d.body)}</p>
+    <div class="pr-cmlist">${list.length ? list.map(c=>`<div class="pr-cmrow">${avatarHTML(c.name, colorFor(c.user_id), (COMM.profiles[c.user_id]||{}).avatar_url, 30)}<div style="min-width:0"><b>${esc(c.name)}</b> <span>${esc(c.body)}</span><small class="muted">${timeAgo(c.created_at)}</small></div>${c.mine||d.mine||d.can_remove?`<button class="icon-btn" data-cdel="${c.id}" aria-label="Borrar comentario">${I.trash}</button>`:""}</div>`).join("") : `<p class="muted" style="margin:0">Aún no hay comentarios. Escribe una palabra de ánimo.</p>`}</div>
+    ${d.mine ? "" : `<div class="pr-quick">${PR_QUICK.map((t,i)=>`<button data-q="${i}">${esc(t)}</button>`).join("")}</div>`}
+    <div class="row" style="gap:8px;flex-wrap:nowrap"><input class="input" id="prCm" maxlength="300" placeholder="Escribe un comentario de ánimo…"><button class="btn primary" id="prCmGo">Enviar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const reopen = ()=>{ closeModal(); prCommentsModal(id); render(); };
+    sc.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>prComment(id, PR_QUICK[+b.dataset.q], reopen));
+    sc.querySelector("#prCmGo").onclick = ()=>prComment(id, sc.querySelector("#prCm").value, reopen);
+    sc.querySelector("#prCm").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); prComment(id, e.target.value, reopen); } });
+    sc.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=async()=>{ try{ await API.rpc("prayer_comment_delete", { p_comment:+b.dataset.cdel }); const r = prFind(id); if(r) r.comments = Math.max(0,(+r.comments||0)-1); reopen(); }catch(e){ toast(prError(e)); } });
+  });
+}
+async function prDetailModal(id){
+  let d; try{ d = await API.rpc("prayer_detail", { p_id:id }); }catch(e){ toast(prError(e)); return; }
+  const fmt = x => new Date(x).toLocaleDateString("es-CO", { day:"numeric", month:"long", year:"numeric" });
+  const days = d.answered_at ? Math.max(1, Math.round((new Date(d.answered_at) - new Date(d.created_at))/DAY)) : 0;
+  const prayed = d.prayed || [], cms = d.comment_list || [];
+  modal(`<div class="spread"><h2 style="font-size:21px">${d.answered_at?"✨ Dios respondió":"Petición"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p style="margin:0;font-size:16px;line-height:1.5">${esc(d.body)}</p>
+    ${d.answered_at ? `<div class="ans-tl"><div><i></i><b>Pedida</b><small>${fmt(d.created_at)}</small></div><div class="ln"><span>${days} ${days===1?"día":"días"} orando</span></div><div><i class="ok"></i><b>Dios respondió</b><small>${fmt(d.answered_at)}</small></div></div>
+      ${d.answer?`<div class="pr-answer"><b>Testimonio</b><span>${esc(d.answer)}</span></div>`:""}` : `<p class="muted" style="margin:0;font-size:13.5px">Pedida el ${fmt(d.created_at)}</p>`}
+    ${d.scope==="private" ? `<p class="muted" style="margin:0;font-size:13.5px">🔒 Solo en tu diario: no la compartiste.</p>` : `
+      <p class="muted" style="margin:0;font-size:13.5px">Compartida con ${esc(prWhere(d))}${d.anon?" · sin nombre":""}</p>
+      <div class="ans-who"><b>🙏 ${prayed.length} ${prayed.length===1?"persona oró":"personas oraron"} por esto</b>${prayed.length?`<div class="ans-av">${prayed.map(x=>`<span>${avatarHTML(x.name, colorFor(x.user_id), x.avatar, 34)}<small>${esc(String(x.name).split(" ")[0])}</small></span>`).join("")}</div>`:""}</div>
+      <div class="row" style="gap:8px"><span class="chip none">🙌 ${d.amen} amén</span><span class="chip none">❤️ ${d.heart}</span><span class="chip none">💬 ${cms.length} ${cms.length===1?"comentario":"comentarios"}</span></div>
+      ${cms.length?`<div class="pr-cm">${cms.map(c=>`<div><b>${esc(c.name)}</b> ${esc(c.body)}</div>`).join("")}</div>`:""}`}
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" data-close>Listo</button></div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
+}
+function prSegHTML(id, opts, sel){ return `<div class="seg" id="${id}">${opts.map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${v===sel}">${l}</button>`).join("")}</div>`; }
+function prSeg(sc, id, cb){ sc.querySelectorAll(`#${id} [data-v]`).forEach(b=>b.onclick=()=>{ sc.querySelectorAll(`#${id} [data-v]`).forEach(x=>x.setAttribute("aria-pressed", x===b)); cb(b.dataset.v); }); }
+function prayerNewModal(forceScope){
+  const groups = PR.groups || [];
+  const scopes = [["private","🔒 Solo yo (mi diario)"], ["friends","👥 Amigos"]].concat(groups.map(g=>["g:"+g.id, g.name]));
+  let where = forceScope || (PR.filter && prGroup(PR.filter) ? "g:"+PR.filter : groups[0] ? "g:"+groups[0].id : "friends"), cat = "fe", bg = 0, days = 7, vid = "";
+  const needConsent = !S.prayConsent;
+  modal(`<div class="spread"><h2 style="font-size:22px">Pedir oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label for="prTxt">¿Por qué quieres que oremos?</label><textarea class="textarea" id="prTxt" maxlength="500" placeholder="Escribe tu petición…" style="min-height:110px;font-size:15px"></textarea>
+      <small class="muted">Consejo: evita nombres completos o detalles privados de otras personas.</small></div>
+    <div class="field"><label>¿Quién la ve?</label>${prSegHTML("prWho", scopes, where)}</div>
+    <label class="check" id="prAnonL"><input type="checkbox" id="prAnon"> Publicar sin mi nombre</label>
+    <div class="field" id="prBgF"><label>Fondo de color (para peticiones cortas)</label><div class="row" style="gap:8px">${PR_BGS.map((g,i)=>`<button type="button" class="pr-swatch${i===0?" on":""}" data-bg="${i}" style="background:${g||"var(--surface-2)"}" aria-label="${i?"Fondo "+i:"Sin fondo"}">${i?"":"Aa"}</button>`).join("")}</div></div>
+    <div class="field"><label>Tema</label>${prSegHTML("prCat", Object.entries(PR_CATS).map(([k,[l]])=>[k,l]), cat)}</div>
+    <div class="field" id="prDaysF"><label>¿Por cuánto tiempo se muestra?</label>${prSegHTML("prDays", [["7","7 días"],["30","30 días"],["0","Hasta que la cierre"]], "7")}</div>
+    <div class="field"><label for="prV">Versículo (opcional)</label><input class="input" id="prV" placeholder="Busca: paz, Filipenses 4…" autocomplete="off"><div id="prVres" class="pr-vres"></div></div>
+    ${needConsent?`<label class="check" style="align-items:flex-start;font-size:13px;line-height:1.4"><input type="checkbox" id="prOk" style="margin-top:2px;flex:none"><span>Autorizo que ${APP_NAME} guarde mis peticiones de oración, que pueden incluir datos sensibles, y que las muestre solo a quienes yo elija. Puedo borrarlas cuando quiera. <button type="button" class="linkbtn" data-act="privacy" style="padding:0;display:inline;font-size:inherit">Política de privacidad</button></span></label>`:""}
+    <p id="prErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="prGo">Publicar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const sync = ()=>{ const priv = where==="private"; sc.querySelector("#prAnonL").hidden = !where.startsWith("g:"); sc.querySelector("#prBgF").hidden = priv; sc.querySelector("#prDaysF").hidden = priv; };
+    prSeg(sc, "prWho", v=>{ where = v; sync(); }); prSeg(sc, "prCat", v=>cat = v); prSeg(sc, "prDays", v=>days = +v); sync();
+    sc.querySelectorAll("[data-bg]").forEach(b=>b.onclick=()=>{ bg = +b.dataset.bg; sc.querySelectorAll("[data-bg]").forEach(x=>x.classList.toggle("on", x===b)); });
+    const vi = sc.querySelector("#prV"), vr = sc.querySelector("#prVres");
+    vi.addEventListener("input", ()=>{ vid = ""; const q = vi.value.trim(); vr.innerHTML = q.length < 2 ? "" : verseSearch(q).slice(0,5).map(v=>`<button type="button" data-vid="${v.id}"><b>${esc(v.ref)}</b> ${esc(v.text.slice(0,60))}…</button>`).join(""); vr.querySelectorAll("[data-vid]").forEach(b=>b.onclick=()=>{ vid = b.dataset.vid; vi.value = verse(vid).ref; vr.innerHTML = ""; }); });
+    sc.querySelector("#prGo").onclick = async ()=>{
+      const body = sc.querySelector("#prTxt").value.trim(), err = sc.querySelector("#prErr"), btn = sc.querySelector("#prGo");
+      if(body.length < 3){ err.textContent = "Escribe tu petición."; return; }
+      if(needConsent && !sc.querySelector("#prOk").checked){ err.textContent = "Para publicar, marca la autorización."; return; }
+      const scope = where==="private" ? "private" : where==="friends" ? "friends" : "group", group = scope==="group" ? where.slice(2) : null;
+      btn.disabled = true; btn.textContent = "Publicando…";
+      try{
+        await API.rpc("prayer_post", { p_body:body, p_scope:scope, p_group:group, p_anon: scope==="group" && sc.querySelector("#prAnon").checked, p_cat:cat, p_bg: scope==="private" || !bg || body.length>140 ? null : bg, p_verse: vid || null, p_days: scope==="private" ? 0 : days });
+        if(needConsent){ S.prayConsent = Date.now(); persist(); }
+        closeModal(); toast(scope==="private" ? "Guardada en tu diario." : "Tu petición se publicó. ¡Vamos a orar!");
+        if(scope==="private") PR.tab = "diario"; PR.feed = null; PR.mine = null; prLoad("mine"); prLoad("feed"); render();
+      }catch(e){ btn.disabled = false; btn.textContent = "Publicar"; err.textContent = prError(e); }
+    };
+    setTimeout(()=>{ const t = sc.querySelector("#prTxt"); if(t) t.focus(); }, 50);
+  });
+}
+function prMenu(id){
+  const r = prFind(id); if(!r) return;
+  const opts = [];
+  if(r.mine && !r.answered_at) opts.push(["answer","✓ Dios respondió"]);
+  if(r.mine && r.scope==="private") opts.push(["share","Compartir con amigos o un grupo"]);
+  if(r.mine || r.can_remove) opts.push(["delete", r.mine ? "Eliminar petición" : "Quitar del grupo (administrador)"]);
+  if(!r.mine) opts.push(["report","Reportar"]);
+  modal(`<div class="spread"><h2 style="font-size:20px">Opciones</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="pick-list">${opts.map(([k,l])=>`<button type="button" data-o="${k}"${k==="delete"||k==="report"?` style="color:var(--bad)"`:""}><b>${l}</b></button>`).join("")}</div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelectorAll("[data-o]").forEach(b=>b.onclick=async()=>{
+      const k = b.dataset.o; closeModal();
+      if(k==="answer") return prAnswerModal(id);
+      if(k==="share") return prShareModal(id);
+      if(k==="delete"){ if(!confirmInline(r.mine ? "¿Eliminar esta petición? No se puede deshacer." : "¿Quitar esta petición del grupo?")) return; try{ await API.rpc("prayer_delete", { p_id:id }); toast("Listo."); PR.feed = null; PR.mine = null; prLoad("feed"); prLoad("mine"); }catch(e){ toast(prError(e)); } }
+      if(k==="report"){ try{ await API.rpc("prayer_report", { p_id:id, p_reason:"" }); toast("Gracias. La revisará el administrador."); }catch(e){ toast(prError(e)); } }
+    });
+  });
+}
+function confirmInline(msg){ try{ return window.confirm(msg); }catch(e){ return true; } }
+function prAnswerModal(id){
+  modal(`<div class="spread"><h2 style="font-size:22px">✨ Dios respondió</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label for="prAns">Cuenta lo que pasó (opcional)</label><textarea class="textarea" id="prAns" maxlength="500" placeholder="Tu testimonio anima a otros…" style="min-height:100px;font-size:15px"></textarea></div>
+    <p class="muted" style="margin:0;font-size:13px">Si la compartiste, avisaremos a quienes oraron por ella.</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="prAnsGo">Guardar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelector("#prAnsGo").onclick = async ()=>{ try{ await API.rpc("prayer_answer", { p_id:id, p_text: sc.querySelector("#prAns").value }); closeModal(); toast("¡Gloria a Dios! Quedó en tu diario."); PR.feed = null; PR.mine = null; prLoad("mine"); prLoad("feed"); }catch(e){ toast(prError(e)); } };
+  });
+}
+function prShareModal(id){
+  const groups = PR.groups || []; let where = groups[0] ? "g:"+groups[0].id : "friends";
+  modal(`<div class="spread"><h2 style="font-size:22px">Compartir petición</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label>¿Con quién?</label>${prSegHTML("prSh", [["friends","👥 Amigos"]].concat(groups.map(g=>["g:"+g.id, g.name])), where)}</div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="prShGo">Compartir</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); prSeg(sc, "prSh", v=>where = v);
+    sc.querySelector("#prShGo").onclick = async ()=>{ const scope = where==="friends" ? "friends" : "group"; try{ await API.rpc("prayer_share", { p_id:id, p_scope:scope, p_group: scope==="group" ? where.slice(2) : null }); closeModal(); toast("Compartida."); PR.feed = null; PR.mine = null; prLoad("mine"); prLoad("feed"); }catch(e){ toast(prError(e)); } };
+  });
+}
+function prGroupNewModal(){
+  modal(`<div class="spread"><h2 style="font-size:22px">Grupos de oración</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label for="pgName">Crear un grupo</label><input class="input" id="pgName" maxlength="40" placeholder="Ej. Célula jóvenes, Familia, Iglesia…"></div><button class="btn primary" id="pgNew">Crear grupo</button>
+    <div class="field" style="margin-top:10px"><label for="pgCode">Unirme con un código</label><input class="input" id="pgCode" maxlength="12" placeholder="NER-XXXX" style="text-transform:uppercase"></div><button class="btn" id="pgJoin">Unirme</button>
+    <p id="pgErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const err = sc.querySelector("#pgErr");
+    sc.querySelector("#pgNew").onclick = async ()=>{ const n = sc.querySelector("#pgName").value.trim(); if(n.length < 2){ err.textContent = "Escribe el nombre del grupo."; return; }
+      try{ const g = await API.rpc("prayer_group_create", { p_name:n }); closeModal(); PR.groups = (PR.groups||[]).concat(g); PR.filter = g.id; PR.feed = null; PR.tab = "comunidad"; render(); prInviteModal(g.id, true); }catch(e){ err.textContent = prError(e); } };
+    sc.querySelector("#pgJoin").onclick = async ()=>{ const c = sc.querySelector("#pgCode").value.trim(); if(c.length < 4){ err.textContent = "Escribe el código."; return; } await prJoin(c, err); };
+  });
+}
+async function prJoin(code, errEl){
+  try{ const g = await API.rpc("prayer_group_join", { p_code:code }); closeModal(); PR.groups = null; PR.filter = g.id; PR.feed = null; PR.tab = "comunidad"; go("oracion"); prLoad("groups"); toast(`Te uniste a “${g.name}”.`); }
+  catch(e){ if(errEl) errEl.textContent = prError(e); else toast(prError(e)); }
+}
+function prInviteModal(gid, fresh){
+  const g = prGroup(gid); if(!g) return; const link = appLink("grupo", g.code);
+  modal(`<div class="spread"><h2 style="font-size:22px">${fresh?"¡Grupo creado!":"Invita a tus hermanos"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0">Comparte el enlace o el código de <b>${esc(g.name)}</b>. Solo los miembros ven sus peticiones.</p>
+    <div class="row" style="gap:8px"><span class="chip acc mono" style="font-size:17px;padding:8px 14px">${esc(g.code)}</span></div>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn" data-act="copy-link" data-link="${esc(link)}">Copiar enlace</button><button class="btn primary" id="pgShare">${I.share} Compartir</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelector("#pgShare").onclick = async ()=>{ const text = `Únete a “${g.name}” en ${APP_NAME} para orar juntos: ${link} (código ${g.code})`;
+      if(navigator.share){ try{ await navigator.share({ text }); return; }catch(e){ if(e && e.name==="AbortError") return; } }
+      try{ await navigator.clipboard.writeText(text); toast("Enlace copiado."); }catch(e){ toast("Copia este enlace: " + link); } };
+  });
+}
+async function prGroupModal(gid){
+  const g = prGroup(gid); if(!g) return;
+  let members = [], reported = [];
+  try{ members = await API.rpc("prayer_group_members", { p_group:gid }); if(g.role==="admin") reported = await API.rpc("prayer_group_reported", { p_group:gid }); }catch(e){}
+  modal(`<div class="spread"><h2 style="font-size:22px">${esc(g.name)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0">${g.members} ${+g.members===1?"miembro":"miembros"}${g.role==="admin"?" · Eres administrador":""} · Código <b class="mono">${esc(g.code)}</b></p>
+    ${reported.length?`<div class="pd-sec"><b>⚠️ Peticiones reportadas</b>${reported.map(r=>`<div class="pd-row"><div style="min-width:0"><b>${esc(r.body)}</b><small class="muted">${r.reports} reportes</small></div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn" style="padding:5px 10px;font-size:13px" data-unhide="${r.id}">Mostrar</button><button class="btn ghost" style="padding:5px 10px;font-size:13px;color:var(--bad)" data-del="${r.id}">Quitar</button></div></div>`).join("")}</div>`:""}
+    <div class="vlist" style="max-height:40vh;overflow:auto">${members.map(m=>`<div class="drow">${avatarHTML(m.name, colorFor(m.user_id), m.avatar, 36)}<div style="min-width:0"><b>${esc(m.name)}</b>${m.role==="admin"?` <span class="chip none">Admin</span>`:""}</div><div>${g.role==="admin" && m.user_id!==ME.id ? `<button class="btn ghost" style="padding:4px 10px;font-size:12.5px" data-rm="${m.user_id}">Quitar</button>` : ""}</div></div>`).join("")}</div>
+    <div class="row" style="justify-content:space-between"><button class="btn ghost" id="pgLeave" style="color:var(--bad)">Salir del grupo</button><button class="btn primary" data-close>Listo</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const again = ()=>{ closeModal(); PR.groups = null; PR.feed = null; prLoad("groups"); prLoad("feed"); };
+    sc.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{ if(!confirmInline("¿Quitar a esta persona del grupo?")) return; try{ await API.rpc("prayer_group_remove", { p_group:gid, p_user:b.dataset.rm }); again(); }catch(e){ toast(prError(e)); } });
+    sc.querySelectorAll("[data-unhide]").forEach(b=>b.onclick=async()=>{ try{ await API.rpc("prayer_unhide", { p_id:b.dataset.unhide }); again(); }catch(e){ toast(prError(e)); } });
+    sc.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{ try{ await API.rpc("prayer_delete", { p_id:b.dataset.del }); again(); }catch(e){ toast(prError(e)); } });
+    sc.querySelector("#pgLeave").onclick = async ()=>{ if(!confirmInline(`¿Salir de “${g.name}”?`)) return; try{ await API.rpc("prayer_group_leave", { p_group:gid }); PR.filter = "todo"; again(); toast("Saliste del grupo."); }catch(e){ toast(prError(e)); } };
+  });
+}
+function pdAddModal(si){
+  const sec = prayerList()[si]; if(!sec) return;
+  modal(`<div class="spread"><h2 style="font-size:22px">${sec.e} ${esc(sec.n)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="field"><label for="pdIt">¿Por quién o por qué quieres orar?</label><input class="input" id="pdIt" maxlength="40" placeholder="Ej. Mamá, Pastor Luis, paz en el país…"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="pdGo">Agregar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const add = ()=>{ const v = sc.querySelector("#pdIt").value.trim(); if(!v) return; sec.items.push(v); persist(); closeModal(); render(); };
+    sc.querySelector("#pdGo").onclick = add; sc.querySelector("#pdIt").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } });
+    setTimeout(()=>sc.querySelector("#pdIt").focus(), 50);
+  });
+}
+// Orar ahora: guía del Padre Nuestro; en "El pan nuestro de cada día" recorre la lista y las peticiones activas
+function prSteps(){
+  const st = [], act = (PR.mine||[]).filter(r=>!r.answered_at).map(r=>r.body.length>70 ? r.body.slice(0,70)+"…" : r.body);
+  PADRE.forEach(([n,q,g],i)=>{
+    st.push({ k:n, i, q, g });
+    if(i===2){ prayerList().filter(s=>s.items.length).forEach(s=>st.push({ k:n, i, sub:`${s.e} ${s.n}`, items:s.items })); if(act.length) st.push({ k:n, i, sub:"Peticiones activas", items:act }); }
+  });
+  return st;
+}
+function renderPrayNow(){
+  const steps = prSteps(); let el = $("#praynow");
+  if(!el){ el = document.createElement("div"); el.id = "praynow"; el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); document.body.appendChild(el); document.body.style.overflow = "hidden"; }
+  if(PR.now >= steps.length){ el.innerHTML = `<div class="pn-in"><div style="font-size:54px">🙏</div><h2>Amén</h2><p class="muted">Terminaste tu tiempo de oración de hoy.</p><button class="btn primary lg" data-act="pr-now-close">Terminar</button></div>`; return; }
+  const s = steps[PR.now];
+  el.innerHTML = `<button class="icon-btn pn-x" data-act="pr-now-close" aria-label="Cerrar">${I.x}</button><div class="pn-in">
+    <span class="eyebrow">Guía del Padre Nuestro · ${s.i+1} de ${PADRE.length}</span>
+    <div class="pn-dots">${PADRE.map((_,i)=>`<i class="${i<s.i?"done":i===s.i?"on":""}"></i>`).join("")}</div>
+    ${s.items?`<h2 style="font-size:26px">${esc(s.sub)}</h2><div class="pn-items">${s.items.map(x=>`<span>${esc(x)}</span>`).join("")}</div><p class="muted" style="font-size:13.5px">Ora por cada uno con calma.</p>`
+      :`<p class="pn-quote">“${esc(s.q)}”</p><span class="muted" style="font-size:13px">Mateo 6:${9+s.i} · RVR1960</span><h2 style="font-size:22px;margin-top:6px">${esc(s.k)}</h2><p class="pn-text">${esc(s.g)}</p>`}
+    <div class="row" style="justify-content:center;gap:8px">${PR.now>0?`<button class="btn ghost" data-act="pr-now-back">Atrás</button>`:""}<button class="btn primary lg" data-act="pr-now-next">Siguiente</button></div>
+    ${s.i===2 && !s.items && !prayerList().some(x=>x.items.length) ? `<p class="muted" style="font-size:13px">Consejo: agrega nombres en “Por quiénes oro” y aparecerán aquí.</p>` : ""}</div>`;
 }
 
 function verseRow(id, i, list){
@@ -2968,7 +3380,7 @@ function viewTopic(id){
    COMUNIDAD: perfil visible, compañero de racha y esgrima
    ========================================================= */
 const COMM = { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, loaded:false, loading:false, err:"" };
-let PENDING_LINK = (()=>{ try{ const q=new URLSearchParams(location.search); const d=q.get("duelo"), a=q.get("amigo"); return d?{type:"duel",code:d}:a?{type:"friend",code:a}:null; }catch(e){ return null; } })();
+let PENDING_LINK = (()=>{ try{ const q=new URLSearchParams(location.search); const d=q.get("duelo"), a=q.get("amigo"), g=q.get("grupo"); return d?{type:"duel",code:d}:a?{type:"friend",code:a}:g?{type:"group",code:g}:null; }catch(e){ return null; } })();
 function cloudOn(){ return !!(SB && ME && ME.mode==="cloud"); }
 function shortCode(n=6){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; const r=crypto.getRandomValues(new Uint32Array(n)); let s=""; for(const x of r) s+=a[x%a.length]; return s; }
 function appLink(param, code){ return location.origin + location.pathname + "?" + param + "=" + encodeURIComponent(code); }
@@ -3315,7 +3727,7 @@ function startNotifs(){
   NOTIF.timer = setInterval(()=>{ if(document.visibilityState==="visible") loadNotifs(); }, 60000);
 }
 function stopNotifs(){ if(NOTIF.timer) clearInterval(NOTIF.timer); NOTIF.timer = null; }
-document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && cloudOn()){ loadNotifs(); if(VIEW.name==="community") reloadCommunity(); } });
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && cloudOn()){ loadNotifs(); if(VIEW.name==="community") reloadCommunity(); if(VIEW.name==="oracion"){ prLoad("feed"); prLoad("groups"); } } });
 const REMINDER_DEFAULT_SINCE = "2026-10-20T22:00:00Z";   // las cuentas creadas desde aquí tienen el recordatorio diario activado (7 p. m.)
 async function loadPrefs(){
   let missing = false;
@@ -3413,7 +3825,7 @@ function notifPrefsPanel(){
 }
 
 /* ----- Lista de avisos ----- */
-const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", streak_mine:"flame", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
+const NOTIF_ICON = { friend_request:"users", friend_accepted:"users", streak_invite:"flame", streak_accepted:"flame", streak_risk:"flame", streak_mine:"flame", prayer_pray:"pray", prayer_comment:"pray", prayer_answered:"pray", duel_challenge:"play", duel_result:"play", cheer:"heart", reminder:"bell", shield:"flame" };
 function timeAgo(iso){
   const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime())/1000));
   if(s < 60) return "ahora"; const m = Math.round(s/60); if(m < 60) return `hace ${m} min`;
@@ -3442,6 +3854,8 @@ function notifActions(n){
     case "duel_challenge": case "duel_result":
       if(duel && myDuelTurn(duel)) return btn("duel-play","Jugar",duel.id,true);
       return duel ? btn("duel-view","Ver resultado",duel.id) : "";
+    case "prayer_pray": case "prayer_comment": case "prayer_answered":
+      return btn("open-oracion", n.type==="prayer_answered" ? "Ver testimonio" : "Ver petición", (n.data && n.data.prayer) || "", true);
     case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
     case "cheer": {
       const vid = n.data && n.data.verse && SUG_MAP[n.data.verse] ? n.data.verse : null;
@@ -4166,6 +4580,7 @@ async function handlePendingLink(){
   const { type, code } = PENDING_LINK; PENDING_LINK = null;
   try{ history.replaceState(null, "", location.pathname); }catch(e){}
   try{
+    if(type==="group"){ await prJoin(code); return; }
     if(type==="duel"){
       const id = await API.joinDuel(code);
       if(!id){ toast("Ese reto ya no está disponible."); return; }
@@ -4851,7 +5266,7 @@ async function signOut(){
   if(ME && ME.mode==="cloud" && SB){ try{ await cloudFlush(); }catch(e){} await detachPushOnSignOut(); try{ await SB.auth.signOut(); }catch(e){} }
   localSignOut();
 }
-function localSignOut(){ stopNotifs(); Object.assign(TEAM, { on:false, items:[], loaded:false, err:"", filter:"pend", q:"" }); BADGE_QUEUE = []; Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
+function localSignOut(){ stopNotifs(); Object.assign(PR, { tab:"comunidad", filter:"todo", feed:null, mine:null, groups:null, err:"" }); Object.assign(TEAM, { on:false, items:[], loaded:false, err:"", filter:"pend", q:"" }); BADGE_QUEUE = []; Object.assign(NOTIF, { items:[], seen:new Set(), loaded:false, prefs:null, push:"unknown", err:"" }); Object.assign(COMM, { profile:null, friends:[], days:{}, counts:{}, duels:[], profiles:{}, search:null, searchQ:"", loaded:false, err:"" }); LS.set("lampara.session", null); ME=null; S=null; SESSION=null; PLACE=null; WEL={ step:"login", goal:10, err:"" }; applyTheme(null); VIEW={name:"home"}; render(); }
 async function deleteAccount(){
   if(ME.mode==="cloud" && SB){
     await API.removeAvatar();
@@ -4874,7 +5289,7 @@ function enterApp(){ if(needsPlacement()) startPlacement(); else go("home"); }
 /* ---------- Política de privacidad ---------- */
 const PRIV = { responsable:"Juliana Alarcón Montaña", ciudad:"Bogotá", correo:"lampara.bible@gmail.com" };   // datos del responsable (Ley 1581)
 const PRIV_READY = !!(PRIV.responsable && PRIV.correo);
-const PRIVACY_TEMPLATE = "<article class=\"policy\">\n  <span class=\"eyebrow\">\u00daltima actualizaci\u00f3n: 9 de octubre de 2026</span>\n  <h1>Pol\u00edtica de privacidad</h1>\n  <p>Esta pol\u00edtica explica qu\u00e9 datos personales recoge <b>L\u00e1mpara B\u00edblica</b>, para qu\u00e9 los usa y c\u00f3mo puedes ejercer tus derechos, seg\u00fan la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.</p>\n\n  <h2>1. Responsable del tratamiento</h2>\n  <p><b>{{RESPONSABLE}}</b>, persona natural responsable del proyecto L\u00e1mpara B\u00edblica, en {{CIUDAD}}, Colombia.<br>Correo de contacto: <b>{{CORREO}}</b></p>\n\n  <h2>2. Datos que recogemos</h2>\n  <ul>\n    <li><b>Datos de tu cuenta:</b> nombre y correo electr\u00f3nico. Tu contrase\u00f1a se guarda cifrada; nadie del equipo puede verla.</li>\n    <li><b>Tu progreso:</b> vers\u00edculos que practicas, resultados de tus respuestas, racha, listas, vers\u00edculos que agregas, avance en libros de la Biblia y tus preferencias (duraci\u00f3n de la sesi\u00f3n, tema, tipo de pr\u00e1ctica).</li>\n    <li><b>Comentarios que nos env\u00edas:</b> el mensaje, el tipo de comentario, la parte de la app donde estabas y tu nombre y correo, para poder responderte.</li>\n    <li><b>Recitaci\u00f3n con micr\u00f3fono:</b> cuando usas esta opci\u00f3n, el reconocimiento de voz lo hace el servicio de tu navegador o tel\u00e9fono (por ejemplo, Google en Chrome). L\u00e1mpara B\u00edblica recibe solo el texto reconocido para calificar tu respuesta y no guarda grabaciones de tu voz.</li>\n      <li><b>Comunidad (si la usas):</b> tu nombre visible, foto de perfil y @usuario; tus amigos y solicitudes de amistad; los d\u00edas en que practicas, tu racha, tus logros y los resultados de los retos de esgrima; los mensajes, vers\u00edculos y escudos de racha que env\u00edas o recibes.</li>\n    <li><b>Avisos:</b> si activas los avisos en el celular, guardamos el identificador t\u00e9cnico que entrega tu navegador para poder envi\u00e1rtelos, y tus preferencias de avisos y hora del recordatorio.</li>\n</ul>\n  <p>No recogemos tu ubicaci\u00f3n, tus contactos ni datos de pago, y no mostramos publicidad.</p>\n\n  <h2>3. Para qu\u00e9 usamos tus datos</h2>\n  <ul>\n    <li>Crear tu cuenta y permitirte entrar desde cualquier dispositivo.</li>\n    <li>Guardar y sincronizar tu progreso.</li>\n    <li>Mostrar tu perfil, racha y logros solo a tus amigos, a quienes te env\u00edan o reciben una solicitud y a tus rivales de esgrima; tu lista de amigos la ven solo tus amigos. Tu correo nunca se muestra a otras personas.</li>\n    <li>Enviarte los avisos que elijas (solicitudes, retos, rachas, \u00e1nimos y recordatorio diario). Puedes desactivarlos en Perfil.</li>\n    <li>Enviarte correos necesarios para tu cuenta, como el enlace para restablecer tu contrase\u00f1a.</li>\n    <li>Mejorar la app con estad\u00edsticas generales de uso que no te identifican.</li>\n  </ul>\n  <p>No vendemos, alquilamos ni compartimos tus datos con terceros para fines comerciales o publicitarios.</p>\n\n  <h2>4. D\u00f3nde se guardan</h2>\n  <p>Tus datos se guardan en <b>Supabase</b>, el servicio que usamos para las cuentas y la base de datos. Sus servidores pueden estar fuera de Colombia; al aceptar esta pol\u00edtica autorizas esa transferencia, con las medidas de seguridad descritas abajo. La app se publica a trav\u00e9s de <b>GitHub Pages</b>, que no recibe tus datos de cuenta.</p>\n\n  <h2>5. C\u00f3mo protegemos tus datos</h2>\n  <ul>\n    <li>Toda la informaci\u00f3n viaja cifrada (https).</li>\n    <li>Reglas en la base de datos permiten que cada persona modifique solo sus propios datos, y que su perfil y actividad solo los vean sus amigos y contactos de la app.</li>\n    <li>Las contrase\u00f1as se guardan cifradas.</li>\n  </ul>\n\n  <h2>6. Tus derechos</h2>\n  <p>Como titular de tus datos tienes derecho a:</p>\n  <ul>\n    <li>Conocer, actualizar y rectificar tus datos.</li>\n    <li>Solicitar prueba de la autorizaci\u00f3n que nos diste.</li>\n    <li>Ser informado sobre el uso que damos a tus datos.</li>\n    <li>Revocar la autorizaci\u00f3n y pedir que eliminemos tus datos.</li>\n    <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</li>\n  </ul>\n  <p><b>Eliminar tu cuenta:</b> puedes hacerlo en cualquier momento desde <b>Perfil \u2192 Eliminar cuenta</b>. Se borran tu cuenta y todo tu progreso de forma definitiva.</p>\n  <p><b>Consultas y reclamos:</b> escr\u00edbenos a <b>{{CORREO}}</b>. Respondemos las consultas en m\u00e1ximo 10 d\u00edas h\u00e1biles y los reclamos en m\u00e1ximo 15 d\u00edas h\u00e1biles, como lo indica la ley.</p>\n\n  <h2>7. Menores de edad</h2>\n  <p>La app est\u00e1 pensada para j\u00f3venes y adultos. Si eres menor de 18 a\u00f1os, \u00fasala con autorizaci\u00f3n de tu padre, madre o acudiente.</p>\n\n  <h2>8. Cambios a esta pol\u00edtica</h2>\n  <p>Si cambiamos esta pol\u00edtica, actualizaremos la fecha de arriba y te avisaremos dentro de la app cuando el cambio sea importante.</p>\n</article>\n";
+const PRIVACY_TEMPLATE = "<article class=\"policy\">\n  <span class=\"eyebrow\">\u00daltima actualizaci\u00f3n: 22 de octubre de 2026</span>\n  <h1>Pol\u00edtica de privacidad</h1>\n  <p>Esta pol\u00edtica explica qu\u00e9 datos personales recoge <b>L\u00e1mpara B\u00edblica</b>, para qu\u00e9 los usa y c\u00f3mo puedes ejercer tus derechos, seg\u00fan la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.</p>\n\n  <h2>1. Responsable del tratamiento</h2>\n  <p><b>{{RESPONSABLE}}</b>, persona natural responsable del proyecto L\u00e1mpara B\u00edblica, en {{CIUDAD}}, Colombia.<br>Correo de contacto: <b>{{CORREO}}</b></p>\n\n  <h2>2. Datos que recogemos</h2>\n  <ul>\n    <li><b>Datos de tu cuenta:</b> nombre y correo electr\u00f3nico. Tu contrase\u00f1a se guarda cifrada; nadie del equipo puede verla.</li>\n    <li><b>Tu progreso:</b> vers\u00edculos que practicas, resultados de tus respuestas, racha, listas, vers\u00edculos que agregas, avance en libros de la Biblia y tus preferencias (duraci\u00f3n de la sesi\u00f3n, tema, tipo de pr\u00e1ctica).</li>\n    <li><b>Comentarios que nos env\u00edas:</b> el mensaje, el tipo de comentario, la parte de la app donde estabas y tu nombre y correo, para poder responderte.</li>\n    <li><b>Recitaci\u00f3n con micr\u00f3fono:</b> cuando usas esta opci\u00f3n, el reconocimiento de voz lo hace el servicio de tu navegador o tel\u00e9fono (por ejemplo, Google en Chrome). L\u00e1mpara B\u00edblica recibe solo el texto reconocido para calificar tu respuesta y no guarda grabaciones de tu voz.</li>\n      <li><b>Comunidad (si la usas):</b> tu nombre visible, foto de perfil y @usuario; tus amigos y solicitudes de amistad; los d\u00edas en que practicas, tu racha, tus logros y los resultados de los retos de esgrima; los mensajes, vers\u00edculos y escudos de racha que env\u00edas o recibes.</li>\n    <li><b>Oraci\u00f3n (si la usas):</b> las peticiones de oraci\u00f3n que escribes, su tema, el vers\u00edculo que eliges, si fueron respondidas y tu testimonio; tu lista personal \"Por qui\u00e9nes oro\"; los grupos de oraci\u00f3n a los que perteneces; y las reacciones (\ud83d\ude4f \u2764\ufe0f \ud83d\ude4c), comentarios y reportes que haces. <b>Las peticiones pueden contener datos sensibles</b> (por ejemplo sobre salud, familia o tu fe); por eso solo las guardamos con tu autorizaci\u00f3n expresa y nunca son p\u00fablicas.</li>\n    <li><b>Avisos:</b> si activas los avisos en el celular, guardamos el identificador t\u00e9cnico que entrega tu navegador para poder envi\u00e1rtelos, y tus preferencias de avisos y hora del recordatorio.</li>\n</ul>\n  <p>No recogemos tu ubicaci\u00f3n, tus contactos ni datos de pago, y no mostramos publicidad.</p>\n\n  <h2>3. Para qu\u00e9 usamos tus datos</h2>\n  <ul>\n    <li>Crear tu cuenta y permitirte entrar desde cualquier dispositivo.</li>\n    <li>Guardar y sincronizar tu progreso.</li>\n    <li>Mostrar tu perfil, racha y logros solo a tus amigos, a quienes te env\u00edan o reciben una solicitud y a tus rivales de esgrima; tu lista de amigos la ven solo tus amigos. Tu correo nunca se muestra a otras personas.</li>\n    <li>Mostrar cada petici\u00f3n de oraci\u00f3n solo a quienes t\u00fa elijas: nadie (privada, en tu diario), tus amigos o los miembros de un grupo. Si la publicas sin tu nombre, el grupo no ve qui\u00e9n la escribi\u00f3. Nadie fuera de esos espacios puede verla.</li>\n    <li>Enviarte los avisos que elijas (solicitudes, retos, rachas, \u00e1nimos y recordatorio diario). Puedes desactivarlos en Perfil.</li>\n    <li>Enviarte correos necesarios para tu cuenta, como el enlace para restablecer tu contrase\u00f1a.</li>\n    <li>Mejorar la app con estad\u00edsticas generales de uso que no te identifican.</li>\n  </ul>\n  <p>No vendemos, alquilamos ni compartimos tus datos con terceros para fines comerciales o publicitarios.</p>\n\n  <h2>4. D\u00f3nde se guardan</h2>\n  <p>Tus datos se guardan en <b>Supabase</b>, el servicio que usamos para las cuentas y la base de datos. Sus servidores pueden estar fuera de Colombia; al aceptar esta pol\u00edtica autorizas esa transferencia, con las medidas de seguridad descritas abajo. La app se publica a trav\u00e9s de <b>GitHub Pages</b>, que no recibe tus datos de cuenta.</p>\n\n  <h2>5. C\u00f3mo protegemos tus datos</h2>\n  <ul>\n    <li>Toda la informaci\u00f3n viaja cifrada (https).</li>\n    <li>Reglas en la base de datos permiten que cada persona modifique solo sus propios datos, y que su perfil y actividad solo los vean sus amigos y contactos de la app.</li>\n    <li>Las contrase\u00f1as se guardan cifradas.</li>\n  </ul>\n\n  <h2>6. Tus derechos</h2>\n  <p>Como titular de tus datos tienes derecho a:</p>\n  <ul>\n    <li>Conocer, actualizar y rectificar tus datos.</li>\n    <li>Solicitar prueba de la autorizaci\u00f3n que nos diste.</li>\n    <li>Ser informado sobre el uso que damos a tus datos.</li>\n    <li>Revocar la autorizaci\u00f3n y pedir que eliminemos tus datos.</li>\n    <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</li>\n  </ul>\n  <p><b>Tus peticiones de oraci\u00f3n:</b> puedes borrar cualquiera en cualquier momento desde su men\u00fa (\u22ef), salir de un grupo cuando quieras, y quitar nombres de tu lista \"Por qui\u00e9nes oro\". Te recomendamos no escribir nombres completos ni detalles privados de otras personas.</p>\n  <p><b>Eliminar tu cuenta:</b> puedes hacerlo en cualquier momento desde <b>Perfil \u2192 Eliminar cuenta</b>. Se borran tu cuenta y todo tu progreso de forma definitiva.</p>\n  <p><b>Consultas y reclamos:</b> escr\u00edbenos a <b>{{CORREO}}</b>. Respondemos las consultas en m\u00e1ximo 10 d\u00edas h\u00e1biles y los reclamos en m\u00e1ximo 15 d\u00edas h\u00e1biles, como lo indica la ley.</p>\n\n  <h2>7. Menores de edad</h2>\n  <p>La app est\u00e1 pensada para j\u00f3venes y adultos. Si eres menor de 18 a\u00f1os, \u00fasala con autorizaci\u00f3n de tu padre, madre o acudiente.</p>\n\n  <h2>8. Cambios a esta pol\u00edtica</h2>\n  <p>Si cambiamos esta pol\u00edtica, actualizaremos la fecha de arriba y te avisaremos dentro de la app cuando el cambio sea importante.</p>\n</article>\n";
 function privacyHTML(){
   return PRIVACY_TEMPLATE.replace(/{{RESPONSABLE}}/g, esc(PRIV.responsable||"[pendiente]")).replace(/{{CIUDAD}}/g, esc(PRIV.ciudad||"[pendiente]")).replace(/{{CORREO}}/g, esc(PRIV.correo||"[pendiente]"));
 }
@@ -4946,6 +5361,27 @@ document.addEventListener("click", e=>{
     case "logout": signOut(); break;
     case "feedback": feedbackModal(); break;
     case "team-open": teamItemModal(t.dataset.id); break;
+    case "pr-filter": PR.filter = t.dataset.k; PR.feed = null; if(prGroup(PR.filter)){ API.rpc("prayer_group_seen", { p_group:PR.filter }).then(()=>{ const g = prGroup(PR.filter); if(g) g.new = false; }).catch(()=>{}); } render(); break;
+    case "pr-tab": PR.tab = t.dataset.k; render(); break;
+    case "pr-react": prReact(t.dataset.id, t.dataset.k); break;
+    case "pr-quick": prComment(t.dataset.id, PR_QUICK[+t.dataset.i]); break;
+    case "pr-comments": prCommentsModal(t.dataset.id); break;
+    case "pr-detail": prDetailModal(t.dataset.id); break;
+    case "pr-menu": prMenu(t.dataset.id); break;
+    case "pr-new": prayerNewModal(); break;
+    case "pr-new-private": prayerNewModal("private"); break;
+    case "pr-answer": prAnswerModal(t.dataset.id); break;
+    case "pr-share": prShareModal(t.dataset.id); break;
+    case "pr-group-new": prGroupNewModal(); break;
+    case "pr-group-open": prGroupModal(t.dataset.id); break;
+    case "pr-invite": prInviteModal(t.dataset.id); break;
+    case "pd-add": pdAddModal(+t.dataset.s); break;
+    case "pd-rm": { const sec = prayerList()[+t.dataset.s]; if(sec){ sec.items.splice(+t.dataset.i, 1); persist(); render(); } break; }
+    case "pr-now": PR.now = 0; renderPrayNow(); break;
+    case "pr-now-next": PR.now++; renderPrayNow(); break;
+    case "pr-now-back": PR.now = Math.max(0, PR.now-1); renderPrayNow(); break;
+    case "pr-now-close": { const x = $("#praynow"); if(x) x.remove(); document.body.style.overflow=""; break; }
+    case "open-oracion": { PR.tab = "comunidad"; PR.feed = null; go("oracion"); const pid = t.dataset.id; if(pid) setTimeout(()=>prDetailModal(pid), 300); break; }
     case "team-add": teamAddModal(); break;
     case "team-reload": loadTeam(); break;
     case "team-filter": TEAM.filter = t.dataset.k; render(); break;
@@ -5013,7 +5449,7 @@ document.addEventListener("click", e=>{
     case "wel-forgot": { const em=$("#liEmail"); WEL.prefillEmail = (em&&em.value.trim()) || WEL.sentTo || null; WEL.step="forgot"; WEL.err=""; render(); break; }
     case "wel-privacy": WEL.prevStep = WEL.step; WEL.step="privacy"; render(); window.scrollTo({top:0}); break;
     case "wel-back-from-privacy": WEL.step = WEL.prevStep || 0; render(); break;
-    case "privacy": go("privacy"); break;
+    case "privacy": closeModal(); go("privacy"); break;
     case "do-login": onLogin().catch(()=>formErr("No se pudo iniciar sesión. Inténtalo de nuevo.")); break;
     case "delete-account": confirmBox("¿Eliminar tu cuenta?", `Se borrarán la cuenta de ${ME.email} y todo su progreso, racha y listas${ME.mode==="cloud"?", también en la nube":""}. No se puede deshacer.`, "Eliminar definitivamente", deleteAccount); break;
     case "pref": { const k=t.dataset.k; let v=t.dataset.v; if(k==="minutes"){ v=+v; S.prefs.size=versesFor(v); }
