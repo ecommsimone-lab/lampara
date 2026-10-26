@@ -393,6 +393,19 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.tablero-btn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border-radius:20px;color:#fff;background:linear-gradient(135deg,#1E2A4A 0%,#2F4AA8 60%,#4C6FFF 100%);box-shadow:0 10px 24px -12px rgba(47,74,168,.7);position:relative;overflow:hidden}
+.tablero-btn::after{content:"";position:absolute;right:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.08)}
+.tablero-btn:active{transform:scale(.99)}
+.tb-ic{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:24px}
+.tb-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tb-txt>b{font-size:19px;letter-spacing:-.01em}
+.tb-bits{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;opacity:.92}
+.tb-bits b{font-weight:800}
+.tb-bits .hot b{color:#FFB4B4}
+.tb-faces{display:flex;flex:none;position:relative;z-index:1}
+.tb-faces .avatar{box-shadow:0 0 0 2px #2F4AA8}
+.tb-faces .avatar+.avatar{margin-left:-8px}
+.tb-go{font-size:24px;opacity:.8;position:relative;z-index:1}
 .tm-people{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
 .tm-people::-webkit-scrollbar{display:none}
 .tm-person{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:62px;text-align:center}
@@ -1377,7 +1390,7 @@ function render(){
         ${cloudOn()?navItem("avisos","Avisos",I.bell):""}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
-        ${TEAM.on?navItem("equipo","Mejoras",I.list||I.review):""}
+        ${TEAM.on?navItem("equipo","Tablero",I.list||I.review):""}
         <button data-act="feedback">${I.chat}<span>Enviar comentario</span></button>
       </nav>
       <div class="eyebrow" style="padding:0 10px">Tus listas</div>
@@ -4171,7 +4184,7 @@ function notifActions(n){
     }
     case "prayer_pray": case "prayer_comment": case "prayer_answered":
       return btn("open-oracion", n.type==="prayer_answered" ? "Ver testimonio" : "Ver petición", (n.data && n.data.prayer) || "", true);
-    case "team_assigned": return btn("team-go","Ver en Mejoras","",true);
+    case "team_assigned": return btn("team-go","Ver en el Tablero","",true);
     case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
     case "cheer": {
       const vid = n.data && n.data.verse && SUG_MAP[n.data.verse] ? n.data.verse : null;
@@ -5191,6 +5204,26 @@ function teamFiltered(skip){
   return list;
 }
 function teamAvatar(m, size){ return avatarHTML(m.nombre || "?", colorFor(m.user_id), m.avatar_url, size); }
+/* Botón al Tablero en Perfil: muestra lo tuyo y lo urgente, sin explicaciones */
+function tableroButton(){
+  if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
+  const pend = TEAM.items.filter(isPend);
+  const mine = pend.filter(it=>(it.asignados||[]).includes(ME.id)).length;
+  const urg = pend.filter(it=>it.prioridad==="ui").length;
+  const late = pend.filter(it=>{ const d = dueInfo(it); return d && d.c==="bad"; }).length;
+  const bits = !TEAM.loaded ? ["…"] : [
+    mine ? `<span><b>${mine}</b> ${mine===1?"tuya":"tuyas"}</span>` : "",
+    urg ? `<span class="hot"><b>${urg}</b> ${urg===1?"urgente":"urgentes"}</span>` : "",
+    late ? `<span class="hot"><b>${late}</b> ${late===1?"vencida o vence hoy":"vencidas o vencen hoy"}</span>` : "",
+    `<span><b>${pend.length}</b> ${pend.length===1?"pendiente":"pendientes"}</span>`].filter(Boolean);
+  const faces = (TEAM.members||[]).slice(0,4).map(m=>teamAvatar(m,26)).join("");
+  return `<button class="tablero-btn" data-go="equipo">
+    <span class="tb-ic">📋</span>
+    <span class="tb-txt"><b>Tablero</b><span class="tb-bits">${bits.join("")}</span></span>
+    ${faces?`<span class="tb-faces">${faces}</span>`:""}
+    <span class="tb-go" aria-hidden="true">›</span>
+  </button>`;
+}
 function viewEquipo(){
   if(!TEAM.on) return `<div class="empty"><b>Esta sección es solo para el equipo</b></div>`;
   if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
@@ -5202,7 +5235,7 @@ function viewEquipo(){
   const quad = ([k,l,d,c,e]) => { const n = byPrio.filter(it=>it.prioridad===k).length; return `<button class="tm-quad" data-act="team-prio" data-k="${k}" aria-pressed="${TEAM.prio===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small><span>${n}</span></button>`; };
   const trashN = TEAM.trash ? TEAM.trash.length : null;
   return `
-  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Mejoras</h1></div>
+  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Tablero</h1></div>
     <div class="row" style="gap:6px"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""} Actualizar</button><button class="btn primary" data-act="team-add">${I.plus} Agregar</button></div></section>
   ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
   ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
@@ -5755,8 +5788,8 @@ function viewProfile(){
       <button class="green" data-go="review"><b>${learned}</b><span>Aprendidos</span></button>
       ${cloudOn()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
+  ${TEAM.on ? tableroButton() : ""}
   ${badgesSection()}
-  ${TEAM.on?`<section class="panel"><div class="set-row" style="padding:0"><div class="lbl"><b>Mejoras y arreglos</b><small>Solo para el equipo: comentarios de los usuarios y la lista de pendientes${TEAM.loaded?` · ${teamCount()} pendientes`:""}</small></div><button class="btn primary" data-go="equipo">Abrir</button></div></section>`:""}
   ${profileCommunityPanel()}
   ${notifPrefsPanel()}
   <section class="panel">
