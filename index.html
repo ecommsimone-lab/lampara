@@ -380,6 +380,16 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pv-acts button small{font-size:12px;color:var(--muted);line-height:1.3}
 .pv-acts button:hover{border-color:var(--accent)}
 .share-prev{position:relative;align-self:center;width:min(230px,60vw);aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center}
+.share-prev.sq{aspect-ratio:1/1;width:min(280px,72vw)}
+.share-fmt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.share-fmt button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:1.5px solid var(--line)}
+.share-fmt button span{display:flex;flex-direction:column;gap:1px;min-width:0}
+.share-fmt b{font-size:15px}
+.share-fmt small{font-size:12px;color:var(--muted)}
+.share-fmt i{flex:none;border:2px solid currentColor;border-radius:4px;opacity:.7}
+.share-fmt i.r916{width:14px;height:24px}
+.share-fmt i.r11{width:20px;height:20px}
+.share-fmt button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .share-prev img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
 .share-prev span{position:relative;font-size:13px;color:var(--muted)}
 .share-scenes{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
@@ -1720,29 +1730,34 @@ const FONDOS = [
 ];
 const FONDO_TEMAS = ["Cielo","Universo","Mar","Bosque"];
 function loadImg(src){ return new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = src; }); }
-async function verseImage(id, fondo){
+/* Formatos: 9:16 (historias/estados) o 1:1 (publicación). El texto se reparte según el formato. */
+async function verseImage(id, fondo, fmt="9:16"){
   const v = verse(id); if(!v) return null;
   const F = FONDOS.find(x=>x[0]===fondo) || FONDOS[0];
   try{ await Promise.all(['900 80px "Roboto"', '500 30px "Roboto"'].map(f=>document.fonts.load(f))); }catch(e){}
-  const W = 1080, H = 1920, X = 96, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
-  try{ g.drawImage(await loadImg(`img/fondos/${F[0]}.jpg`), 0, 0, W, H); }catch(e){ g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H); }
+  const sq = fmt === "1:1";
+  const W = 1080, H = sq ? 1080 : 1920, X = sq ? 84 : 96, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  try{ const im = await loadImg(`img/fondos/${F[0]}.jpg`);
+    if(sq){ const ih = im.naturalHeight || 1920, iw = im.naturalWidth || 1080, side = Math.min(iw, ih), sy = Math.max(0, Math.min(ih - side, ih*F[2] - side/2)); g.drawImage(im, (iw-side)/2, sy, side, side, 0, 0, W, H); }
+    else g.drawImage(im, 0, 0, W, H);
+  }catch(e){ g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H); }
   // columna alineada a la izquierda: primero la cita pequeña (da contexto) y debajo el versículo grande
-  const maxW = W - X*2, maxH = 900;
-  let fs = 104, lines = [];
-  for(; fs >= 44; fs -= 2){ g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`; lines = wrapLines(g, v.text, maxW); if(lines.length * fs * 1.08 <= maxH) break; }
-  const lh = fs * 1.08, eyeH = 34 + 30, blockH = eyeH + lines.length*lh;
-  const cy = Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
+  const maxW = W - X*2, maxH = sq ? 640 : 900;
+  let fs = sq ? 92 : 104, lines = [];
+  for(; fs >= (sq ? 38 : 44); fs -= 2){ g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`; lines = wrapLines(g, v.text, maxW); if(lines.length * fs * 1.08 <= maxH) break; }
+  const lh = fs * 1.08, eyeH = sq ? 30 + 24 : 34 + 30, blockH = eyeH + lines.length*lh;
+  const cy = sq ? Math.min(H - 150 - blockH/2, Math.max(120 + blockH/2, H/2)) : Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
   g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(0, 0, W, H);
   const vg = g.createLinearGradient(0, top - 300, 0, top + blockH + 300);
   vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(.3, "rgba(0,0,0,.4)"); vg.addColorStop(.7, "rgba(0,0,0,.4)"); vg.addColorStop(1, "rgba(0,0,0,0)");
   g.fillStyle = vg; g.fillRect(0, top - 300, W, blockH + 600);
   g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillStyle = "#fff"; g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 16; g.shadowOffsetY = 2;
-  g.font = '500 32px "Roboto", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.globalAlpha = .9;
-  g.fillText(v.ref.toUpperCase(), X, top + 32); g.globalAlpha = 1;
+  g.font = `500 ${sq?28:32}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = sq ? "5px" : "6px"; g.globalAlpha = .9;
+  g.fillText(v.ref.toUpperCase(), X, top + (sq?28:32)); g.globalAlpha = 1;
   g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`;
   lines.forEach((l,i)=>g.fillText(l, X - fs*.04, top + eyeH + fs*.92 + i*lh));
-  g.font = '500 24px "Roboto", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "5px"; g.globalAlpha = .75;
-  g.fillText(`${APP_NAME.toUpperCase()} · RVR1960`, X, H - 110);
+  g.font = `500 ${sq?21:24}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = "5px"; g.globalAlpha = .75;
+  g.fillText(`${APP_NAME.toUpperCase()} · RVR1960`, X, H - (sq ? 64 : 110));
   g.globalAlpha = 1; if("letterSpacing" in g) g.letterSpacing = "0px"; g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/jpeg", .9));
 }
@@ -2014,19 +2029,21 @@ function pildVerseModal(vid){
     </div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
 }
 function shareVerseModal(vid){
-  const v = verse(vid); if(!v) return; let tema = FONDO_TEMAS[0], fondo = FONDOS.find(x=>x[1]===tema)[0], blob = null, seq = 0;
+  const v = verse(vid); if(!v) return; let tema = FONDO_TEMAS[0], fondo = FONDOS.find(x=>x[1]===tema)[0], blob = null, seq = 0, fmt = S.shareFmt || "9:16";
   modal(`<div class="spread"><h2 style="font-size:22px">Compartir ${esc(v.ref)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <div class="share-prev"><img id="shImg" alt="Vista previa de la imagen"><span id="shWait">Creando imagen…</span></div>
+    <div class="share-fmt" id="shFmt"><button type="button" data-fmt="9:16" aria-pressed="${fmt==="9:16"}"><i class="r916"></i><span><b>9:16</b><small>Historias y estados</small></span></button><button type="button" data-fmt="1:1" aria-pressed="${fmt==="1:1"}"><i class="r11"></i><span><b>1:1</b><small>Publicación</small></span></button></div>
+    <div class="share-prev ${fmt==="1:1"?"sq":""}" id="shPrev"><img id="shImg" alt="Vista previa de la imagen"><span id="shWait">Creando imagen…</span></div>
     <div class="share-scenes" id="shTema">${FONDO_TEMAS.map((x,i)=>`<button type="button" data-t="${x}" aria-pressed="${i===0}">${x}</button>`).join("")}</div>
     <div class="share-thumbs" id="shFondos"></div>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="shGo">${I.share} Compartir</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
     const img = sc.querySelector("#shImg"), wait = sc.querySelector("#shWait");
-    const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await verseImage(vid, fondo); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
+    const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await verseImage(vid, fondo, fmt); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
     const thumbs = ()=>{ sc.querySelector("#shFondos").innerHTML = FONDOS.filter(x=>x[1]===tema).map(x=>`<button type="button" data-f="${x[0]}" aria-pressed="${x[0]===fondo}" style="background-image:url('img/fondos/${x[0]}.jpg')" aria-label="Fondo"></button>`).join("");
       sc.querySelectorAll("#shFondos [data-f]").forEach(b=>b.onclick=()=>{ fondo = b.dataset.f; thumbs(); draw(); }); };
+    sc.querySelectorAll("#shFmt [data-fmt]").forEach(b=>b.onclick=()=>{ fmt = b.dataset.fmt; S.shareFmt = fmt; persist(); sc.querySelectorAll("#shFmt [data-fmt]").forEach(x=>x.setAttribute("aria-pressed", x===b)); sc.querySelector("#shPrev").classList.toggle("sq", fmt==="1:1"); draw(); });
     sc.querySelectorAll("#shTema [data-t]").forEach(b=>b.onclick=()=>{ tema = b.dataset.t; fondo = FONDOS.find(x=>x[1]===tema)[0]; sc.querySelectorAll("#shTema [data-t]").forEach(x=>x.setAttribute("aria-pressed", x===b)); thumbs(); draw(); });
-    sc.querySelector("#shGo").onclick = async ()=>{ if(!blob) return; const name = v.ref.replace(/[^\wáéíóúñ]+/gi,"-").toLowerCase() + ".jpg"; const file = new File([blob], name, { type:"image/jpeg" });
+    sc.querySelector("#shGo").onclick = async ()=>{ if(!blob) return; const name = v.ref.replace(/[^\wáéíóúñ]+/gi,"-").toLowerCase() + (fmt==="1:1" ? "-cuadrada" : "") + ".jpg"; const file = new File([blob], name, { type:"image/jpeg" });
       if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; } }
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast("Imagen descargada. Ya la puedes subir a tus estados."); };
     thumbs(); draw();
