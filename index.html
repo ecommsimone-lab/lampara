@@ -5265,9 +5265,11 @@ function teamListHTML(){
   if(!list.length) return `<div class="empty"><b>${q?"Nada coincide con la búsqueda":TEAM.filter==="pend"?"No hay nada pendiente aquí 🎉":"No hay elementos aquí"}</b></div>`;
   if(!TEAM.members) return list.map(teamRow).join("");
   // Agrupado por prioridad; dentro de cada grupo, primero lo que vence antes
-  const byDue = (a,b) => (a.fecha_limite||"9999") < (b.fecha_limite||"9999") ? -1 : (a.fecha_limite||"9999") > (b.fecha_limite||"9999") ? 1 : String(b.created_at).localeCompare(String(a.created_at));
-  // Primero lo que aún no tiene prioridad (por ejemplo, comentarios nuevos de usuarios): hay que clasificarlo
-  const groups = [{ k:"", title:"📥 Por clasificar", sub:"Aún sin prioridad: ábrelo y elige una", c:"var(--accent)", items:list.filter(it=>!PRIO[it.prioridad]) }].concat(PRIOS.map(([k,l,d,c,e])=>({ k, title:`${e} ${l}`, c, items:list.filter(it=>it.prioridad===k) })));
+  // Dentro de cada prioridad: primero lo que tiene fecha (lo que vence antes arriba), luego lo asignado sin fecha
+  // y al final lo que no tiene ni responsable ni fecha
+  const tier = it => it.fecha_limite ? 0 : (it.asignados||[]).length ? 1 : 2;
+  const byDue = (a,b) => tier(a) - tier(b) || ((a.fecha_limite||"") < (b.fecha_limite||"") ? -1 : (a.fecha_limite||"") > (b.fecha_limite||"") ? 1 : 0) || String(b.created_at).localeCompare(String(a.created_at));
+  const groups = PRIOS.map(([k,l,d,c,e])=>({ k, title:`${e} ${l}`, c, items:list.filter(it=>it.prioridad===k) })).concat([{ k:"", title:"Sin prioridad", c:"var(--line)", items:list.filter(it=>!PRIO[it.prioridad]) }]);
   return groups.filter(g=>g.items.length).map(g=>`<div class="tm-group"><div class="tm-gh" style="--pc:${g.c}"><b>${g.title}</b><span class="muted">${g.items.length}</span>${g.sub?`<small class="muted" style="font-size:12px;font-weight:500">· ${g.sub}</small>`:""}</div>${g.items.sort(byDue).map(teamRow).join("")}</div>`).join("");
 }
 /* Campos de responsables, fecha y prioridad (se usan al agregar y al editar) */
