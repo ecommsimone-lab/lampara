@@ -388,7 +388,43 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
-.tm-who{display:flex;flex-direction:column;gap:6px}
+.tm-people{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.tm-people::-webkit-scrollbar{display:none}
+.tm-person{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:62px;text-align:center}
+.tm-person small{font-size:12px;font-weight:600;color:var(--muted);max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-face{position:relative;display:grid;place-items:center;padding:3px;border-radius:50%;box-shadow:0 0 0 2px transparent;transition:box-shadow .15s}
+.tm-face i{position:absolute;top:-3px;right:-5px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:var(--ink);color:var(--bg);font-size:11px;font-style:normal;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg)}
+.tm-face i.ok{background:var(--accent);color:#fff;opacity:0;transform:scale(.6);transition:.15s}
+.tm-all,.tm-none{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);color:var(--ink)}
+.tm-all svg{width:20px;height:20px}
+.tm-none{border:2px dashed var(--line);background:none;color:var(--muted);font-weight:800;box-sizing:border-box}
+.tm-person[aria-pressed="true"] .tm-face{box-shadow:0 0 0 2px var(--accent)}
+.tm-person[aria-pressed="true"] small{color:var(--ink)}
+.tm-person[aria-pressed="true"] .tm-face i.ok{opacity:1;transform:none}
+#tmAsg{margin:0;padding:2px 0 4px}
+.tm-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin:0 -16px;padding:0 16px;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.tm-tabs::-webkit-scrollbar{display:none}
+.tm-tab{all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;padding:10px 10px 11px;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tm-tab b{font-size:11.5px;font-weight:700;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:var(--surface-2);display:grid;place-items:center}
+.tm-tab[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.tm-tab[aria-pressed="true"] b{background:var(--ink);color:var(--bg)}
+.tm-selbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn.tm-del{background:var(--bad);color:#fff;border-color:var(--bad);box-shadow:none}
+.btn.tm-del:disabled{opacity:.45}
+.tm-row.picked{outline:2px solid var(--accent);outline-offset:-1px}
+.tm-check{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;background:var(--surface)}
+.tm-row.picked .tm-check{background:var(--accent);border-color:var(--accent)}
+.tm-trashrow{cursor:default}
+.tm-quick{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tm-quick button{all:unset;cursor:pointer;padding:8px 10px;font-size:13px;font-weight:600}
+.tm-quick button+button{border-left:1px solid var(--line)}
+.tm-quick button:hover{background:var(--surface-2)}
+.tm-histbox summary{cursor:pointer;font-size:14px;font-weight:700;padding:4px 0}
+.tm-hist{list-style:none;margin:8px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.tm-hist li{font-size:13.5px;line-height:1.45;position:relative}
+.tm-hist li::before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.tm-hist li span{font-weight:600}
+.tm-hist li small{display:block;color:var(--muted);font-size:12px}
 .tm-matrix{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tm-quad{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:3px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--pc);min-width:0}
 .tm-quad b{font-size:13.5px;line-height:1.25;padding-right:26px}
@@ -415,7 +451,7 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .tm-chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tm-chip[aria-pressed="true"] b{color:inherit;opacity:.7}
 .tm-list{display:flex;flex-direction:column;gap:10px}
-.tm-row{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--ec)}
+.tm-row{all:unset;position:relative;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--ec)}
 .tm-row:hover{border-color:var(--ec)}
 .tm-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px}
 .tm-est{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ec)}
@@ -5076,7 +5112,7 @@ async function flushFeedback(){
 window.addEventListener("online", ()=>flushFeedback());
 
 /* ----- Equipo: lista de mejoras y arreglos (solo para los correos de la tabla team, SQL 11) ----- */
-const TEAM = { on:false, items:[], loaded:false, loading:false, err:"", filter:"pend", q:"", members:null, who:"all", prio:"" };
+const TEAM = { on:false, items:[], loaded:false, loading:false, err:"", filter:"pend", q:"", members:null, who:"all", prio:"", sel:null, trash:null };
 /* Prioridad (matriz de Eisenhower) */
 const PRIOS = [
   ["ui","Urgente e importante","Hazlo ya","#E5484D","🔴"],
@@ -5101,7 +5137,7 @@ function dueInfo(it){
 }
 const ESTADOS = [
   ["⚪ nuevo","Nuevo","#98A2B3"], ["🔵 revisado","Revisado","#3B82F6"], ["🟡 en proceso","En proceso","#E0A100"],
-  ["🟢 corregido","Corregido","#16A36A"], ["⚫ descartado","Descartado","#5B6474"]
+  ["🟢 corregido","Completado","#16A36A"], ["⚫ descartado","Descartado","#5B6474"]
 ];
 const EST = Object.fromEntries(ESTADOS.map(([v,l,c])=>[v,{l,c}]));
 const estOf = it => EST[it.estado] ? it.estado : "⚪ nuevo";
@@ -5118,8 +5154,8 @@ async function loadTeam(){
   if(!TEAM.on || TEAM.loading) return;
   TEAM.loading = true;
   try{
-    const [items, members] = await Promise.all([API.rpc("team_items"), API.rpc("team_members").catch(()=>null)]);
-    TEAM.items = items || []; TEAM.members = members; TEAM.err = "";
+    const [items, members, trash] = await Promise.all([API.rpc("team_items"), API.rpc("team_members").catch(()=>null), API.rpc("team_trash").catch(()=>null)]);
+    TEAM.items = items || []; TEAM.members = members; TEAM.trash = members ? (trash || []) : null; TEAM.err = "";
   }
   catch(e){ TEAM.err = "No se pudo cargar la lista. Revisa la conexión e inténtalo de nuevo."; }
   TEAM.loading = false; TEAM.loaded = true;
@@ -5129,7 +5165,9 @@ function teamCount(){ return TEAM.items.filter(isPend).length; }
 function teamRow(it){
   const e = EST[estOf(it)], mine = it.origen==="equipo", pr = PRIO[it.prioridad], due = dueInfo(it), asg = it.asignados || [];
   const who = mine ? `Equipo · ${it.name||""}` : `${it.name||"Usuario"}${it.email?` · ${it.email}`:""}`;
-  return `<button class="tm-row" data-act="team-open" data-id="${esc(String(it.id))}" style="--ec:${e.c}">
+  const sel = TEAM.sel && estOf(it)==="⚫ descartado";
+  return `<button class="tm-row${sel&&TEAM.sel.has(String(it.id))?" picked":""}" data-act="${sel?"team-pick":"team-open"}" data-id="${esc(String(it.id))}" style="--ec:${e.c}">
+    ${sel?`<span class="tm-check" aria-hidden="true">${TEAM.sel.has(String(it.id))?"✓":""}</span>`:""}
     <div class="tm-top"><span class="tm-est"><i></i>${e.l}</span><span class="tm-kind ${mine?"eq":""}">${mine?"Equipo":"Usuario"} · ${esc(KIND_LABEL[it.kind]||it.kind||"")}</span><span class="muted tm-when">${timeAgo(it.created_at)}</span></div>
     <p class="tm-msg">${esc(it.message||"")}</p>
     ${TEAM.members && (pr || due || asg.length) ? `<div class="tm-plan">${pr?`<span class="tm-prio" style="--pc:${pr.c}">${pr.e} ${pr.l}</span>`:""}${due?`<span class="chip ${due.c}">📅 ${due.t}</span>`:""}${asg.length?`<span class="tm-asg">${asg.map(id=>`<span class="avatar" title="${esc(memberName(id))}" style="width:24px;height:24px;font-size:11px;background:${colorFor(id)}">${esc(memberName(id).charAt(0).toUpperCase())}</span>`).join("")}<small>${asg.map(id=>esc(memberName(id))).join(", ")}</small></span>`:""}</div>` : ""}
@@ -5146,26 +5184,74 @@ function teamFiltered(skip){
   if(q) list = list.filter(it=>normQ([it.message,it.nota,it.name,it.context].join(" ")).includes(q));
   return list;
 }
+function teamAvatar(m, size){ return `<span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.42)}px;background:${colorFor(m.user_id)};color:#fff;font-weight:800;display:inline-grid;place-items:center;border-radius:50%">${esc(firstName(m.nombre).charAt(0).toUpperCase())}</span>`; }
 function viewEquipo(){
   if(!TEAM.on) return `<div class="empty"><b>Esta sección es solo para el equipo</b></div>`;
   if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
-  const f = TEAM.filter, base = teamFiltered("estado");
-  const chip = (k,l,n,c) => `<button class="tm-chip" data-act="team-filter" data-k="${k}" aria-pressed="${f===k}"${c?` style="--ec:${c}"`:""}>${c?"<i></i>":""}${l}<b>${n}</b></button>`;
-  const M = TEAM.members;
+  const f = TEAM.filter, base = teamFiltered("estado"), M = TEAM.members;
+  const tab = (k,l,n) => `<button class="tm-tab" data-act="team-filter" data-k="${k}" aria-pressed="${f===k}">${l}${n!=null?`<b>${n}</b>`:""}</button>`;
   const byWho = teamFiltered("who").filter(isPend);
-  const whoChip = (k,l,n) => `<button class="tm-chip" data-act="team-who" data-k="${k}" aria-pressed="${TEAM.who===k}">${l}<b>${n}</b></button>`;
+  const person = (k, face, l, n) => `<button class="tm-person" data-act="team-who" data-k="${k}" aria-pressed="${TEAM.who===k}"><span class="tm-face">${face}${n?`<i>${n}</i>`:""}</span><small>${l}</small></button>`;
   const byPrio = teamFiltered("prio").filter(isPend);
   const quad = ([k,l,d,c,e]) => { const n = byPrio.filter(it=>it.prioridad===k).length; return `<button class="tm-quad" data-act="team-prio" data-k="${k}" aria-pressed="${TEAM.prio===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small><span>${n}</span></button>`; };
+  const trashN = TEAM.trash ? TEAM.trash.length : null;
   return `
   <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Mejoras</h1></div>
     <div class="row" style="gap:6px"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""} Actualizar</button><button class="btn primary" data-act="team-add">${I.plus} Agregar</button></div></section>
   ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
-  ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas y prioridad falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
-  ${M ? `<div class="tm-who"><span class="eyebrow">Responsable</span><div class="tm-chips">${whoChip("all","Todos",byWho.length)}${M.map(m=>whoChip(m.user_id, esc(firstName(m.nombre))+(m.user_id===ME.id?" (tú)":""), byWho.filter(it=>(it.asignados||[]).includes(m.user_id)).length)).join("")}${whoChip("none","Sin asignar",byWho.filter(it=>!(it.asignados||[]).length).length)}</div></div>
-  <div class="tm-matrix">${PRIOS.map(quad).join("")}</div>` : ""}
-  <div class="tm-chips">${chip("pend","Pendientes",base.filter(isPend).length)}${ESTADOS.map(([v,l,c])=>chip(v,l,base.filter(it=>estOf(it)===v).length,c)).join("")}${chip("all","Todos",base.length)}</div>
-  <input class="input" id="teamQuery" placeholder="Buscar en la lista…" value="${esc(TEAM.q||"")}" style="max-width:420px">
-  <div class="tm-list" id="teamList">${teamListHTML()}</div>`;
+  ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
+  ${M && f!=="trash" ? `<div class="tm-people">
+      ${person("all", `<span class="tm-all">${I.users}</span>`, "Todos", byWho.length)}
+      ${M.map(m=>person(m.user_id, teamAvatar(m,44), esc(firstName(m.nombre))+(m.user_id===ME.id?" · tú":""), byWho.filter(it=>(it.asignados||[]).includes(m.user_id)).length)).join("")}
+      ${person("none", `<span class="tm-none">?</span>`, "Sin asignar", byWho.filter(it=>!(it.asignados||[]).length).length)}
+    </div>
+    <div class="tm-matrix">${PRIOS.map(quad).join("")}</div>` : ""}
+  <div class="tm-tabs">${tab("pend","Pendientes",base.filter(isPend).length)}${ESTADOS.filter(([v])=>v!=="⚪ nuevo").map(([v,l])=>tab(v, v==="⚫ descartado"?"Descartados":l, base.filter(it=>estOf(it)===v).length)).join("")}${tab("all","Todos",base.length)}${M?tab("trash","🗑 Papelera",trashN):""}</div>
+  ${f==="⚫ descartado" && M && base.some(it=>estOf(it)===f) ? (TEAM.sel ? `<div class="tm-selbar"><button class="linkbtn" data-act="team-sel-all" style="padding:0">Seleccionar todos</button><span style="flex:1"></span><button class="btn ghost" data-act="team-sel" style="padding:6px 12px">Cancelar</button><button class="btn tm-del" data-act="team-trash-move" ${TEAM.sel.size?"":"disabled"} style="padding:6px 12px">🗑 Mover a la papelera${TEAM.sel.size?` (${TEAM.sel.size})`:""}</button></div>` : `<div class="tm-selbar"><span class="muted" style="font-size:13px">Lo descartado se puede mover a la papelera.</span><span style="flex:1"></span><button class="btn" data-act="team-sel" style="padding:6px 12px">Seleccionar</button></div>`) : ""}
+  ${f==="trash" ? "" : `<input class="input" id="teamQuery" placeholder="Buscar en la lista…" value="${esc(TEAM.q||"")}" style="max-width:420px">`}
+  <div class="tm-list" id="teamList">${f==="trash" ? teamTrashHTML() : teamListHTML()}</div>`;
+}
+function teamTrashHTML(){
+  if(TEAM.trash===null){ setTimeout(loadTrash, 0); return `<div class="empty"><b>Cargando…</b></div>`; }
+  if(!TEAM.trash.length) return `<div class="empty"><b>La papelera está vacía</b><span>Aquí llega lo que muevas desde Descartados. Puedes restaurarlo o borrarlo para siempre.</span></div>`;
+  return `<div class="tm-selbar"><span class="muted" style="font-size:13px">${TEAM.trash.length} en la papelera</span><span style="flex:1"></span><button class="btn tm-del" data-act="team-purge-all" style="padding:6px 12px">Vaciar papelera</button></div>`
+    + TEAM.trash.map(it=>`<div class="tm-row tm-trashrow" style="--ec:#5B6474"><p class="tm-msg">${esc(it.message||"")}</p>
+      <div class="tm-meta muted">${esc(KIND_LABEL[it.kind]||it.kind||"")} · a la papelera por ${esc(it.deleted_por||"alguien")} ${it.deleted_at?timeAgo(it.deleted_at):""}</div>
+      <div class="row" style="gap:6px"><button class="btn" data-act="team-restore" data-id="${esc(String(it.id))}" style="padding:6px 12px">↩ Restaurar</button><button class="btn ghost" data-act="team-purge" data-id="${esc(String(it.id))}" style="padding:6px 12px;color:var(--bad)">Borrar para siempre</button><button class="btn ghost" data-act="team-hist" data-id="${esc(String(it.id))}" style="padding:6px 12px">Historial</button></div></div>`).join("");
+}
+async function loadTrash(){ if(TEAM.trashLoading) return; TEAM.trashLoading = true; try{ TEAM.trash = (await API.rpc("team_trash")) || []; }catch(e){ TEAM.trash = []; } TEAM.trashLoading = false; if(VIEW.name==="equipo") render(); }
+async function teamTrashMove(){
+  const ids = [...(TEAM.sel||[])]; if(!ids.length) return;
+  try{ const n = await API.rpc("team_trash_move", { p_ids: ids, p_name: displayName() }); TEAM.sel = null; TEAM.trash = null; toast(`${n} ${n===1?"elemento movido":"elementos movidos"} a la papelera.`); await loadTeam(); loadTrash(); }
+  catch(e){ toast("No se pudo mover: " + String((e&&e.message)||e).slice(0,100)); }
+}
+async function teamRestore(id){ try{ await API.rpc("team_restore", { p_id: String(id), p_name: displayName() }); TEAM.trash = (TEAM.trash||[]).filter(x=>String(x.id)!==String(id)); toast("Restaurado en Descartados."); render(); loadTeam(); }catch(e){ toast("No se pudo restaurar."); } }
+async function teamPurge(ids){
+  if(!confirmInline(ids.length===1 ? "¿Borrar para siempre? No se puede deshacer." : `¿Borrar para siempre ${ids.length} elementos? No se puede deshacer.`)) return;
+  try{ await API.rpc("team_purge", { p_ids: ids.map(String) }); TEAM.trash = (TEAM.trash||[]).filter(x=>!ids.map(String).includes(String(x.id))); toast("Borrado."); render(); }catch(e){ toast("No se pudo borrar."); }
+}
+/* Historial de cambios: quién hizo qué y cuándo */
+const HIST_LABEL = { creado:"lo creó", estado:"cambió el estado a", prioridad:"cambió la prioridad a", asignados:"cambió los responsables a", fecha:"cambió la fecha límite a", nota:"editó la nota", papelera:"lo movió a la papelera", restaurado:"lo restauró" };
+function histLine(h){
+  let det = h.detalle || "";
+  if(h.accion==="estado") det = (EST[det]||{}).l || det;
+  else if(h.accion==="prioridad") det = det ? `${PRIO[det].e} ${PRIO[det].l}` : "sin prioridad";
+  else if(h.accion==="asignados") det = det ? det.split(",").map(memberName).join(", ") : "nadie";
+  else if(h.accion==="fecha") det = det ? new Date(det+"T12:00:00").toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"}) : "sin fecha";
+  else if(h.accion==="nota") det = det ? `“${det}”` : "(la borró)";
+  const when = new Date(h.created_at);
+  return `<li><b>${esc(h.quien||"Alguien")}</b> ${HIST_LABEL[h.accion]||esc(h.accion)} ${det?`<span>${esc(det)}</span>`:""}<small>${when.toLocaleDateString("es-CO",{day:"numeric",month:"short"})}, ${when.toLocaleTimeString("es-CO",{hour:"numeric",minute:"2-digit"})}</small></li>`;
+}
+async function fillHistory(sc, id){
+  const box = sc.querySelector("#tmHist"); if(!box) return;
+  try{ const rows = (await API.rpc("team_history", { p_id: String(id) })) || [];
+    box.innerHTML = rows.length ? `<ul class="tm-hist">${rows.map(histLine).join("")}</ul>` : `<p class="muted" style="font-size:13px;margin:0">Aún no hay cambios registrados.</p>`; }
+  catch(e){ box.innerHTML = `<p class="muted" style="font-size:13px;margin:0">No se pudo cargar el historial.</p>`; }
+}
+function teamHistModal(id){
+  const it = (TEAM.trash||[]).concat(TEAM.items).find(x=>String(x.id)===String(id)); if(!it) return;
+  modal(`<div class="spread"><h2 style="font-size:22px">Historial</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p style="margin:0;font-size:15px">${esc(it.message||"")}</p><div id="tmHist"><p class="muted" style="font-size:13px">Cargando…</p></div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); fillHistory(sc, id); });
 }
 function teamListHTML(){
   if(!TEAM.loaded) return `<div class="empty"><b>Cargando…</b></div>`;
@@ -5183,9 +5269,9 @@ function teamPlanFields(it){
   const asg = new Set(it.asignados||[]), today = todayKey();
   const plus = n => todayKey(new Date(Date.now()+n*DAY));
   return `<div class="field"><label>Prioridad</label><div class="tm-priopick" id="tmPrio">${PRIOS.map(([k,l,d,c,e])=>`<button type="button" data-v="${k}" aria-pressed="${it.prioridad===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small></button>`).join("")}</div></div>
-    <div class="field"><label>Responsables</label><div class="tm-chips" id="tmAsg">${TEAM.members.map(m=>`<button type="button" class="tm-chip" data-v="${m.user_id}" aria-pressed="${asg.has(m.user_id)}">${esc(firstName(m.nombre))}${m.user_id===ME.id?" (tú)":""}</button>`).join("")}</div></div>
+    <div class="field"><label>Responsables <small class="muted" style="font-weight:500">(puedes elegir varios)</small></label><div class="tm-people" id="tmAsg">${TEAM.members.map(m=>`<button type="button" class="tm-person" data-v="${m.user_id}" aria-pressed="${asg.has(m.user_id)}"><span class="tm-face">${teamAvatar(m,40)}<i class="ok">✓</i></span><small>${esc(firstName(m.nombre))}${m.user_id===ME.id?" · tú":""}</small></button>`).join("")}</div></div>
     <div class="field"><label for="tmFecha">Fecha límite</label><div class="row" style="gap:6px;flex-wrap:wrap"><input class="input" type="date" id="tmFecha" value="${esc(it.fecha_limite||"")}" min="${today}" style="max-width:190px">
-      <button type="button" class="tm-chip" data-day="${plus(0)}">Hoy</button><button type="button" class="tm-chip" data-day="${plus(1)}">Mañana</button><button type="button" class="tm-chip" data-day="${plus(7)}">En 1 semana</button><button type="button" class="tm-chip" data-day="">Sin fecha</button></div></div>`;
+      <span class="tm-quick"><button type="button" data-day="${plus(0)}">Hoy</button><button type="button" data-day="${plus(1)}">Mañana</button><button type="button" data-day="${plus(7)}">En 1 semana</button><button type="button" data-day="">Sin fecha</button></span></div></div>`;
 }
 function bindPlanFields(sc, st){
   sc.querySelectorAll("#tmPrio button").forEach(b=>b.onclick=()=>{ st.prio = st.prio===b.dataset.v ? "" : b.dataset.v; sc.querySelectorAll("#tmPrio button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.v===st.prio)); });
@@ -5201,12 +5287,15 @@ function teamItemModal(id){
     <p class="muted" style="font-size:13px;margin:0">${esc(KIND_LABEL[it.kind]||it.kind||"")} · ${esc(it.name||"")}${it.email?` · ${esc(it.email)}`:""}${!mine&&it.context?` · ${esc(it.context)}`:""} · ${new Date(it.created_at).toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"})}</p>
     <p style="font-size:16px;line-height:1.5;white-space:pre-wrap;margin:4px 0 0">${esc(it.message||"")}</p>
     ${teamPlanFields(it)}
-    <div class="field"><label>Estado</label><div class="tm-estpick" id="tmEst">${ESTADOS.map(([v,l,c])=>`<button type="button" data-v="${v}" aria-pressed="${v===est}" style="--ec:${c}"><i></i>${l}</button>`).join("")}</div></div>
+    <div class="field"><label>Estado</label><div class="tm-estpick" id="tmEst">${ESTADOS.filter(([v])=>v!=="⚪ nuevo" || est==="⚪ nuevo").map(([v,l,c])=>`<button type="button" data-v="${v}" aria-pressed="${v===est}" style="--ec:${c}"><i></i>${l}</button>`).join("")}</div></div>
     <div class="field"><label for="tmNota">Nota del equipo</label><textarea class="textarea" id="tmNota" maxlength="2000" placeholder="Qué se hizo, qué falta, quién lo toma…" style="min-height:90px;font-size:15px">${esc(it.nota||"")}</textarea>
       ${it.actualizado_por?`<small class="muted">Última edición: ${esc(it.actualizado_por)}${it.actualizado_at?`, ${timeAgo(it.actualizado_at)}`:""}</small>`:""}</div>
+    ${TEAM.members?`<details class="tm-histbox"><summary>Historial de cambios</summary><div id="tmHist"><p class="muted" style="font-size:13px">Cargando…</p></div></details>`:""}
     <p id="tmErr" role="alert" style="color:var(--bad);font-size:13px;font-weight:600;min-height:1.2em;margin:0"></p>
-    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="tmSave">Guardar</button></div>`, sc=>{
+    <div class="row" style="justify-content:flex-end">${TEAM.members && est==="⚫ descartado"?`<button class="btn ghost" id="tmTrash" style="color:var(--bad);margin-right:auto">🗑 A la papelera</button>`:""}<button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="tmSave">Guardar</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    if(TEAM.members) fillHistory(sc, it.id);
+    const tb = sc.querySelector("#tmTrash"); if(tb) tb.onclick = ()=>{ closeModal(); TEAM.sel = new Set([String(it.id)]); teamTrashMove(); };
     sc.querySelectorAll("#tmEst button").forEach(b=>b.onclick=()=>{ est=b.dataset.v; sc.querySelectorAll("#tmEst button").forEach(x=>x.setAttribute("aria-pressed", x===b)); });
     const plan = TEAM.members ? bindPlanFields(sc, { prio: it.prioridad||"" }) : null;
     sc.querySelector("#tmSave").onclick = async ()=>{
@@ -5736,8 +5825,16 @@ document.addEventListener("click", e=>{
     case "open-oracion": { PR.tab = "comunidad"; PR.feed = null; go("oracion"); const pid = t.dataset.id; if(pid) setTimeout(()=>prDetailModal(pid), 300); break; }
     case "team-add": teamAddModal(); break;
     case "team-reload": loadTeam(); break;
-    case "team-filter": TEAM.filter = t.dataset.k; render(); break;
+    case "team-filter": { TEAM.filter = t.dataset.k; TEAM.sel = null; if(t.dataset.k==="trash") TEAM.trash = null; const y = window.scrollY; render(); const at = document.querySelector('.tm-tab[aria-pressed="true"]'); if(at && at.parentElement) at.parentElement.scrollLeft = at.offsetLeft - 40; window.scrollTo(0, y); break; }
     case "team-who": TEAM.who = t.dataset.k; render(); break;
+    case "team-sel": TEAM.sel = TEAM.sel ? null : new Set(); render(); break;
+    case "team-pick": { const k = t.dataset.id; if(TEAM.sel.has(k)) TEAM.sel.delete(k); else TEAM.sel.add(k); render(); break; }
+    case "team-sel-all": teamFiltered().filter(it=>estOf(it)==="⚫ descartado").forEach(it=>TEAM.sel.add(String(it.id))); render(); break;
+    case "team-trash-move": teamTrashMove(); break;
+    case "team-restore": teamRestore(t.dataset.id); break;
+    case "team-purge": teamPurge([t.dataset.id]); break;
+    case "team-purge-all": teamPurge((TEAM.trash||[]).map(x=>x.id)); break;
+    case "team-hist": teamHistModal(t.dataset.id); break;
     case "team-prio": TEAM.prio = TEAM.prio===t.dataset.k ? "" : t.dataset.k; render(); break;
     case "team-go": go("equipo"); loadTeam(); break;
     case "open-topic": go("topic", { topic: t.dataset.id }); break;
