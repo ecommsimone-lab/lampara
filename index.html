@@ -5174,10 +5174,10 @@ function teamRow(it){
   const sel = TEAM.sel && estOf(it)==="⚫ descartado";
   return `<button class="tm-row${sel&&TEAM.sel.has(String(it.id))?" picked":""}" data-act="${sel?"team-pick":"team-open"}" data-id="${esc(String(it.id))}" style="--ec:${e.c}">
     ${sel?`<span class="tm-check" aria-hidden="true">${TEAM.sel.has(String(it.id))?"✓":""}</span>`:""}
-    <div class="tm-top"><span class="tm-est"><i></i>${e.l}</span><span class="tm-kind ${mine?"eq":""}">${mine?"Equipo":"Usuario"} · ${esc(KIND_LABEL[it.kind]||it.kind||"")}</span><span class="muted tm-when">${timeAgo(it.created_at)}</span></div>
+    <div class="tm-top"><span class="tm-est"><i></i>${e.l}</span><span class="tm-kind ${mine?"eq":""}">${mine?"":"Usuario · "}${esc(KIND_LABEL[it.kind]||it.kind||"")}</span><span class="muted tm-when">${timeAgo(it.created_at)}</span></div>
     <p class="tm-msg">${esc(it.message||"")}</p>
     ${TEAM.members && (pr || due || asg.length) ? `<div class="tm-plan">${pr?`<span class="tm-prio" style="--pc:${pr.c}">${pr.e} ${pr.l}</span>`:""}${due?`<span class="chip ${due.c}">📅 ${due.t}</span>`:""}${asg.length?`<span class="tm-asg">${asg.map(id=>{ const m = (TEAM.members||[]).find(x=>x.user_id===id) || { user_id:id, nombre:"?" }; return teamAvatar(m, 24); }).join("")}<small>${asg.map(id=>esc(memberName(id))).join(", ")}</small></span>`:""}</div>` : ""}
-    <div class="tm-meta muted">${esc(who)}${!mine && it.context?` · ${esc(it.context)}`:""}</div>
+    ${mine ? "" : `<div class="tm-meta muted">${esc(who)}${it.context?` · ${esc(it.context)}`:""}</div>`}
     ${it.nota?`<div class="tm-note"><b>Nota</b>${esc(it.nota)}${it.actualizado_por?`<small> — ${esc(it.actualizado_por)}${it.actualizado_at?`, ${timeAgo(it.actualizado_at)}`:""}</small>`:""}</div>`:""}
   </button>`;
 }
@@ -5289,8 +5289,8 @@ function teamItemModal(id){
   const it = TEAM.items.find(x=>String(x.id)===String(id)); if(!it) return;
   let est = estOf(it); const mine = it.origen==="equipo";
   modal(`
-    <div class="spread"><h2 style="font-size:22px">${mine?"Del equipo":"Comentario de usuario"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <p class="muted" style="font-size:13px;margin:0">${esc(KIND_LABEL[it.kind]||it.kind||"")} · ${esc(it.name||"")}${it.email?` · ${esc(it.email)}`:""}${!mine&&it.context?` · ${esc(it.context)}`:""} · ${new Date(it.created_at).toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"})}</p>
+    <div class="spread"><h2 style="font-size:22px">${mine?esc(KIND_LABEL[it.kind]||"Tarea"):"Comentario de usuario"}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    ${mine ? "" : `<p class="muted" style="font-size:13px;margin:0">${esc(KIND_LABEL[it.kind]||it.kind||"")} · ${esc(it.name||"")}${it.email?` · ${esc(it.email)}`:""}${it.context?` · ${esc(it.context)}`:""} · ${new Date(it.created_at).toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"})}</p>`}
     <p style="font-size:16px;line-height:1.5;white-space:pre-wrap;margin:4px 0 0">${esc(it.message||"")}</p>
     ${teamPlanFields(it)}
     <div class="field"><label>Estado</label><div class="tm-estpick" id="tmEst">${ESTADOS.filter(([v])=>v!=="⚪ nuevo" || est==="⚪ nuevo").map(([v,l,c])=>`<button type="button" data-v="${v}" aria-pressed="${v===est}" style="--ec:${c}"><i></i>${l}</button>`).join("")}</div></div>
