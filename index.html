@@ -1543,7 +1543,7 @@ const HEART_BANK = [
   ["En Cristo","Todo lo puedes","en Cristo","flp-4-13"],
   ["Discípulos","Que te reconozcan","por tu amor","jn-13-35"]
 ];
-const HEART_PHOTOS = ["cielo-nubes","cielo-cumulo","cielo-amanecer","universo-via-lactea","universo-galaxia","universo-orion","universo-magallanes","universo-nebulosa","universo-luna","mar-acantilados","mar-montes","bosque-secuoyas","bosque-cascada","bosque-corteza","campo-flores","montana-roca"];
+const HEART_PHOTOS = ["cielo-luna","mar-olas","mar-playa","universo-cumulo","universo-pilar","cielo-nubes","cielo-cumulo","cielo-amanecer","universo-via-lactea","universo-galaxia","universo-orion","universo-magallanes","universo-nebulosa","universo-luna","mar-acantilados","mar-montes","bosque-secuoyas","bosque-cascada","bosque-corteza","campo-flores","montana-roca"];
 const heartPhrase = h => h.lines.map(l=>l[1]).join(" ");
 // Cada dispositivo guarda la del día; mañana elige otra frase al azar entre las que no han salido y un diseño al azar (foto o crema)
 function heartDeck(){
@@ -1726,9 +1726,16 @@ const FONDOS = [
   ["cielo-nubes","Cielo",.36],["cielo-cumulo","Cielo",.3],["cielo-amanecer","Cielo",.56],
   ["universo-via-lactea","Universo",.5],["universo-galaxia","Universo",.5],["universo-orion","Universo",.5],["universo-magallanes","Universo",.5],["universo-nebulosa","Universo",.5],["universo-luna","Universo",.8],
   ["mar-acantilados","Mar",.52],["mar-montes","Mar",.3],
-  ["bosque-secuoyas","Bosque",.5],["bosque-cascada","Bosque",.72],["bosque-corteza","Bosque",.5],["campo-flores","Bosque",.5],["montana-roca","Bosque",.24]
+  ["bosque-secuoyas","Naturaleza",.5],["bosque-cascada","Naturaleza",.72],["bosque-corteza","Naturaleza",.5],["campo-flores","Naturaleza",.5],["montana-roca","Naturaleza",.24],
+  // Fotos agregadas el 26 de octubre de 2026. "sq" = solo en formato 1:1 (la foto original es horizontal)
+  ["cielo-luna","Cielo",.3],
+  ["universo-roja","Universo",.5],["universo-cumulo","Universo",.5],["universo-pilar","Universo",.5],["universo-sol","Universo",.5],["universo-anillo","Universo",.27,"sq"],["universo-polvo","Universo",.5,"sq"],
+  ["mar-olas","Mar",.5],["mar-playa","Mar",.45],["mar-abstracto","Mar",.55],["mar-profundo","Mar",.5,"sq"],
+  ["montana-verde","Naturaleza",.24,"sq"],
+  ["fe-tumba","Fe",.45],["fe-pastor","Fe",.24,"sq"],["fe-cruz-roja","Fe",.22,"sq"],["fe-cruz-luz","Fe",.5,"sq"]
 ];
-const FONDO_TEMAS = ["Cielo","Universo","Mar","Bosque"];
+const FONDO_TEMAS = ["Cielo","Universo","Mar","Naturaleza","Fe"];
+const fondosFor = (tema, fmt) => FONDOS.filter(x=>x[1]===tema && (fmt==="1:1" || x[3]!=="sq"));
 function loadImg(src){ return new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = src; }); }
 /* Formatos: 9:16 (historias/estados) o 1:1 (publicación). El texto se reparte según el formato. */
 async function verseImage(id, fondo, fmt="9:16"){
@@ -1746,7 +1753,7 @@ async function verseImage(id, fondo, fmt="9:16"){
   let fs = sq ? 92 : 104, lines = [];
   for(; fs >= (sq ? 38 : 44); fs -= 2){ g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`; lines = wrapLines(g, v.text, maxW); if(lines.length * fs * 1.08 <= maxH) break; }
   const lh = fs * 1.08, eyeH = sq ? 30 + 24 : 34 + 30, blockH = eyeH + lines.length*lh;
-  const cy = sq ? Math.min(H - 150 - blockH/2, Math.max(120 + blockH/2, H/2)) : Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
+  const cy = sq ? Math.min(H - 150 - blockH/2, Math.max(120 + blockH/2, F[3]==="sq" ? H*F[2] : H/2)) : Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
   g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(0, 0, W, H);
   const vg = g.createLinearGradient(0, top - 300, 0, top + blockH + 300);
   vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(.3, "rgba(0,0,0,.4)"); vg.addColorStop(.7, "rgba(0,0,0,.4)"); vg.addColorStop(1, "rgba(0,0,0,0)");
@@ -1993,6 +2000,36 @@ const PILDORAS = [
   { id:"enojo", e:"😤", l:"Enojo", t:"Para cuando estás enojado", f:"No permitas que el enojo domine tu vida: suéltalo y busca a Dios.", ids:["stg-1-19-20","prov-15-1","ef-4-26-27","ef-4-32","col-3-13"] },
   { id:"culpa", e:"🤍", l:"Culpa", t:"Para cuando sientes culpa", f:"Confiesa tus pecados y Dios te perdonará; ante sus ojos quedarás limpio.", ids:["sal-32-5","mi-7-19","1jn-1-9","rom-8-1","sal-103-12","is-1-18"] }
 ];
+/* Cada semana (de lunes a domingo) cada píldora muestra otros versículos, elegidos al azar de un grupo más grande.
+   Todos estos versículos ya están en la app y fueron verificados con la RVR1960. La selección es la misma para todos esa semana. */
+const PILD_POOL = {
+  ansiedad:["mt-6-33","prov-3-5-6","is-41-10","sal-46-1","rom-8-28","mt-11-28","jer-29-11","sal-56-3","sal-23-1","2tim-1-7"],
+  tristeza:["sal-42-11","lm-3-22-23","sal-40-1-2","rom-8-28","rom-8-38-39","is-41-10","2co-4-8-9","sal-46-1","jer-31-3"],
+  sinanimo:["is-40-31","is-40-29","flp-4-13","gal-6-9","flp-1-6","rom-15-13","ef-6-10","jos-1-9","2co-12-9"],
+  cansancio:["flp-4-13","ef-6-10","sal-23-1","sal-46-1","is-41-10","1p-5-7","sal-127-1","lm-3-22-23"],
+  tentacion:["gal-5-22-23","rom-12-2","1co-6-19","sal-51-10","ef-6-10","rom-8-1","gal-2-20"],
+  alegria:["rom-15-13","sal-34-8","sal-37-4","jn-10-10","gal-5-22-23","sal-139-14","lm-3-22-23"],
+  gratitud:["sal-118-24","sal-103-12","rom-8-28","ef-2-8-9","jn-3-16","sal-23-1","sal-34-8"],
+  aburrimiento:["jn-10-10","rom-12-2","mt-5-16","mt-6-33","sal-37-4","1p-2-9","flp-1-6"],
+  postergando:["gal-6-9","mt-6-33","lc-11-28","mt-7-24","flp-4-13","ec-3-1"],
+  soledad:["jos-1-9","rom-8-38-39","jer-31-3","sal-23-1","sal-46-1","is-43-1","jn-15-5"],
+  miedo:["is-41-10","sal-46-1","dt-31-6","sal-23-1","rom-8-38-39","jn-14-27","rom-8-28"],
+  enojo:["mt-6-14","gal-5-22-23","1co-13-4","rom-12-2","sal-51-10","mi-6-8"],
+  culpa:["rom-8-1","is-1-18","2co-5-17","sal-51-10","ef-2-8-9","rom-5-8","rom-5-1","tit-3-5"]
+};
+const weekNumber = () => { const d = new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())/DAY + 3) / 7); };
+function seededShuffle(arr, seedStr){
+  let h = 2166136261; for(const ch of seedStr){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const rnd = ()=>{ h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(rnd()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a;
+}
+PILDORAS.forEach(p=>{
+  const base = p.ids.slice(), n = base.length; let cache = null;
+  Object.defineProperty(p, "ids", { get(){ const w = weekNumber(); if(cache && cache.w===w) return cache.ids;
+    const pool = [...new Set(base.concat(PILD_POOL[p.id]||[]))].filter(id=>verse(id));
+    const ids = pool.length > n ? seededShuffle(pool, p.id + ":" + w).slice(0, n) : pool;
+    cache = { w, ids }; return ids; } });
+});
 const PILD_MAP = Object.fromEntries(PILDORAS.map(p=>[p.id,p]));
 /* "Memorizar este": entra a tu plan y sale primero entre los versículos nuevos, respetando tu ritmo */
 function queueVerse(id){
@@ -2039,10 +2076,11 @@ function shareVerseModal(vid){
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
     const img = sc.querySelector("#shImg"), wait = sc.querySelector("#shWait");
     const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await verseImage(vid, fondo, fmt); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
-    const thumbs = ()=>{ sc.querySelector("#shFondos").innerHTML = FONDOS.filter(x=>x[1]===tema).map(x=>`<button type="button" data-f="${x[0]}" aria-pressed="${x[0]===fondo}" style="background-image:url('img/fondos/${x[0]}.jpg')" aria-label="Fondo"></button>`).join("");
+    const thumbs = ()=>{ const list = fondosFor(tema, fmt); if(!list.some(x=>x[0]===fondo)) fondo = list[0][0];
+      sc.querySelector("#shFondos").innerHTML = list.map(x=>`<button type="button" data-f="${x[0]}" aria-pressed="${x[0]===fondo}" style="background-image:url('img/fondos/${x[0]}.jpg')" aria-label="Fondo"></button>`).join("");
       sc.querySelectorAll("#shFondos [data-f]").forEach(b=>b.onclick=()=>{ fondo = b.dataset.f; thumbs(); draw(); }); };
-    sc.querySelectorAll("#shFmt [data-fmt]").forEach(b=>b.onclick=()=>{ fmt = b.dataset.fmt; S.shareFmt = fmt; persist(); sc.querySelectorAll("#shFmt [data-fmt]").forEach(x=>x.setAttribute("aria-pressed", x===b)); sc.querySelector("#shPrev").classList.toggle("sq", fmt==="1:1"); draw(); });
-    sc.querySelectorAll("#shTema [data-t]").forEach(b=>b.onclick=()=>{ tema = b.dataset.t; fondo = FONDOS.find(x=>x[1]===tema)[0]; sc.querySelectorAll("#shTema [data-t]").forEach(x=>x.setAttribute("aria-pressed", x===b)); thumbs(); draw(); });
+    sc.querySelectorAll("#shFmt [data-fmt]").forEach(b=>b.onclick=()=>{ fmt = b.dataset.fmt; S.shareFmt = fmt; persist(); sc.querySelectorAll("#shFmt [data-fmt]").forEach(x=>x.setAttribute("aria-pressed", x===b)); sc.querySelector("#shPrev").classList.toggle("sq", fmt==="1:1"); thumbs(); draw(); });
+    sc.querySelectorAll("#shTema [data-t]").forEach(b=>b.onclick=()=>{ tema = b.dataset.t; fondo = fondosFor(tema, fmt)[0][0]; sc.querySelectorAll("#shTema [data-t]").forEach(x=>x.setAttribute("aria-pressed", x===b)); thumbs(); draw(); });
     sc.querySelector("#shGo").onclick = async ()=>{ if(!blob) return; const name = v.ref.replace(/[^\wáéíóúñ]+/gi,"-").toLowerCase() + (fmt==="1:1" ? "-cuadrada" : "") + ".jpg"; const file = new File([blob], name, { type:"image/jpeg" });
       if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; } }
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast("Imagen descargada. Ya la puedes subir a tus estados."); };
