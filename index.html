@@ -5274,7 +5274,7 @@ const HIST_LABEL = { creado:"lo creó", estado:"cambió el estado a", prioridad:
 function histLine(h){
   let det = h.detalle || "";
   if(h.accion==="estado") det = (EST[det]||{}).l || det;
-  else if(h.accion==="prioridad") det = det ? `${PRIO[det].e} ${PRIO[det].l}` : "sin prioridad";
+  else if(h.accion==="prioridad") det = det ? `${PRIO[det].e} ${PRIO[det].l}` : "por definir";
   else if(h.accion==="asignados") det = det ? det.split(",").map(memberName).join(", ") : "nadie";
   else if(h.accion==="fecha") det = det ? new Date(det+"T12:00:00").toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"}) : "sin fecha";
   else if(h.accion==="nota") det = det ? `“${det}”` : "(la borró)";
@@ -5302,7 +5302,7 @@ function teamListHTML(){
   // y al final lo que no tiene ni responsable ni fecha
   const tier = it => it.fecha_limite ? 0 : (it.asignados||[]).length ? 1 : 2;
   const byDue = (a,b) => tier(a) - tier(b) || ((a.fecha_limite||"") < (b.fecha_limite||"") ? -1 : (a.fecha_limite||"") > (b.fecha_limite||"") ? 1 : 0) || String(b.created_at).localeCompare(String(a.created_at));
-  const groups = PRIOS.map(([k,l,d,c,e])=>({ k, title:`${e} ${l}`, c, items:list.filter(it=>it.prioridad===k) })).concat([{ k:"", title:"Sin prioridad", c:"var(--line)", items:list.filter(it=>!PRIO[it.prioridad]) }]);
+  const groups = PRIOS.map(([k,l,d,c,e])=>({ k, title:`${e} ${l}`, c, items:list.filter(it=>it.prioridad===k) })).concat([{ k:"", title:"🗓️ Por definir en equipo", sub:"Falta decidir prioridad, responsable y fecha", c:"var(--muted)", items:list.filter(it=>!PRIO[it.prioridad]) }]);
   return groups.filter(g=>g.items.length).map(g=>`<div class="tm-group"><div class="tm-gh" style="--pc:${g.c}"><b>${g.title}</b><span class="muted">${g.items.length}</span>${g.sub?`<small class="muted" style="font-size:12px;font-weight:500">· ${g.sub}</small>`:""}</div>${g.items.sort(byDue).map(teamRow).join("")}</div>`).join("");
 }
 /* Campos de responsables, fecha y prioridad (se usan al agregar y al editar) */
