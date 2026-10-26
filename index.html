@@ -1888,6 +1888,12 @@ const FONDOS = [
   ["leon-cordero","León y Cordero",.74],["leon-melena","León y Cordero",.76],["leon-blanco","León y Cordero",.76],["leon-atardecer","León y Cordero",.78],["leon-mirada","León y Cordero",.24],["leon-rojo","León y Cordero",.78],
   ["fe-tumba","Fe",.45],["fe-pastor","Fe",.24,"sq"],["fe-cruz-roja","Fe",.22,"sq"],["fe-cruz-luz","Fe",.5,"sq"]
 ];
+/* En 1:1 las fotos verticales se recortan: [centro del recorte, altura del texto] (0 = arriba, 1 = abajo)
+   para que se vea la cara del animal o el motivo principal y el texto quede donde no lo tapa */
+const SQ_FOCUS = {
+  "leon-cordero":[.42,.8], "leon-melena":[.45,.8], "leon-blanco":[.4,.8], "leon-atardecer":[.38,.8], "leon-rojo":[.36,.8], "leon-mirada":[.52,.2],
+  "naturaleza-ovejas":[.45,.22], "fe-tumba":[.5,.5], "mar-roca":[.4,.3], "bosque-copa":[.5,.5]
+};
 const FONDO_TEMAS = ["Cielo","Universo","Mar","Naturaleza","Fe","León y Cordero"];
 const fondosFor = (tema, fmt) => FONDOS.filter(x=>x[1]===tema && (fmt==="1:1" || x[3]!=="sq"));
 function loadImg(src){ return new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = src; }); }
@@ -1900,7 +1906,7 @@ async function verseImage(id, fondo, fmt="9:16", size="g"){
   const sq = fmt === "1:1";
   const W = 1080, H = sq ? 1080 : 1920, X = sq ? 84 : 96, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   try{ const im = await loadImg(`img/fondos/${F[0]}.jpg`);
-    if(sq){ const ih = im.naturalHeight || 1920, iw = im.naturalWidth || 1080, side = Math.min(iw, ih), sy = Math.max(0, Math.min(ih - side, ih*F[2] - side/2)); g.drawImage(im, (iw-side)/2, sy, side, side, 0, 0, W, H); }
+    if(sq){ const ih = im.naturalHeight || 1920, iw = im.naturalWidth || 1080, side = Math.min(iw, ih), fc = SQ_FOCUS[F[0]] ? SQ_FOCUS[F[0]][0] : F[2], sy = Math.max(0, Math.min(ih - side, ih*fc - side/2)); g.drawImage(im, (iw-side)/2, sy, side, side, 0, 0, W, H); }
     else g.drawImage(im, 0, 0, W, H);
   }catch(e){ g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H); }
   // columna alineada a la izquierda: primero la cita pequeña (da contexto) y debajo el versículo grande
@@ -1909,7 +1915,7 @@ async function verseImage(id, fondo, fmt="9:16", size="g"){
   let fs = Math.round((sq ? 92 : 104) * k), lines = [];
   for(; fs >= Math.round((sq ? 38 : 44) * Math.min(1, k + .1)); fs -= 2){ g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`; lines = wrapLines(g, v.text, maxW); if(lines.length * fs * 1.08 <= maxH) break; }
   const lh = fs * 1.08, eyeH = sq ? 30 + 24 : 34 + 30, blockH = eyeH + lines.length*lh;
-  const cy = sq ? Math.min(H - 150 - blockH/2, Math.max(120 + blockH/2, F[3]==="sq" ? H*F[2] : H/2)) : Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
+  const cy = sq ? Math.min(H - 150 - blockH/2, Math.max(120 + blockH/2, SQ_FOCUS[F[0]] ? H*SQ_FOCUS[F[0]][1] : F[3]==="sq" ? H*F[2] : H/2)) : Math.min(H - 300 - blockH/2, Math.max(240 + blockH/2, H * F[2])), top = cy - blockH/2;
   g.fillStyle = "rgba(0,0,0,.2)"; g.fillRect(0, 0, W, H);
   const vg = g.createLinearGradient(0, top - 300, 0, top + blockH + 300);
   vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(.3, "rgba(0,0,0,.4)"); vg.addColorStop(.7, "rgba(0,0,0,.4)"); vg.addColorStop(1, "rgba(0,0,0,0)");
