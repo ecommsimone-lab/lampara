@@ -162,6 +162,19 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .hsum-row small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hsum-ic{font-size:22px;flex:none}
 .hsum-row .go{color:var(--muted);font-size:18px}
+.ini-tip{font-size:12.5px;color:var(--muted);line-height:1.4}
+.mt{display:flex;flex-direction:column;gap:16px}
+.mt-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.mt-step{display:flex;gap:12px;align-items:flex-start}
+.mt-step>div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.mt-step b{font-size:15px}
+.mt-step small{font-size:13px;color:var(--muted);line-height:1.4}
+.mt-n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:13px;font-weight:800}
+.mt-ex{margin-top:8px;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--accent-soft);border:1px dashed var(--accent)}
+.mt-ex small{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.mt-words{margin:0;font-family:var(--f-display);font-size:15px;line-height:1.5;color:var(--ink)}
+.mt-words b{color:var(--accent);font-size:1.15em}
+.mt-ini{margin:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:20px;font-weight:700;letter-spacing:.12em;color:var(--ink)}
 .ini-box{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:16px;background:var(--accent-soft);border:1px dashed var(--accent)}
 .ini-box small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .ini-box p{margin:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:clamp(22px,5.4vw,30px);font-weight:700;letter-spacing:.14em;line-height:1.5;word-break:break-all;color:var(--ink)}
@@ -2409,6 +2422,27 @@ function startSession(ids, {title, review=false, listId=null}={}){
   SESSION = { ids, source: arguments[1]&&arguments[1].source || ids, title, review, listId, phase:"setup", i:0, mode:S.prefs.mode, results:[], flipped:false, q:null, unlocked:0, xp:0, stageBefore:currentStage() };
   VIEW = { name:"session" };
   render();
+  if(!S.methodSeen) setTimeout(methodModal, 250);
+}
+/* Explicación del método: se muestra la primera vez que practicas y se puede volver a ver con "¿Cómo funciona?" */
+function methodModal(){
+  const ex = "Por cuanto todos pecaron, y están destituidos de la gloria de Dios,";
+  const marked = ex.split(" ").map(w=>{ const m = w.match(/^(.)(.*)$/); return `<span><b>${esc(m[1])}</b>${esc(m[2])}</span>`; }).join(" ");
+  const step = (n,e,t,d,extra="") => `<li class="mt-step"><span class="mt-n">${n}</span><div><b>${e} ${t}</b><small>${d}</small>${extra}</div></li>`;
+  modal(`<div class="mt">
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Antes de empezar</span><h2 style="font-size:clamp(24px,5vw,30px)">Así vas a memorizar</h2>
+      <p class="muted" style="margin:0;font-size:14.5px;line-height:1.5">Cada versículo sube de nivel cuando lo aciertas. La ayuda va bajando poco a poco, hasta que lo dices sin nada.</p></div>
+    <ol class="mt-steps">
+      ${step(1,"🃏","Tarjetas","Lee el versículo y conócelo.")}
+      ${step(2,"✏️","Llenar espacios","Completa las palabras que faltan. Cada vez faltan más.")}
+      ${step(3,"🔤","Con iniciales","Ves solo la primera letra de cada palabra, con sus comas y puntos, y lo recitas completo.",
+        `<div class="mt-ex"><small>Romanos 3:23</small><p class="mt-words">${marked}</p><p class="mt-ini">${esc(initialsOf(ex))}</p></div>`)}
+      ${step(4,"⌨️","Escribirlo completo","Sin pistas.")}
+      ${step(5,"🎙️","Recitarlo completo","Sin pistas ni iniciales. ¡Ya lo aprendiste!")}
+    </ol>
+    <p class="muted" style="margin:0;font-size:13px;line-height:1.5">Si fallas, el versículo baja un nivel para que lo refuerces. Puedes volver a ver esto en <b style="color:var(--ink)">¿Cómo funciona?</b> al empezar una práctica.</p>
+    <button class="btn primary lg" id="mtOk" style="justify-content:center">Entendido, empezar</button>
+  </div>`, sc=>{ sc.querySelector("#mtOk").onclick = ()=>{ S.methodSeen = true; persist(); closeModal(); }; });
 }
 /* Tarjetas: siempre para los versículos nuevos (menos de 2 aciertos seguidos) y para los que siguen con errores (último intento por debajo del 90 %), sin importar la fase */
 function cardIdsFor(ids){ const failed=new Set(S.lastFailed||[]); return ids.filter(id=>{ const p=prog(id); if(!p || !p.reps || p.box<2 || failed.has(id)) return true; const h=p.hist||[]; return h.length>0 && h[h.length-1]<90; }); }
@@ -2462,7 +2496,7 @@ function renderSession(){
   if(s.phase==="setup"){
     const opt = (k,t,d) => `<button class="mode" data-mode="${k}" aria-pressed="${s.mode===k}"><b>${t}</b><small>${d}</small></button>`;
     body = `
-      <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${total} ${total===1?"versículo":"versículos"}</span><h1 style="font-size:clamp(30px,5vw,44px)">${s.review?"Repaso de memorizados":"¿Cómo quieres practicar?"}</h1><p class="muted">Tarjetas para los versículos nuevos, después las preguntas.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${total} ${total===1?"versículo":"versículos"}</span><h1 style="font-size:clamp(30px,5vw,44px)">${s.review?"Repaso de memorizados":"¿Cómo quieres practicar?"}</h1><p class="muted">Tarjetas para los versículos nuevos, después las preguntas. <button class="linkbtn" data-act="method-help" style="padding:0;font-size:inherit">¿Cómo funciona?</button></p></div>
       <div class="modes">
         ${opt("mixto","Mixto","Va subiendo según cada versículo: espacios, iniciales, escribir y recitar")}
         ${opt("blanks","Llenar espacios","Completa las palabras que faltan")}
@@ -2614,7 +2648,7 @@ function quizBody(){
   if(q.stage==="ref") return refBody();
   const fav = S.favs.includes(q.id);
   const modeName = q.ini ? "Con iniciales" : { blanks:"Llenar espacios", write:"Escribir completo", recite:"Recitar" }[q.mode];
-  const iniBox = q.ini && !q.done ? `<div class="ini-box"><small>Iniciales de cada palabra</small><p>${esc(initialsOf(v.text))}</p></div>` : "";
+  const iniBox = q.ini && !q.done ? `<div class="ini-box"><small>Iniciales de cada palabra</small><p>${esc(initialsOf(v.text))}</p><span class="ini-tip">Cada letra es el comienzo de una palabra. Dilo completo, palabra por palabra.</span></div>` : "";
   const favBtn = v.sug ? `<button class="btn ${fav?"":"ghost"}" data-act="fav" data-id="${q.id}" style="${fav?'color:var(--accent)':''}">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"Agregar a Mis versículos"}</button>` : "";
   let inner = "";
   if(q.mode==="blanks"){
@@ -5652,6 +5686,7 @@ document.addEventListener("click", e=>{
     case "verse-practice": { const id=t.dataset.id; startSession([id],{ title:SUG_MAP[id].ref, source:[id] }); break; }
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "sug-add": sugAdd(t.dataset.id, t); break;
+    case "method-help": methodModal(); break;
     case "sug-hide": sugHide(t.dataset.id); break;
     case "friend-accept": friendAction("accept", t.dataset.id, t); break;
     case "friend-reject": friendAction("reject", t.dataset.id, t); break;
