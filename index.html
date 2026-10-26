@@ -1754,23 +1754,25 @@ function wrapLines(g, text, maxW){ const words = text.split(" "), lines = []; le
 function star(g, x, y, r){ g.beginPath(); g.moveTo(x, y-r); g.quadraticCurveTo(x, y, x+r, y); g.quadraticCurveTo(x, y, x, y+r); g.quadraticCurveTo(x, y, x-r, y); g.quadraticCurveTo(x, y, x, y-r); g.fill(); }
 /* Diseño con foto: todo agrupado en el centro (frase + versículo), dentro de la zona que no tapan
    las redes sociales (arriba ~250 px y abajo ~340 px en historias). */
-async function heartImageFoto(h, pal, ref, text){
-  const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+async function heartImageFoto(h, pal, ref, text, fmt="9:16"){
+  const sq = fmt === "1:1", Z = sq ? .74 : 1;   // en 1:1 todo un poco más pequeño para que quepa
+  const W = 1080, H = sq ? 1080 : 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H);
   try{ const im = await loadImg(`img/fondos/${h.photo}.jpg`), sc = Math.max(W/im.width, H/im.height), dw = im.width*sc, dh = im.height*sc; g.drawImage(im, (W-dw)/2, (H-dh)/2, dw, dh); }catch(e){}
   const ov = g.createLinearGradient(0, 0, 0, H); ov.addColorStop(0, "rgba(0,0,0,.18)"); ov.addColorStop(.5, "rgba(0,0,0,.42)"); ov.addColorStop(1, "rgba(0,0,0,.22)"); g.fillStyle = ov; g.fillRect(0, 0, W, H);
   const spec = { caps:['500 76px "Playfair Display", serif', 1.18], serif:['500 82px "Playfair Display", serif', 1.18], script:['400 120px "Kaushan Script", cursive', 1.22], wave:['600 92px "Fraunces", serif', 1.3], wavebig:['900 270px "Fraunces", serif', 1.12] };
-  const rows = h.lines.map(([kind, txt])=>{ let [font, lh] = spec[kind]; const size = parseFloat(font.match(/(\d+)px/)[1]); let fs = size; const shown = kind === "caps" ? txt.toUpperCase() : txt;
+  const rows = h.lines.map(([kind, txt])=>{ let [font, lh] = spec[kind]; const size = Math.round(parseFloat(font.match(/(\d+)px/)[1]) * Z); font = font.replace(/\d+px/, size + "px"); let fs = size; const shown = kind === "caps" ? txt.toUpperCase() : txt;
     g.font = font; let w = g.measureText(shown).width; if(w > 940){ fs = Math.floor(size * 940 / w); font = font.replace(/\d+px/, fs + "px"); g.font = font; w = g.measureText(shown).width; }
     return { kind, shown, font, fs, w, h: fs*lh }; });
   const phraseH = rows.reduce((a,r)=>a+r.h, 0);
-  g.font = 'italic 400 40px "Inter", sans-serif'; const vl = wrapLines(g, `“${text}”`, 820); const boxH = vl.length*58 + 130;
-  const eyeH = 40, gap1 = 46, gap2 = 64, gap3 = 54, brandH = 40;
+  const vf = sq ? 32 : 40, vlh = sq ? 46 : 58;
+  g.font = `italic 400 ${vf}px "Inter", sans-serif`; const vl = wrapLines(g, `“${text}”`, 820); const boxH = vl.length*vlh + (sq ? 104 : 130);
+  const eyeH = 40*Z, gap1 = 46*Z, gap2 = 64*Z, gap3 = 54*Z, brandH = 40*Z;
   const total = eyeH + gap1 + phraseH + gap2 + boxH + gap3 + brandH;
-  const safeTop = 260, safeBot = H - 360;
+  const safeTop = sq ? 70 : 260, safeBot = H - (sq ? 70 : 360);
   let y = Math.max(safeTop, safeTop + ((safeBot - safeTop) - total) / 2);
   g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillStyle = "rgba(255,255,255,.92)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 14;
-  g.font = '700 30px "Inter", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText("RECUERDA ESTO", W/2, y + 30); if("letterSpacing" in g) g.letterSpacing = "0px";
+  g.font = `700 ${Math.round(30*Z)}px "Inter", sans-serif`; if("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText("RECUERDA ESTO", W/2, y + 30*Z); if("letterSpacing" in g) g.letterSpacing = "0px";
   y += eyeH + gap1;
   rows.forEach(r=>{
     const base = y + r.fs * (r.kind === "wavebig" ? 0.95 : 0.9);
@@ -1786,16 +1788,16 @@ async function heartImageFoto(h, pal, ref, text){
   });
   y += gap2;
   g.fillStyle = "rgba(255,255,255,.94)"; rrect(g, 90, y, 900, boxH, 40); g.fill();
-  g.font = 'italic 400 40px "Inter", sans-serif'; g.fillStyle = "#1C2340"; g.textAlign = "left"; vl.forEach((l,i)=>g.fillText(l, 130, y + 72 + i*58));
-  g.font = '600 32px "Inter", sans-serif'; g.fillStyle = pal.ink; g.fillText(`${ref} · RVR1960`, 130, y + boxH - 40);
+  g.font = `italic 400 ${vf}px "Inter", sans-serif`; g.fillStyle = "#1C2340"; g.textAlign = "left"; vl.forEach((l,i)=>g.fillText(l, 130, y + (sq ? 60 : 72) + i*vlh));
+  g.font = `600 ${sq ? 26 : 32}px "Inter", sans-serif`; g.fillStyle = pal.ink; g.fillText(`${ref} · RVR1960`, 130, y + boxH - (sq ? 32 : 40));
   y += boxH + gap3;
-  g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.9)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 12; g.font = '700 36px "Inter", sans-serif'; g.fillText(APP_NAME, W/2, y + 30); g.shadowBlur = 0;
+  g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.9)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 12; g.font = `700 ${Math.round(36*Z)}px "Inter", sans-serif`; g.fillText(APP_NAME, W/2, y + 30*Z); g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/png"));
 }
-async function heartImage(){
+async function heartImage(fmt){
   const { h, pal, ref, text } = heartOfDay();
   try{ await Promise.all(['400 100px "Kaushan Script"','500 60px "Playfair Display"','600 60px "Fraunces"','900 60px "Fraunces"','italic 400 40px "Inter"','700 40px "Inter"'].map(f=>document.fonts.load(f))); }catch(e){}
-  if(h.lay === "foto" && h.photo) return heartImageFoto(h, pal, ref, text);
+  if(h.lay === "foto" && h.photo) return heartImageFoto(h, pal, ref, text, fmt);
   const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   const light = h.lay !== "noche", ink = light ? pal.ink : "#fff";
   if(h.lay === "noche"){ const gr = g.createRadialGradient(540, 700, 0, 540, 700, 1250); gr.addColorStop(0, pal.deep); gr.addColorStop(.58, pal.mid); gr.addColorStop(1, pal.light); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
@@ -1852,18 +1854,23 @@ async function heartImage(){
   g.globalAlpha = .75; g.font = '500 30px "Inter", sans-serif'; g.fillText((location.host + location.pathname).replace(/index\.html$/, "").replace(/\/$/, ""), W/2, H - 98); g.globalAlpha = 1;
   return new Promise(r=>c.toBlob(r, "image/png"));
 }
-async function shareHeart(btn){
-  if(btn) btn.disabled = true;
-  try{
-    const blob = await heartImage(); if(!blob) throw new Error("sin imagen");
-    const file = new File([blob], "recuerda-esto.png", { type:"image/png" });
-    if(navigator.canShare && navigator.canShare({ files:[file] })){
-      try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; }
-    }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "recuerda-esto.png"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
-    toast("Imagen descargada. Ya la puedes subir a tus estados.");
-  }catch(e){ toast("No se pudo crear la imagen."); }
-  finally{ if(btn) btn.disabled = false; }
+async function shareHeart(){
+  let fmt = S.shareFmt || "9:16", blob = null, seq = 0;
+  modal(`<div class="spread"><h2 style="font-size:22px">Compartir “Recuerda esto”</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="share-fmt" id="hsFmt"><button type="button" data-fmt="9:16" aria-pressed="${fmt==="9:16"}"><i class="r916"></i><span><b>9:16</b><small>Historias y estados</small></span></button><button type="button" data-fmt="1:1" aria-pressed="${fmt==="1:1"}"><i class="r11"></i><span><b>1:1</b><small>Publicación</small></span></button></div>
+    <div class="share-prev ${fmt==="1:1"?"sq":""}" id="hsPrev"><img id="hsImg" alt="Vista previa de la imagen"><span id="hsWait">Creando imagen…</span></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="hsGo">${I.share} Compartir</button></div>`, sc=>{
+    sc.style.zIndex = 120;   // por encima de la pantalla de "Recuerda esto"
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const img = sc.querySelector("#hsImg"), wait = sc.querySelector("#hsWait");
+    const draw = async ()=>{ const my = ++seq; wait.hidden = false; const bl = await heartImage(fmt); if(my !== seq) return; blob = bl; if(blob){ if(img.src) URL.revokeObjectURL(img.src); img.src = URL.createObjectURL(blob); } wait.hidden = true; };
+    sc.querySelectorAll("#hsFmt [data-fmt]").forEach(b=>b.onclick=()=>{ fmt = b.dataset.fmt; S.shareFmt = fmt; persist(); sc.querySelectorAll("#hsFmt [data-fmt]").forEach(x=>x.setAttribute("aria-pressed", x===b)); sc.querySelector("#hsPrev").classList.toggle("sq", fmt==="1:1"); draw(); });
+    sc.querySelector("#hsGo").onclick = async ()=>{ if(!blob) return; const name = "recuerda-esto" + (fmt==="1:1" ? "-cuadrada" : "") + ".png"; const file = new File([blob], name, { type:"image/png" });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file] }); return; }catch(e){ if(e && e.name === "AbortError") return; } }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+      toast("Imagen descargada. Ya la puedes subir a tus estados."); };
+    draw();
+  });
 }
 
 /* ---------- Imagen para compartir un versículo: fotos reales (Unsplash, Pexels y NASA, uso libre) en formato de celular ---------- */
@@ -6140,7 +6147,7 @@ document.addEventListener("click", e=>{
     case "heart-close": closeHeart(); break;
     case "heart-practice": { const hid = t.dataset.id, v = verse(hid); closeHeart(); if(v) startSession([hid], { title:v.ref }); break; }
     case "heart-fav": { const hid = t.dataset.id; if(S.favs.includes(hid)) S.favs = S.favs.filter(x=>x!==hid); else S.favs.unshift(hid); persist(); t.innerHTML = heartFavBtn(hid); toast(S.favs.includes(hid) ? "Guardado en Mis versículos." : "Lo quitaste de Mis versículos."); break; }
-    case "heart-share": shareHeart(t); break;
+    case "heart-share": shareHeart(); break;
     case "intro-preview": { try{ sessionStorage.removeItem("lampara.introSeen"); }catch(e){} const was = introEnabled(); try{ localStorage.removeItem("lampara.intro"); }catch(e){} replayIntro(); if(!was){ try{ localStorage.setItem("lampara.intro","off"); }catch(e){} } break; }
     case "badge-open": badgeModal(t.dataset.id, t.dataset.friend || false); break;
     case "practice-hard": { const ids=hardestIds(activeIds()); startSession(shuffle(ids),{title:"Los que más te cuestan", source:ids.slice()}); break; }
