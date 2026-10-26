@@ -167,6 +167,29 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .hsum-row small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hsum-ic{font-size:22px;flex:none}
 .hsum-row .go{color:var(--muted);font-size:18px}
+.celeb{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.celeb h2{font-size:clamp(26px,6vw,32px);margin:0}
+.celeb-badge{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-size:44px;background:radial-gradient(circle at 35% 30%,#FFE7A3,#FFC94D 55%,#F2A100);box-shadow:0 10px 30px -8px rgba(242,161,0,.7);animation:celebPop .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes celebPop{from{transform:scale(.3) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+.celeb-card{width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;text-align:left;padding:18px 20px;border-radius:18px;background:var(--accent-soft);border:1px solid var(--line);animation:celebIn .35s ease both}
+@keyframes celebIn{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.celeb-card p{margin:0;font-family:var(--f-display);font-size:18px;line-height:1.5;color:var(--ink)}
+.celeb-nav{display:flex;align-items:center;gap:12px}
+.celeb-nav span{display:flex;gap:6px}
+.celeb-nav i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.celeb-nav i.on{background:var(--accent);width:18px;border-radius:4px}
+.celeb .btn{width:100%}
+.confetti{position:absolute;inset:-24px -24px auto;height:520px;overflow:hidden;pointer-events:none;z-index:0}
+.confetti i{position:absolute;top:-20px;border-radius:2px;opacity:.95;animation-name:confFall;animation-timing-function:cubic-bezier(.3,.6,.5,1);animation-fill-mode:both}
+@keyframes confFall{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(540px) rotate(540deg);opacity:0}}
+.celeb>*:not(.confetti){position:relative;z-index:1}
+.celeb-bar{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#FFF4D6,#FFE2A8);color:#5A3B00;border:1px solid #F5C451}
+.celeb-bar>span:first-child{font-size:28px}
+.celeb-bar>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.celeb-bar b{font-size:16px}
+.celeb-bar small{font-size:13px;opacity:.85}
+.celeb-bar .go{font-size:13.5px;font-weight:800;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.confetti{display:none}.celeb-badge,.celeb-card{animation:none}}
 .ini-tip{font-size:12.5px;color:var(--muted);line-height:1.4}
 .mt{display:flex;flex-direction:column;gap:16px}
 .mt-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
@@ -2065,9 +2088,9 @@ function pildVerseModal(vid){
       <button data-act="pv-share" data-id="${vid}">${I.share}<b>Compartir imagen</b><small>Para tus estados o redes</small></button>
     </div>`, sc=>{ sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal); });
 }
-function shareVerseModal(vid){
+function shareVerseModal(vid, memorized){
   const v = verse(vid); if(!v) return; let tema = FONDO_TEMAS[0], fondo = FONDOS.find(x=>x[1]===tema)[0], blob = null, seq = 0, fmt = S.shareFmt || "9:16";
-  modal(`<div class="spread"><h2 style="font-size:22px">Compartir ${esc(v.ref)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+  modal(`<div class="spread"><h2 style="font-size:22px">${memorized?`🎉 Comparte que memorizaste ${esc(v.ref)}`:`Compartir ${esc(v.ref)}`}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
     <div class="share-fmt" id="shFmt"><button type="button" data-fmt="9:16" aria-pressed="${fmt==="9:16"}"><i class="r916"></i><span><b>9:16</b><small>Historias y estados</small></span></button><button type="button" data-fmt="1:1" aria-pressed="${fmt==="1:1"}"><i class="r11"></i><span><b>1:1</b><small>Publicación</small></span></button></div>
     <div class="share-prev ${fmt==="1:1"?"sq":""}" id="shPrev"><img id="shImg" alt="Vista previa de la imagen"><span id="shWait">Creando imagen…</span></div>
     <div class="share-scenes" id="shTema">${FONDO_TEMAS.map((x,i)=>`<button type="button" data-t="${x}" aria-pressed="${i===0}">${x}</button>`).join("")}</div>
@@ -5090,6 +5113,35 @@ function profileCommunityPanel(){
 }
 
 /* ---------- Resumen ---------- */
+/* ----- Felicitación al memorizar un versículo ----- */
+function masteredNow(){ const s = SESSION; if(!s) return []; return [...new Set(s.results.filter(x=>x.before!=="ok" && x.after==="ok").map(x=>x.id))].filter(id=>verse(id)); }
+function confettiHTML(n=46){
+  const cols = ["#FFC94D","#FF8A1A","#4C6FFF","#16A36A","#E5484D","#B57BFF","#38BDF8"];
+  let h = ""; for(let i=0;i<n;i++){ const l = Math.random()*100, d = (Math.random()*1.4).toFixed(2), t = (2.2+Math.random()*1.8).toFixed(2), r = Math.round(Math.random()*360), w = 6+Math.round(Math.random()*6);
+    h += `<i style="left:${l}%;background:${cols[i%cols.length]};width:${w}px;height:${Math.round(w*1.6)}px;animation-delay:${d}s;animation-duration:${t}s;transform:rotate(${r}deg)"></i>`; }
+  return `<div class="confetti" aria-hidden="true">${h}</div>`;
+}
+function celebrateModal(ids){
+  ids = (ids||[]).filter(id=>verse(id)); if(!ids.length) return; let i = 0;
+  const card = () => { const v = verse(ids[i]); return `<div class="celeb-card"><span class="eyebrow" style="color:var(--accent)">${esc(v.ref)}</span><p>${esc(v.text)}</p></div>`; };
+  modal(`<div class="celeb">${confettiHTML()}
+    <div class="celeb-badge">🏆</div>
+    <h2>${ids.length===1?"¡Lo memorizaste!":`¡Memorizaste ${ids.length} versículos!`}</h2>
+    <p class="muted" style="margin:0;text-align:center;font-size:14.5px">Ya está guardado en tu corazón. Te lo preguntaremos de vez en cuando para que no se te olvide.</p>
+    <div id="celebCard">${card()}</div>
+    ${ids.length>1?`<div class="celeb-nav"><button class="icon-btn" id="celPrev" aria-label="Anterior">‹</button><span id="celDots">${ids.map((_,k)=>`<i class="${k===0?"on":""}"></i>`).join("")}</span><button class="icon-btn" id="celNext" aria-label="Siguiente">›</button></div>`:""}
+    <button class="btn primary lg" id="celImg" style="justify-content:center">📸 Crear imagen para compartir</button>
+    <button class="btn ghost" data-close style="justify-content:center">Seguir</button>
+  </div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    const upd = ()=>{ sc.querySelector("#celebCard").innerHTML = card(); sc.querySelectorAll("#celDots i").forEach((d,k)=>d.className = k===i ? "on" : ""); };
+    const pv = sc.querySelector("#celPrev"), nx = sc.querySelector("#celNext");
+    if(pv) pv.onclick = ()=>{ i = (i-1+ids.length)%ids.length; upd(); };
+    if(nx) nx.onclick = ()=>{ i = (i+1)%ids.length; upd(); };
+    sc.querySelector("#celImg").onclick = ()=>{ const vid = ids[i]; closeModal(); shareVerseModal(vid, true); };
+    try{ if(navigator.vibrate) navigator.vibrate([30,40,60]); }catch(e){}
+  });
+}
 function summaryBody(){
   const s = SESSION; const r = s.results;
   const avg = r.length ? Math.round(r.reduce((a,x)=>a+x.score,0)/r.length*100) : 0;
@@ -5105,7 +5157,7 @@ function summaryBody(){
       <div class="stat"><div class="eyebrow">Bien</div><span class="big" style="color:var(--ok)">${up}</span></div>
       <div class="stat"><div class="eyebrow">A practicar</div><span class="big" style="color:var(--bad)">${bad}</span></div>
     </div>
-    ${newMaster.length?`<div class="result-bar ok"><span>Nuevos aprendidos: <b style="font-size:inherit">${newMaster.map(x=>esc(verse(x.id).ref)).join(", ")}</b></span></div>`:""}
+    ${newMaster.length?`<button class="celeb-bar" data-act="celebrate"><span>🎉</span><span><b>${newMaster.length===1?"¡Memorizaste un versículo!":`¡Memorizaste ${new Set(newMaster.map(x=>x.id)).size} versículos!`}</b><small>${[...new Set(newMaster.map(x=>x.id))].map(id=>esc(verse(id).ref)).join(" · ")}</small></span><span class="go">Crear imagen ›</span></button>`:""}
     ${fell.length?`<div class="result-bar bad"><span>Regresan a tu práctica: <b style="font-size:inherit">${fell.map(x=>esc(verse(x.id).ref)).join(", ")}</b></span></div>`:""}
     ${s.unlocked?`<div class="result-bar mid"><span>Vas muy bien. Agregamos <b style="font-size:inherit">${s.unlocked}</b> versículos nuevos a tu plan.</span></div>`:""}
     <div class="panel" style="padding:10px"><div class="vlist">${r.map((x,i)=>{ const v=verse(x.id); const cls=x.outcome==="ok"?"ok":x.outcome==="mid"?"mid":"bad"; return `<div class="vrow" style="grid-template-columns:28px minmax(0,1fr) auto auto"><span class="idx">${i+1}</span><div class="t"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip ${cls} mono">${Math.round(x.score*100)}%</span><span class="chip ${x.after}">${STATUS_LABEL[x.after]}</span></div>`; }).join("")}</div></div>
@@ -5977,6 +6029,7 @@ document.addEventListener("click", e=>{
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "sug-add": sugAdd(t.dataset.id, t); break;
     case "method-help": methodModal(); break;
+    case "celebrate": celebrateModal(masteredNow()); break;
     case "sug-hide": sugHide(t.dataset.id); break;
     case "friend-accept": friendAction("accept", t.dataset.id, t); break;
     case "friend-reject": friendAction("reject", t.dataset.id, t); break;
@@ -6115,7 +6168,7 @@ document.addEventListener("click", e=>{
     case "next-q":
       stopSpeech();
       if(SESSION.t<SESSION.tasks.length-1){ SESSION.t++; prepQuestion(); render(); }
-      else { SESSION.unlocked = SESSION.review ? 0 : maybeUnlock(); SESSION.advanced = checkStageAdvance(SESSION.stageBefore); if(SESSION.results.length>=3 && SESSION.results.every(x=>x.score>=0.999)) S.perfect = (S.perfect||0)+1; rememberSession(SESSION.ids, SESSION.results.filter(x=>x.outcome==="bad").map(x=>x.id)); persist(); SESSION.phase="done"; render(); }
+      else { SESSION.unlocked = SESSION.review ? 0 : maybeUnlock(); SESSION.advanced = checkStageAdvance(SESSION.stageBefore); if(SESSION.results.length>=3 && SESSION.results.every(x=>x.score>=0.999)) S.perfect = (S.perfect||0)+1; rememberSession(SESSION.ids, SESSION.results.filter(x=>x.outcome==="bad").map(x=>x.id)); persist(); SESSION.phase="done"; render(); const nm = masteredNow(); if(nm.length) setTimeout(()=>celebrateModal(nm), 450); }
       break;
     case "end-home": SESSION=null; go("home"); break;
     case "again": {
