@@ -1579,7 +1579,8 @@ function heartDeck(){
   const seen = (d && Array.isArray(d.seen) ? d.seen : []).filter(i=>i < HEART_BANK.length);
   let pool = HEART_BANK.map((_,i)=>i).filter(i=>!seen.includes(i)); if(!pool.length) pool = HEART_BANK.map((_,i)=>i).filter(i=>!d || i!==d.i);
   const i = pool[Math.floor(Math.random()*pool.length)];
-  const all = FONDOS.filter(x=>x[3]!=="sq").map(x=>x[0]);   // todas las fotos verticales que nos han pasado
+  // todas las fotos verticales, menos las de León y Cordero: el texto va centrado y taparía la cara del animal
+  const all = FONDOS.filter(x=>x[3]!=="sq" && x[1]!=="León y Cordero").map(x=>x[0]);
   const photos = all.filter(x=>!d || x!==d.photo);
   const lay = "foto";
   const nd = { day:k, i, lay, photo: lay==="foto" ? photos[Math.floor(Math.random()*photos.length)] : null, pal: Math.floor(Math.random()*HEART_PALS.length), caps: Math.random() < .4,
@@ -1646,7 +1647,7 @@ function openHeart(){
   el.innerHTML = `${h.lay === "foto" && h.photo ? `<div class="hx-photo" aria-hidden="true" style="background-image:url('img/fondos/${h.photo}.jpg')"></div>` : ""}
     <button class="icon-btn hx-close" data-act="heart-close" aria-label="Cerrar">${I.x}</button>
     <div class="hx-in">
-      <span class="hx-ey fd" style="--d:100ms">Recuerda esto · ${esc(h.title)}</span>
+      <span class="hx-ey fd" style="--d:100ms">Recuerda esto</span>
       <p class="hx-art" style="margin:0" aria-label="${esc(heartPhrase(h))}"><span aria-hidden="true" style="display:contents">${html}</span></p>
       <div class="hx-rest fd" style="--d:${total + 250}ms">
         <div class="hx-verse">“${esc(text)}”<span class="hx-ref">${esc(ref)} · RVR1960</span></div>
@@ -1693,7 +1694,7 @@ async function heartImageFoto(h, pal, ref, text){
   const safeTop = 260, safeBot = H - 360;
   let y = Math.max(safeTop, safeTop + ((safeBot - safeTop) - total) / 2);
   g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillStyle = "rgba(255,255,255,.92)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 14;
-  g.font = '700 30px "Inter", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText(("Recuerda esto · " + h.title).toUpperCase(), W/2, y + 30); if("letterSpacing" in g) g.letterSpacing = "0px";
+  g.font = '700 30px "Inter", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText("RECUERDA ESTO", W/2, y + 30); if("letterSpacing" in g) g.letterSpacing = "0px";
   y += eyeH + gap1;
   rows.forEach(r=>{
     const base = y + r.fs * (r.kind === "wavebig" ? 0.95 : 0.9);
@@ -1800,9 +1801,11 @@ const FONDOS = [
   ["universo-roja","Universo",.5],["universo-cumulo","Universo",.5],["universo-pilar","Universo",.5],["universo-sol","Universo",.5],["universo-anillo","Universo",.27,"sq"],["universo-polvo","Universo",.5,"sq"],
   ["mar-olas","Mar",.5],["mar-playa","Mar",.45],["mar-abstracto","Mar",.55],["mar-profundo","Mar",.5,"sq"],
   ["montana-verde","Naturaleza",.24,"sq"],
+  ["mar-roca","Mar",.3],["bosque-copa","Naturaleza",.5],["naturaleza-ovejas","Naturaleza",.72],["universo-llamarada","Universo",.5],
+  ["leon-cordero","León y Cordero",.74],["leon-melena","León y Cordero",.76],["leon-blanco","León y Cordero",.76],["leon-atardecer","León y Cordero",.78],["leon-mirada","León y Cordero",.24],["leon-rojo","León y Cordero",.78],
   ["fe-tumba","Fe",.45],["fe-pastor","Fe",.24,"sq"],["fe-cruz-roja","Fe",.22,"sq"],["fe-cruz-luz","Fe",.5,"sq"]
 ];
-const FONDO_TEMAS = ["Cielo","Universo","Mar","Naturaleza","Fe"];
+const FONDO_TEMAS = ["Cielo","Universo","Mar","Naturaleza","Fe","León y Cordero"];
 const fondosFor = (tema, fmt) => FONDOS.filter(x=>x[1]===tema && (fmt==="1:1" || x[3]!=="sq"));
 function loadImg(src){ return new Promise((res, rej)=>{ const im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = src; }); }
 /* Formatos: 9:16 (historias/estados) o 1:1 (publicación). El texto se reparte según el formato. */
