@@ -104,6 +104,11 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
   .tabbar button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:600;color:var(--muted);padding:6px 18px;border-radius:10px;min-width:0}
   .tabbar button[aria-current="true"]{color:var(--accent)}
   .tabbar button[aria-current="true"] svg{transform:scale(1.08)}
+  .tabbar button{padding:6px 12px}
+  .tab-av{display:grid;place-items:center;width:22px;height:20px;line-height:0;overflow:visible}
+  .tab-av .avatar{width:22px!important;height:22px!important;min-width:0!important;font-size:10.5px!important;line-height:22px!important;display:grid!important;place-items:center}
+  .tabbar button[aria-current="true"] .tab-av .avatar{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--accent)}
+
   .mtop{display:flex!important}
 }
 .mtop{display:none;align-items:center;justify-content:space-between;gap:12px}
@@ -1357,7 +1362,7 @@ function render(){
   if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
   const badge = commBadge();
   const unread = unreadCount();
-  const navItem = (id,label,icon) => { const n = id==="community" ? badge + (PR.invites||[]).length : id==="avisos" ? unread : id==="equipo" ? teamCount() : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || VIEW.name==="oracion" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="library" && (VIEW.name==="books" || VIEW.name==="topic" || VIEW.name==="list" || VIEW.name==="pildora")) || (id==="profile" && (VIEW.name==="logros" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
+  const navItem = (id,label,icon) => { const n = id==="community" ? badge + (PR.invites||[]).length : id==="avisos" ? unread : id==="equipo" ? teamCount() : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || VIEW.name==="oracion" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="library" && (VIEW.name==="books" || VIEW.name==="topic" || VIEW.name==="list" || VIEW.name==="pildora")) || (id==="profile" && (VIEW.name==="logros" || VIEW.name==="equipo" || VIEW.name==="privacy" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
   const lists = listDefs();
   root.innerHTML = `
   <div class="app">
@@ -1390,10 +1395,11 @@ function render(){
       ${navItem("home","Inicio",I.home)}
       ${navItem("library","Biblioteca",I.lib)}
       ${navItem("community","Comunidad",I.users)}
+      ${navItem("profile","Perfil",`<span class="tab-av">${myAvatar(26)}</span>`)}
     </nav>
   </div>`;
   const v = $("#view");
-  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button><button class="icon-btn" data-go="profile" aria-label="Abrir perfil" style="width:auto">${myAvatar(32)}</button></div></div>`;
+  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button></div></div>`;
   if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
   else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
   else if(VIEW.name==="books"){ LIB.seg = "libros"; v.innerHTML = mtop + viewLibrary(); }
