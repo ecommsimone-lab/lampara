@@ -880,10 +880,13 @@ a.btn:not(.primary){color:var(--ink)}
 .lay-bruma .hx-actions .btn.primary,.lay-crema .hx-actions .btn.primary{background:var(--c-ink);color:#fff;box-shadow:none}
 /* boceto: fondos que van a blanco, fotos y letra de pincel con textura */
 #heartx.lay-aurora{background:linear-gradient(180deg,var(--c-mid) 0%,var(--c-mid) 18%,var(--c-light) 46%,#fff 72%);color:#fff}
-#heartx.lay-foto{background:#fff;color:#fff}
-.hx-photo{position:absolute;left:0;right:0;top:0;height:78%;background-size:cover;background-position:center;-webkit-mask-image:linear-gradient(180deg,#000 52%,transparent 100%);mask-image:linear-gradient(180deg,#000 52%,transparent 100%);pointer-events:none}
+#heartx.lay-foto{background:#0B1430;color:#fff}
+.hx-photo{position:fixed;inset:0;background-size:cover;background-position:center;pointer-events:none}
+.lay-foto .hx-in{justify-content:center;gap:0}
+.lay-foto .hx-rest{margin-top:26px;padding-top:0}
+.lay-foto .hx-ey{margin-bottom:18px}
 .lay-foto .hx-art,.lay-foto .hx-ey,.lay-aurora .hx-art{text-shadow:0 2px 18px rgba(0,0,0,.28)}
-.lay-foto .hx-photo::after{content:"";position:absolute;inset:0;background:radial-gradient(70% 34% at 50% 26%,rgba(0,0,0,.32),transparent 100%)}
+.lay-foto .hx-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.42) 50%,rgba(0,0,0,.22))}
 .lay-aurora .hx-verse,.lay-foto .hx-verse{background:#fff;color:#1C2340;box-shadow:0 10px 30px -18px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.05)}
 .lay-aurora .hx-ref,.lay-foto .hx-ref{color:var(--c-ink)}
 .lay-aurora .hx-actions .btn,.lay-foto .hx-actions .btn{background:#fff;color:var(--c-ink);box-shadow:0 0 0 1.5px var(--c-ink) inset}
@@ -1572,12 +1575,13 @@ const heartPhrase = h => h.lines.map(l=>l[1]).join(" ");
 function heartDeck(){
   const k = todayKey(); let d = null;
   try{ d = JSON.parse(localStorage.getItem("lampara.heartDeck") || "null"); }catch(e){}
-  if(d && d.day === k && HEART_BANK[d.i]) return d;
+  if(d && d.day === k && HEART_BANK[d.i] && d.lay === "foto") return d;
   const seen = (d && Array.isArray(d.seen) ? d.seen : []).filter(i=>i < HEART_BANK.length);
   let pool = HEART_BANK.map((_,i)=>i).filter(i=>!seen.includes(i)); if(!pool.length) pool = HEART_BANK.map((_,i)=>i).filter(i=>!d || i!==d.i);
   const i = pool[Math.floor(Math.random()*pool.length)];
-  const photos = HEART_PHOTOS.filter(x=>!d || x!==d.photo);
-  const lay = Math.random() < .75 ? "foto" : "crema";
+  const all = FONDOS.filter(x=>x[3]!=="sq").map(x=>x[0]);   // todas las fotos verticales que nos han pasado
+  const photos = all.filter(x=>!d || x!==d.photo);
+  const lay = "foto";
   const nd = { day:k, i, lay, photo: lay==="foto" ? photos[Math.floor(Math.random()*photos.length)] : null, pal: Math.floor(Math.random()*HEART_PALS.length), caps: Math.random() < .4,
     seen: (pool.length===HEART_BANK.length-seen.length ? seen : []).concat(i) };
   try{ localStorage.setItem("lampara.heartDeck", JSON.stringify(nd)); }catch(e){}
@@ -1671,9 +1675,50 @@ document.addEventListener("keydown", e=>{ if(e.key === "Escape" && $("#heartx"))
 function rrect(g, x, y, w, h, r){ g.beginPath(); g.moveTo(x+r, y); g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r); g.arcTo(x, y+h, x, y, r); g.arcTo(x, y, x+w, y, r); g.closePath(); }
 function wrapLines(g, text, maxW){ const words = text.split(" "), lines = []; let cur = ""; words.forEach(w=>{ const t = cur ? cur + " " + w : w; if(g.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; }); if(cur) lines.push(cur); return lines; }
 function star(g, x, y, r){ g.beginPath(); g.moveTo(x, y-r); g.quadraticCurveTo(x, y, x+r, y); g.quadraticCurveTo(x, y, x, y+r); g.quadraticCurveTo(x, y, x-r, y); g.quadraticCurveTo(x, y, x, y-r); g.fill(); }
+/* Diseño con foto: todo agrupado en el centro (frase + versículo), dentro de la zona que no tapan
+   las redes sociales (arriba ~250 px y abajo ~340 px en historias). */
+async function heartImageFoto(h, pal, ref, text){
+  const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  g.fillStyle = "#0B1430"; g.fillRect(0, 0, W, H);
+  try{ const im = await loadImg(`img/fondos/${h.photo}.jpg`), sc = Math.max(W/im.width, H/im.height), dw = im.width*sc, dh = im.height*sc; g.drawImage(im, (W-dw)/2, (H-dh)/2, dw, dh); }catch(e){}
+  const ov = g.createLinearGradient(0, 0, 0, H); ov.addColorStop(0, "rgba(0,0,0,.18)"); ov.addColorStop(.5, "rgba(0,0,0,.42)"); ov.addColorStop(1, "rgba(0,0,0,.22)"); g.fillStyle = ov; g.fillRect(0, 0, W, H);
+  const spec = { caps:['500 76px "Playfair Display", serif', 1.18], serif:['500 82px "Playfair Display", serif', 1.18], script:['400 120px "Kaushan Script", cursive', 1.22], wave:['600 92px "Fraunces", serif', 1.3], wavebig:['900 270px "Fraunces", serif', 1.12] };
+  const rows = h.lines.map(([kind, txt])=>{ let [font, lh] = spec[kind]; const size = parseFloat(font.match(/(\d+)px/)[1]); let fs = size; const shown = kind === "caps" ? txt.toUpperCase() : txt;
+    g.font = font; let w = g.measureText(shown).width; if(w > 940){ fs = Math.floor(size * 940 / w); font = font.replace(/\d+px/, fs + "px"); g.font = font; w = g.measureText(shown).width; }
+    return { kind, shown, font, fs, w, h: fs*lh }; });
+  const phraseH = rows.reduce((a,r)=>a+r.h, 0);
+  g.font = 'italic 400 40px "Inter", sans-serif'; const vl = wrapLines(g, `“${text}”`, 820); const boxH = vl.length*58 + 130;
+  const eyeH = 40, gap1 = 46, gap2 = 64, gap3 = 54, brandH = 40;
+  const total = eyeH + gap1 + phraseH + gap2 + boxH + gap3 + brandH;
+  const safeTop = 260, safeBot = H - 360;
+  let y = Math.max(safeTop, safeTop + ((safeBot - safeTop) - total) / 2);
+  g.textAlign = "center"; g.textBaseline = "alphabetic"; g.fillStyle = "rgba(255,255,255,.92)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 14;
+  g.font = '700 30px "Inter", sans-serif'; if("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText(("Recuerda esto · " + h.title).toUpperCase(), W/2, y + 30); if("letterSpacing" in g) g.letterSpacing = "0px";
+  y += eyeH + gap1;
+  rows.forEach(r=>{
+    const base = y + r.fs * (r.kind === "wavebig" ? 0.95 : 0.9);
+    g.fillStyle = "#fff"; g.font = r.font; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 22;
+    if(r.kind === "script"){
+      const oc = document.createElement("canvas"); oc.width = W; oc.height = Math.ceil(r.fs*1.7); const o = oc.getContext("2d");
+      o.font = r.font; o.textAlign = "center"; o.textBaseline = "alphabetic"; o.fillStyle = "#fff"; o.shadowColor = "rgba(0,0,0,.4)"; o.shadowBlur = 22; o.fillText(r.shown, W/2, r.fs*1.2);
+      o.globalCompositeOperation = "destination-out"; o.shadowBlur = 0;
+      for(let k=0; k<Math.round(r.w*r.fs*.012); k++){ o.globalAlpha = .35 + Math.random()*.65; const rr = .8 + Math.random()*1.8; o.beginPath(); o.arc(W/2 - r.w/2 + Math.random()*r.w, Math.random()*oc.height, rr, 0, Math.PI*2); o.fill(); }
+      g.shadowBlur = 0; g.drawImage(oc, 0, base - r.fs*1.2);
+    } else g.fillText(r.shown, W/2, base);
+    g.shadowBlur = 0; y += r.h;
+  });
+  y += gap2;
+  g.fillStyle = "rgba(255,255,255,.94)"; rrect(g, 90, y, 900, boxH, 40); g.fill();
+  g.font = 'italic 400 40px "Inter", sans-serif'; g.fillStyle = "#1C2340"; g.textAlign = "left"; vl.forEach((l,i)=>g.fillText(l, 130, y + 72 + i*58));
+  g.font = '600 32px "Inter", sans-serif'; g.fillStyle = pal.ink; g.fillText(`${ref} · RVR1960`, 130, y + boxH - 40);
+  y += boxH + gap3;
+  g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.9)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 12; g.font = '700 36px "Inter", sans-serif'; g.fillText(APP_NAME, W/2, y + 30); g.shadowBlur = 0;
+  return new Promise(r=>c.toBlob(r, "image/png"));
+}
 async function heartImage(){
   const { h, pal, ref, text } = heartOfDay();
   try{ await Promise.all(['400 100px "Kaushan Script"','500 60px "Playfair Display"','600 60px "Fraunces"','900 60px "Fraunces"','italic 400 40px "Inter"','700 40px "Inter"'].map(f=>document.fonts.load(f))); }catch(e){}
+  if(h.lay === "foto" && h.photo) return heartImageFoto(h, pal, ref, text);
   const W = 1080, H = 1920, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   const light = h.lay !== "noche", ink = light ? pal.ink : "#fff";
   if(h.lay === "noche"){ const gr = g.createRadialGradient(540, 700, 0, 540, 700, 1250); gr.addColorStop(0, pal.deep); gr.addColorStop(.58, pal.mid); gr.addColorStop(1, pal.light); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
