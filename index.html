@@ -206,6 +206,17 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .ini-box{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:16px;background:var(--accent-soft);border:1px dashed var(--accent)}
 .ini-box small{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .ini-box p{margin:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:clamp(22px,5.4vw,30px);font-weight:700;letter-spacing:.14em;line-height:1.5;word-break:break-all;color:var(--ink)}
+button.stat.stat-mem{grid-column:1/-1}
+.mem-a svg{flex:none}
+.mem-row{display:flex;align-items:center;gap:16px}
+.mem-a{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.mem-a>div,.mem-b{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mem-a b{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.mem-a b small{font-size:15px;font-weight:600;color:var(--muted)}
+.mem-b{padding-left:16px;border-left:1px solid var(--line)}
+.mem-b b{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.mem-b b small{font-size:16px;font-weight:600;color:var(--muted);margin-left:1px}
+.mem-row small.muted{font-size:12.5px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .stat{background:var(--surface);border:1px solid var(--card-border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0}
 button.stat{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--card-border);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);min-width:0;position:relative;transition:transform .12s}
@@ -2012,17 +2023,13 @@ function viewHome(){
         <div class="xpbar" style="height:10px"><i style="width:${xi.pct}%"></i></div>
         <small class="muted">${pathStageLine()}</small>
       </button>
-      <button class="stat" data-go="progreso" aria-label="Ver mi estado de memorización">
+      <button class="stat stat-mem" data-go="progreso" aria-label="Ver tu memorización: aprendidos y acierto">
         <span class="go" aria-hidden="true">›</span>
-        <div class="eyebrow">Aprendido</div>
-        <div class="ring-wrap">${ring(pct,76,9)}</div>
-        <small class="muted">${!counts.ok && counts.mid ? `${counts.mid} en proceso · 0 aprendidos` : `${counts.ok} de ${act.length} versículos`}</small>
-      </button>
-      <button class="stat" data-go="progreso" aria-label="Ver mi acierto y actividad">
-        <span class="go" aria-hidden="true">›</span>
-        <div class="eyebrow">Acierto · 30 días</div>
-        <span class="big">${acc===null?"—":acc}<small>${acc===null?"":"%"}</small></span>
-        <small class="muted">Promedio de tus respuestas</small>
+        <div class="eyebrow">Tu memorización</div>
+        <div class="mem-row">
+          <div class="mem-a">${ring(pct,76,9)}<div><b>${counts.ok} <small>de ${act.length}</small></b><small class="muted">${!counts.ok && counts.mid ? `${counts.mid} en proceso` : "versículos aprendidos"}</small></div></div>
+          <div class="mem-b"><b>${acc===null?"—":acc}<small>${acc===null?"":"%"}</small></b><small class="muted">acierto · 30 días</small></div>
+        </div>
       </button>
     </div>
   </section>
@@ -6027,7 +6034,7 @@ function viewProfile(){
   <section class="prof-head">
     ${myAvatar(64)}
     <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${myUsername()?`<b>@${esc(myUsername())}</b> · `:""}${esc(ME.email||"")}</span>
-      ${S.placed&&S.placed.level?`<span class="muted" style="font-size:13px">Empezaste en nivel ${esc(S.placed.level.toLowerCase())}</span>`:""}</div>
+</div>
   </section>
   ${(()=>{ if(cloudOn() && !COMM.loaded && !COMM.loading) setTimeout(loadCommunity,0); const nf = friendsAccepted().length, st = streak(), x = xpInfo();
     return `<section class="pstats">
