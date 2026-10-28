@@ -477,6 +477,11 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.pc-tabs{position:sticky;top:6px;z-index:6;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:16px;background:var(--surface-2);box-shadow:0 0 0 6px var(--bg)}
+.pc-tab{all:unset;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-radius:12px;font-size:14px;font-weight:700;color:var(--muted)}
+.pc-tab[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.pc-tab b{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;display:grid;place-items:center}
+.pc-ic{font-size:15px}
 .dr{position:relative;align-self:flex-start}
 .dr-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 12px 9px 11px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,24,40,.05);font-size:14px;font-weight:600;color:var(--ink)}
 .dr-btn svg{color:var(--muted);flex:none}
@@ -5844,9 +5849,15 @@ function viewEquipo(){
   const byPrio = teamFiltered("prio").filter(isPend);
   const quad = ([k,l,d,c,e]) => { const n = byPrio.filter(it=>it.prioridad===k).length; return `<button class="tm-quad" data-act="team-prio" data-k="${k}" aria-pressed="${TEAM.prio===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small><span>${n}</span></button>`; };
   const trashN = TEAM.trash ? TEAM.trash.length : null;
-  return `
-  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Panel de control</h1></div>
-    <div class="row" style="gap:6px"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""} Actualizar</button><button class="btn primary" data-act="team-add">${I.plus} Agregar</button></div></section>
+  const SEC = TEAM.sec || "tareas", pendN = TEAM.items.filter(isPend).length;
+  const revN = Array.isArray(REV.rows) ? REV.rows.filter(r=>r.ref==="demo" && Date.now()-new Date(r.created_at).getTime() < 7*DAY).length : 0;
+  const sec = (k,ic,l,n) => `<button class="pc-tab" data-act="pc-sec" data-k="${k}" aria-pressed="${SEC===k}"><span class="pc-ic">${ic}</span><span>${l}</span>${n?`<b>${n}</b>`:""}</button>`;
+  const top = `<section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Panel de control</h1></section>
+  <nav class="pc-tabs">${sec("tareas","✅","Tareas",pendN)}${sec("metricas","📊","Métricas",0)}${sec("revisores","👀","Revisores",revN)}</nav>`;
+  if(SEC==="metricas") return top + `<div id="usersPanel">${usersPanelHTML()}</div>`;
+  if(SEC==="revisores") return top + `<div id="revEvents">${revEventsHTML()}</div>`;
+  return top + `
+  <div class="spread" style="align-items:center;gap:8px;flex-wrap:nowrap"><b style="font-size:16px;min-width:0">Tareas, mejoras y errores</b><div class="row" style="gap:6px;flex-wrap:nowrap;flex:none"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""}</button><button class="btn primary" data-act="team-add" style="padding:7px 14px">${I.plus} Agregar</button></div></div>
   ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
   ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
   ${M && f!=="trash" ? `<div class="tm-people">
@@ -5859,7 +5870,7 @@ function viewEquipo(){
   ${f==="⚫ descartado" && M && base.some(it=>estOf(it)===f) ? (TEAM.sel ? `<div class="tm-selbar"><button class="linkbtn" data-act="team-sel-all" style="padding:0">Seleccionar todos</button><span style="flex:1"></span><button class="btn ghost" data-act="team-sel" style="padding:6px 12px">Cancelar</button><button class="btn tm-del" data-act="team-trash-move" ${TEAM.sel.size?"":"disabled"} style="padding:6px 12px">🗑 Mover a la papelera${TEAM.sel.size?` (${TEAM.sel.size})`:""}</button></div>` : `<div class="tm-selbar"><span class="muted" style="font-size:13px">Lo descartado se puede mover a la papelera.</span><span style="flex:1"></span><button class="btn" data-act="team-sel" style="padding:6px 12px">Seleccionar</button></div>`) : ""}
   ${f==="trash" ? "" : `<input class="input" id="teamQuery" placeholder="Buscar en la lista…" value="${esc(TEAM.q||"")}" style="max-width:420px">`}
   <div class="tm-list" id="teamList">${f==="trash" ? teamTrashHTML() : teamListHTML()}</div>
-  ${f==="trash" ? "" : `<div id="usersPanel">${usersPanelHTML()}</div><div id="revEvents">${revEventsHTML()}</div>`}`;
+`;
 }
 function teamTrashHTML(){
   if(TEAM.trash===null){ setTimeout(loadTrash, 0); return `<div class="empty"><b>Cargando…</b></div>`; }
@@ -6541,6 +6552,7 @@ document.addEventListener("click", e=>{
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-range": { UPV.range = t.dataset.k; UPV.open = false; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-dr": { UPV.open = !UPV.open; if(UPV.open && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
+    case "pc-sec": TEAM.sec = t.dataset.k; render(); window.scrollTo({top:0}); break;
     case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-sort": { const k = t.dataset.k; UPV.dir = UPV.sort===k ? -UPV.dir : (k==="nombre"||k==="ritmo" ? 1 : -1); UPV.sort = k; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
