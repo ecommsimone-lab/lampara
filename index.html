@@ -477,6 +477,17 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.rev-ev{display:flex;flex-direction:column;gap:10px}
+.rev-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rev-sum>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.rev-sum b{font-size:20px;font-weight:800;line-height:1.15}
+.rev-sum small{font-size:12px;color:var(--muted)}
+.rev-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rev-list li{display:flex;gap:10px;align-items:flex-start}
+.rev-list li>span{font-size:18px;line-height:1.2}
+.rev-list li>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.rev-list b{font-size:14px}
+.rev-list small{font-size:12.5px;color:var(--muted)}
 .tablero-btn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;padding:16px 18px;border-radius:20px;color:#fff;background:linear-gradient(135deg,#1E2A4A 0%,#2F4AA8 60%,#4C6FFF 100%);box-shadow:0 10px 24px -12px rgba(47,74,168,.7);position:relative;overflow:hidden}
 .tablero-btn::after{content:"";position:absolute;right:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.08)}
 .tablero-btn:active{transform:scale(.99)}
@@ -5557,6 +5568,31 @@ async function refreshLinks(){
 }
 setInterval(refreshLinks, 15000);
 setInterval(()=>{ if(VIEW.name==="equipo"){ const box = $("#teamLinks"); if(box && TEAM.linksAt) box.innerHTML = teamLinksHTML(); } }, 5000);
+/* Perfil del equipo: cuándo y desde qué país abrieron la demo o la página para revisores (SQL 20), en vivo */
+const REV = { rows:undefined, at:0, loading:false, all:false };
+const REV_LABEL = { demo:["🎬","Abrieron la demo"], revisores:["📄","Página para revisores (desde el inicio)"], abs:["📄","Página para Sociedades Bíblicas"], tyndale:["📄","Página para Tyndale"], lockman:["📄","Página para Lockman"] };
+async function loadRevEvents(){
+  if(!TEAM.on || REV.loading) return; REV.loading = true;
+  try{ REV.rows = (await API.rpc("team_link_events", { p_limit: 40 })) || []; }catch(e){ REV.rows = null; }
+  REV.at = Date.now(); REV.loading = false;
+  const box = $("#revEvents"); if(box) box.innerHTML = revEventsHTML();
+}
+function revEventsHTML(){
+  if(REV.rows===undefined){ setTimeout(loadRevEvents, 0); return `<section class="panel rev-ev"><b>👀 Revisores</b><p class="muted" style="margin:0;font-size:13px">Cargando…</p></section>`; }
+  if(REV.rows===null) return `<section class="panel rev-ev"><b>👀 Revisores</b><p class="muted" style="margin:0;font-size:13px">Para ver cuándo abren la demo falta correr el <b>SQL 20</b> en Supabase.</p></section>`;
+  const demos = REV.rows.filter(r=>r.ref==="demo"), list = REV.all ? REV.rows : REV.rows.slice(0, 6);
+  const last = demos[0];
+  const site = h => /lamparabiblica/.test(h||"") ? "Ner" : /ecommsimone/.test(h||"") ? "Lámpara" : (h||"");
+  const when = t => new Date(t).toLocaleString("es-CO",{ weekday:"short", day:"numeric", month:"short", hour:"numeric", minute:"2-digit" });
+  return `<section class="panel rev-ev">
+    <div class="spread" style="align-items:center"><b>👀 Revisores</b><span class="tm-live"><i></i>En vivo</span></div>
+    <div class="rev-sum"><div><b>${demos.length}</b><small>${demos.length===1?"vez abrieron":"veces abrieron"} la demo</small></div><div><b>${last ? esc(last.country || "—") : "—"}</b><small>${last ? "última: " + esc(when(last.created_at)) : "aún nadie la ha abierto"}</small></div></div>
+    ${list.length ? `<ul class="rev-list">${list.map(r=>{ const [ic, l] = REV_LABEL[r.ref] || ["🔗", r.ref]; return `<li><span>${ic}</span><div><b>${esc(l)}</b><small>${esc(when(r.created_at))} · ${r.country?`🌎 ${esc(r.country)}`:"país desconocido"} · ${esc(r.device||"")}${site(r.host)?` · ${esc(site(r.host))}`:""}</small></div></li>`; }).join("")}</ul>` : ""}
+    ${REV.rows.length > 6 ? `<button class="linkbtn" data-act="rev-all" style="align-self:flex-start;padding:0">${REV.all ? "Ver menos" : `Ver todas (${REV.rows.length})`}</button>` : ""}
+    <small class="muted" style="font-size:11.5px">Solo lo ve el equipo. El país es aproximado (zona horaria del navegador); no se guarda la IP.</small>
+  </section>`;
+}
+setInterval(()=>{ if(VIEW.name==="profile" && TEAM.on && !document.hidden) loadRevEvents(); }, 15000);
 function viewEquipo(){
   if(!TEAM.on) return `<div class="empty"><b>Esta sección es solo para el equipo</b></div>`;
   if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
@@ -6125,6 +6161,7 @@ function viewProfile(){
       ${cloudOn()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
   ${TEAM.on ? tableroButton() : ""}
+  ${TEAM.on ? `<div id="revEvents">${revEventsHTML()}</div>` : ""}
   ${badgesSection()}
   ${profileCommunityPanel()}
   ${notifPrefsPanel()}
@@ -6259,6 +6296,7 @@ document.addEventListener("click", e=>{
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "sug-add": sugAdd(t.dataset.id, t); break;
     case "method-help": methodModal(); break;
+    case "rev-all": REV.all = !REV.all; { const box = $("#revEvents"); if(box) box.innerHTML = revEventsHTML(); } break;
     case "demo-exit": { closeModal(); SESSION = null; ME = null; S = null; VIEW = { name:"home" }; window.scrollTo(0,0); renderReviewers(); break; }
     case "celebrate": celebrateModal(masteredNow()); break;
     case "sug-hide": sugHide(t.dataset.id); break;
