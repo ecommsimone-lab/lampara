@@ -1,7 +1,8 @@
 -- Ner · 19 · Enlaces que avisan cuando alguien los abre (por ejemplo, el enlace enviado a los revisores de licencias)
 -- Se guarda solo: qué enlace fue (?revisores=abs, ?r=tyndale…), en qué sitio (Lámpara o Ner), tipo de dispositivo,
 -- idioma y país aproximado (según la zona horaria y el idioma del navegador) y la fecha. No se guarda la IP.
--- Cada vez que alguien abre un enlace de revisores, al equipo (tabla "team") le llega un aviso al celular
+-- También se registran las visitas sin cuenta al enlace normal (ref "inicio") y el botón "Para revisores" del inicio.
+-- Cada vez que alguien abre un enlace de revisores (o el enlace normal desde fuera de Colombia), al equipo le llega un aviso al celular
 -- (máximo uno cada 30 minutos por enlace, para no llenar de avisos). El resumen se ve en vivo al final del Tablero.
 -- Supabase → SQL Editor → pegar → Run. Se puede correr aunque ya se haya corrido una versión anterior.
 
@@ -21,7 +22,8 @@ alter table public.link_opens enable row level security;   -- sin políticas: so
 create or replace function public.link_ref_name(r text) returns text
 language sql immutable set search_path = '' as $$
   select case r when 'abs' then 'Sociedades Bíblicas (RVR1960)' when 'tyndale' then 'Tyndale (NTV)'
-                when 'lockman' then 'Lockman (NBLA)' else r end;
+                when 'lockman' then 'Lockman (NBLA)' when 'revisores' then 'la página para revisores'
+                when 'inicio' then 'la app (enlace normal)' else r end;
 $$;
 
 -- Registrar una apertura (lo puede llamar cualquiera, incluso sin cuenta)
@@ -33,15 +35,19 @@ begin
   if r !~ '^[a-z0-9_-]{1,30}$' then return; end if;
   -- freno contra abusos: máximo 300 registros por enlace en una hora
   if (select count(*) from public.link_opens where ref = r and created_at > now() - interval '1 hour') >= 300 then return; end if;
-  reciente := exists (select 1 from public.link_opens where ref = r and created_at > now() - interval '30 minutes');
+  -- (para "inicio" se cuenta por país, así una visita desde Colombia no tapa la de un revisor de otro país)
+  reciente := exists (select 1 from public.link_opens where ref = r and created_at > now() - interval '30 minutes'
+                      and (r <> 'inicio' or coalesce(country, '') = coalesce(p_country, '')));
   insert into public.link_opens (ref, host, device, lang, country)
   values (r, left(coalesce(p_host, ''), 60), left(coalesce(p_device, ''), 20), left(coalesce(p_lang, ''), 12), left(coalesce(p_country, ''), 40));
   -- aviso al equipo (solo enlaces de revisores, y no más de uno cada 30 minutos por enlace)
-  if not reciente and r in ('abs', 'tyndale', 'lockman', 'revisores') then
+  -- y para las visitas sin cuenta al enlace normal ("inicio"), solo si vienen de fuera de Colombia (posibles revisores)
+  if not reciente and (r in ('abs', 'tyndale', 'lockman', 'revisores')
+                       or (r = 'inicio' and coalesce(p_country, '') not in ('', 'Colombia'))) then
     sitio := case when coalesce(p_host, '') like '%lamparabiblica%' then 'Ner' when coalesce(p_host, '') like '%ecommsimone%' then 'Lámpara' else coalesce(p_host, '') end;
     for t in select user_id from public.team loop
       perform public.notify(t.user_id, null, 'link_open',
-        '👀 Abrieron el enlace de ' || public.link_ref_name(r),
+        case when r = 'inicio' then '👀 Alguien abrió la app sin cuenta' else '👀 Abrieron el enlace de ' || public.link_ref_name(r) end,
         concat_ws(' · ', nullif('Desde ' || nullif(p_country, ''), 'Desde '), nullif(p_device, ''), nullif('en ' || sitio, 'en ')),
         jsonb_build_object('ref', r));
     end loop;
