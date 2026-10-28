@@ -190,6 +190,33 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .celeb-bar small{font-size:13px;opacity:.85}
 .celeb-bar .go{font-size:13.5px;font-weight:800;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.confetti{display:none}.celeb-badge,.celeb-card{animation:none}}
+.rvr-mark{margin:14px 0 0;font-size:11px;line-height:1.4;color:var(--muted);text-align:center;opacity:.85}
+.rv{max-width:760px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:18px}
+.rv-head{display:flex;align-items:center;justify-content:space-between}
+.rv-hero{display:flex;flex-direction:column;gap:10px}
+.rv-hero h1{font-size:clamp(28px,5.4vw,40px);line-height:1.15;margin:0}
+.rv-hero p{margin:0;font-size:16px;line-height:1.55;color:var(--muted)}
+.rv-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.rv-facts div{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.rv-facts small{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.rv-facts b{font-size:15.5px;line-height:1.35}
+.rv-sec{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line)}
+.rv-sec h2{font-size:19px;margin:0}
+.rv-sec ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.5}
+.rv-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.rv-tabs button{all:unset;cursor:pointer;padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);font-size:13.5px;font-weight:700}
+.rv-tabs button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.rv-card{display:flex;flex-direction:column;gap:8px;padding:18px;border-radius:16px;background:var(--surface-2)}
+.rv-card small{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.rv-card p{margin:0;font-family:var(--f-display);font-size:19px;line-height:1.6}
+.rv-blank{display:inline-block;border-bottom:2px solid var(--accent);min-width:3em}
+.rv-ini{font-family:ui-monospace,Menlo,monospace!important;font-weight:700;letter-spacing:.12em;word-break:break-all}
+.rv-img{display:flex;flex-direction:column;align-items:center;gap:8px}
+.rv-img img{width:min(260px,70vw);aspect-ratio:9/16;border-radius:16px;background:var(--surface-2);object-fit:cover}
+.rv-img small{font-size:12.5px;color:var(--muted);text-align:center}
+.rv-notice{margin:0;padding:12px 14px;border-radius:12px;background:var(--surface-2);font-size:14px;line-height:1.5}
+.rv-refs{font-size:13.5px;line-height:1.7;color:var(--muted);margin:10px 0 0}
+.rv summary{cursor:pointer;font-size:16px}
 .ini-tip{font-size:12.5px;color:var(--muted);line-height:1.4}
 .mt{display:flex;flex-direction:column;gap:16px}
 .mt-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
@@ -455,6 +482,12 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .tb-faces .avatar{box-shadow:0 0 0 2px #2F4AA8}
 .tb-faces .avatar+.avatar{margin-left:-8px}
 .tb-go{font-size:24px;opacity:.8;position:relative;z-index:1}
+.tm-links{padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.tm-links summary{cursor:pointer;font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.tm-linklist{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.tm-link{display:flex;align-items:center;gap:10px}
+.tm-link>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tm-link small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tm-people{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
 .tm-people::-webkit-scrollbar{display:none}
 .tm-person{all:unset;cursor:pointer;flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:62px;text-align:center}
@@ -1737,12 +1770,13 @@ function openHeart(){
       <span class="hx-ey fd" style="--d:100ms">Recuerda esto</span>
       <p class="hx-art" style="margin:0" aria-label="${esc(heartPhrase(h))}"><span aria-hidden="true" style="display:contents">${html}</span></p>
       <div class="hx-rest fd" style="--d:${total + 250}ms">
-        <div class="hx-verse">“${esc(text)}”<span class="hx-ref">${esc(ref)} · RVR1960</span></div>
+        <div class="hx-verse">“${esc(text)}”<span class="hx-ref">${esc(ref)} · RVR1960®</span></div>
         <div class="hx-actions">
           <button class="btn primary" data-act="heart-practice" data-id="${id}">${I.play} Practicar</button>
           <button class="btn" data-act="heart-fav" data-id="${id}">${heartFavBtn(id)}</button>
           <button class="btn" data-act="heart-share">${I.share} Compartir</button>
         </div>
+        <p class="rvr-mark" style="color:rgba(255,255,255,.8)">${RVR_SHORT}</p>
       </div>
     </div>`;
   // tocar mientras aparece muestra todo de una vez
@@ -1800,9 +1834,10 @@ async function heartImageFoto(h, pal, ref, text, fmt="9:16"){
   y += gap2;
   g.fillStyle = "rgba(255,255,255,.94)"; rrect(g, 90, y, 900, boxH, 40); g.fill();
   g.font = `italic 400 ${vf}px "Inter", sans-serif`; g.fillStyle = "#1C2340"; g.textAlign = "left"; vl.forEach((l,i)=>g.fillText(l, 130, y + (sq ? 60 : 72) + i*vlh));
-  g.font = `600 ${sq ? 26 : 32}px "Inter", sans-serif`; g.fillStyle = pal.ink; g.fillText(`${ref} · RVR1960`, 130, y + boxH - (sq ? 32 : 40));
+  g.font = `600 ${sq ? 26 : 32}px "Inter", sans-serif`; g.fillStyle = pal.ink; g.fillText(`${ref} · RVR1960®`, 130, y + boxH - (sq ? 32 : 40));
   y += boxH + gap3;
-  g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.9)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 12; g.font = `700 ${Math.round(36*Z)}px "Inter", sans-serif`; g.fillText(APP_NAME, W/2, y + 30*Z); g.shadowBlur = 0;
+  g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.9)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 12; g.font = `700 ${Math.round(36*Z)}px "Inter", sans-serif`; g.fillText(APP_NAME, W/2, y + 30*Z);
+  g.font = `500 ${Math.round(22*Z)}px "Inter", sans-serif`; g.globalAlpha = .8; g.fillText(RVR_SHORT, W/2, y + 30*Z + 36*Z); g.globalAlpha = 1; g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/png"));
 }
 async function heartImage(fmt){
@@ -1936,8 +1971,10 @@ async function verseImage(id, fondo, fmt="9:16", size="g"){
   g.fillText(v.ref.toUpperCase(), X, top + (sq?28:32)); g.globalAlpha = 1;
   g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`;
   lines.forEach((l,i)=>g.fillText(l, X - fs*.04, top + eyeH + fs*.92 + i*lh));
-  g.font = `500 ${sq?21:24}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = "5px"; g.globalAlpha = .75;
-  g.fillText(`${APP_NAME.toUpperCase()} · RVR1960`, X, H - (sq ? 64 : 110));
+  { let ff = sq ? 19 : 22; const foot = `${APP_NAME.toUpperCase()} · ${RVR_SHORT.toUpperCase()}`;
+    g.font = `500 ${ff}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = "3px"; g.globalAlpha = .75;
+    while(g.measureText(foot).width > W - X*2 && ff > 12){ ff--; g.font = `500 ${ff}px "Roboto", sans-serif`; }
+    g.fillText(foot, X, H - (sq ? 64 : 110)); }
   g.globalAlpha = 1; if("letterSpacing" in g) g.letterSpacing = "0px"; g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/jpeg", .9));
 }
@@ -2039,7 +2076,8 @@ function viewHome(){
   ${cloudOn() ? `<button class="pr-start home-pray" data-act="home-pray"><span>🙏</span><div><b>Orar ahora</b><small>Unos minutos con la guía del Padre Nuestro</small></div>${I.play}</button>` : ""}
 
   ${homeReviewCard(next, weakest)}
-  ${homeBooksCard()}`;
+  ${homeBooksCard()}
+  ${rvrMark()}`;
 }
 /* Resumen corto en Inicio: el detalle está en "Tu memorización" (toca Aprendido o Acierto) */
 function homeReviewCard(next, weakest){
@@ -2098,7 +2136,8 @@ function viewProgreso(){
       ${next.length? `<div class="vlist">${next.map(id=>{ const v=verse(id), p=prog(id); const d=Math.max(0,Math.round((dayStart(p.due)-dayStart(Date.now()))/DAY)); return `<div class="vrow" style="grid-template-columns:minmax(0,1fr) auto"><div class="t open" data-act="verse-open" data-id="${id}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p></div><span class="chip none">${d<=1?"mañana":"en "+d+" días"}</span></div>`; }).join("")}</div>`
        : `<div class="empty"><b>Aún no hay repasos programados</b><span>Cuando practiques, aquí verás cuándo vuelve cada versículo.</span></div>`}
     </div>
-  </section>`;
+  </section>
+  ${rvrMark()}`;
 }
 
 /* ---------- Biblioteca ---------- */
@@ -2221,7 +2260,8 @@ function viewPildora(id){
   <section class="pild-head"><span class="pe">${p.e}</span><div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">Píldora de fe</span><h1 style="font-size:clamp(28px,5vw,42px)">${esc(p.t)}</h1><p class="pf">${esc(p.f)}</p></div></section>
   <div class="row spread" style="gap:8px;align-items:center"><span class="muted" style="font-size:13.5px">Toca un versículo para memorizarlo, guardarlo, enviarlo o compartirlo.</span><button class="btn" data-act="pild-save" data-id="${p.id}">${I.listAdd} Guardar todos</button></div>
   <section class="pild-verses">${p.ids.map(vid=>{ const v=verse(vid); return v?`<div class="pv" data-act="pild-verse" data-id="${vid}" role="button" tabindex="0"><b>${esc(v.ref)}</b><p>${esc(v.text)}</p><span class="pv-more">Memorizar · Guardar · Enviar · Compartir</span></div>`:""; }).join("")}</section>
-  ${p.ayuda?`<div class="pild-help"><b>No tienes que pasarlo solo</b><span>Si llevas días o semanas así, habla con tu pastor, con alguien de confianza o con un profesional. En Colombia puedes llamar gratis a la línea nacional de salud mental: <b>192, opción 4</b>. Si es una emergencia, marca <b>123</b>.</span></div>`:""}`;
+  ${p.ayuda?`<div class="pild-help"><b>No tienes que pasarlo solo</b><span>Si llevas días o semanas así, habla con tu pastor, con alguien de confianza o con un profesional. En Colombia puedes llamar gratis a la línea nacional de salud mental: <b>192, opción 4</b>. Si es una emergencia, marca <b>123</b>.</span></div>`:""}
+  ${rvrMark()}`;
 }
 function pildVerseModal(vid){
   const v = verse(vid); if(!v) return;
@@ -2837,7 +2877,7 @@ function renderSession(){
   else if(s.phase==="done"){
     body = summaryBody();
   }
-  root.innerHTML = `<main style="min-height:100%"><div class="stage">${top}${body}</div></main>`;
+  root.innerHTML = `<main style="min-height:100%"><div class="stage">${top}${body}${rvrMark()}</div></main>`;
   sizeBlanks();
   if(s.phase==="quiz") afterQuizRender();
 }
@@ -4822,7 +4862,7 @@ function verseModal(id){
     <p class="verse-full">${esc(v.text)}</p>
     <div class="row" style="gap:6px"><span class="chip ${s}"><i class="dot" style="background:currentColor"></i>${STATUS_LABEL[s]}</span>${v.theme?`<span class="chip none">${esc(v.theme)}</span>`:""}${h!=null?`<span class="chip ${h>=90?"ok":h>=60?"mid":"bad"}">Acierto ${h}%</span>`:""}${p&&p.lapses?`<span class="chip bad">${p.lapses} ${p.lapses===1?"fallo":"fallos"}</span>`:""}</div>
     <p class="muted" style="font-size:12px">Reina-Valera 1960</p>
-    <div class="row"><button class="btn primary" id="vmPlay">${I.play} Practicar este versículo</button><button class="btn" id="vmList">${I.listAdd} A una lista</button>${cloudOn()&&v.sug?`<button class="btn" id="vmSend">${I.users} Enviar a un amigo</button>`:""}<button class="btn" id="vmShare">${I.share} Compartir imagen</button>${v.sug&&!v.pild?`<button class="btn ghost" id="vmFav">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"A Mis versículos"}</button>`:""}</div>`, sc=>{
+    <div class="row"><button class="btn primary" id="vmPlay">${I.play} Practicar este versículo</button><button class="btn" id="vmList">${I.listAdd} A una lista</button>${cloudOn()&&v.sug?`<button class="btn" id="vmSend">${I.users} Enviar a un amigo</button>`:""}<button class="btn" id="vmShare">${I.share} Compartir imagen</button>${v.sug&&!v.pild?`<button class="btn ghost" id="vmFav">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"A Mis versículos"}</button>`:""}</div>${rvrMark()}`, sc=>{
       sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
       sc.querySelector("#vmPlay").onclick = ()=>{ closeModal(); startSession([id], { title:v.ref, source:[id] }); };
       sc.querySelector("#vmList").onclick = ()=>{ closeModal(); toListModal(id); };
@@ -5428,7 +5468,8 @@ async function loadTeam(){
   if(!TEAM.on || TEAM.loading) return;
   TEAM.loading = true;
   try{
-    const [items, members, trash] = await Promise.all([API.rpc("team_items"), API.rpc("team_members").catch(()=>null), API.rpc("team_trash").catch(()=>null)]);
+    const [items, members, trash, links] = await Promise.all([API.rpc("team_items"), API.rpc("team_members").catch(()=>null), API.rpc("team_trash").catch(()=>null), API.rpc("team_link_opens").catch(()=>null)]);
+    TEAM.links = links;
     TEAM.items = items || []; TEAM.members = members; TEAM.trash = members ? (trash || []) : null; TEAM.err = "";
   }
   catch(e){ TEAM.err = "No se pudo cargar la lista. Revisa la conexión e inténtalo de nuevo."; }
@@ -5479,6 +5520,20 @@ function tableroButton(){
     <span class="tb-go" aria-hidden="true">›</span>
   </button>`;
 }
+/* Enlaces para revisores de licencias: avisan cuando alguien los abre (SQL 19) */
+const RV_ORGS = [["abs","Sociedades Bíblicas (RVR1960)"],["tyndale","Tyndale (NTV)"]];
+function teamLinksHTML(){
+  const base = location.origin + location.pathname.replace(/index\.html$/, "");
+  const L = TEAM.links;
+  return `<details class="tm-links"><summary>🔗 Enlaces para revisores${Array.isArray(L) && L.length ? ` <span class="chip ok">${L.reduce((a,x)=>a+ +x.veces,0)} aperturas</span>` : ""}</summary>
+    ${L===null || L===undefined ? `<p class="muted" style="font-size:13px;margin:8px 0 0">Para ver cuándo los abren falta correr el <b>SQL 19</b> en Supabase.</p>` : ""}
+    <div class="tm-linklist">${RV_ORGS.map(([k,l])=>{ const rows = (L||[]).filter(x=>x.ref===k), n = rows.reduce((a,x)=>a+ +x.veces,0), last = rows.map(x=>x.ultima).sort().pop();
+      const url = `${base}?revisores=${k}`;
+      return `<div class="tm-link"><div><b>${esc(l)}</b><small class="mono">${esc(url)}</small><small>${n ? `👀 Abierto ${n} ${n===1?"vez":"veces"} · último: ${new Date(last).toLocaleString("es-CO",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}${rows.length?` · ${esc([...new Set(rows.map(x=>x.dispositivos))].join(", "))}`:""}` : "Aún no lo han abierto"}</small></div>
+        <button class="btn" data-act="copy-link" data-link="${esc(url)}" style="padding:6px 12px">Copiar</button></div>`; }).join("")}</div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">La página está en español e inglés y no pide cuenta. Solo se guarda qué enlace se abrió, cuándo y si fue en celular o computador.</p>
+  </details>`;
+}
 function viewEquipo(){
   if(!TEAM.on) return `<div class="empty"><b>Esta sección es solo para el equipo</b></div>`;
   if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
@@ -5493,6 +5548,7 @@ function viewEquipo(){
   <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Tablero</h1></div>
     <div class="row" style="gap:6px"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""} Actualizar</button><button class="btn primary" data-act="team-add">${I.plus} Agregar</button></div></section>
   ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
+  ${f!=="trash" ? teamLinksHTML() : ""}
   ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
   ${M && f!=="trash" ? `<div class="tm-people">
       ${person("all", `<span class="tm-all">${I.users}</span>`, "Todos", byWho.length)}
@@ -6364,6 +6420,7 @@ function introSound(){
 }
 function replayIntro(){ playIntro(true); }
 function playIntro(force){
+  if(!force && RV_PARAM_EARLY()) return;
   let seen = false; try{ seen = sessionStorage.getItem("lampara.introSeen") === "1"; sessionStorage.setItem("lampara.introSeen","1"); }catch(e){}
   if(!force && (seen || !introEnabled())) return;
   const old = $("#intro"); if(old) old.remove();
@@ -6379,11 +6436,92 @@ function playIntro(force){
 }
 playIntro();
 
+function RV_PARAM_EARLY(){ return /[?&](revisores|reviewers)(=|&|$)/.test(location.search); }
+/* =========================================================
+   PÁGINA PARA REVISORES DE LICENCIAS (?revisores=abs, ?revisores=tyndale …)
+   Solo se abre con ese enlace; los usuarios normales nunca la ven. Español / English.
+   ========================================================= */
+const RV_PARAM = (()=>{ try{ const q = new URLSearchParams(location.search); return q.has("revisores") ? (q.get("revisores") || "revisores") : q.has("reviewers") ? (q.get("reviewers") || "revisores") : null; }catch(e){ return null; } })();
+const LINK_REF = (()=>{ try{ const q = new URLSearchParams(location.search); return RV_PARAM || q.get("r") || null; }catch(e){ return null; } })();
+let RV_LANG = (()=>{ try{ const l = new URLSearchParams(location.search).get("lang"); if(l) return l.startsWith("en") ? "en" : "es"; }catch(e){} return /^es/i.test(navigator.language||"es") ? "es" : "en"; })();
+/* Avisa (sin datos personales) cuando alguien abre un enlace con ?revisores= o ?r= */
+function logLinkOpen(){
+  if(!LINK_REF || !SB) return;
+  const k = "lampara.linkLogged." + LINK_REF; try{ if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); }catch(e){}
+  const device = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "celular" : "computador";
+  try{ SB.rpc("log_link_open", { p_ref: String(LINK_REF).toLowerCase().slice(0,30), p_host: location.host, p_device: device, p_lang: (navigator.language||"").slice(0,12) }).then(()=>{}, ()=>{}); }catch(e){}
+}
+function bibleStats(){
+  const seen = new Map();
+  Object.values(SUG_MAP).forEach(v=>{ if(v && v.ref && v.text && !seen.has(v.ref)) seen.set(v.ref, v); });
+  [].concat(typeof EXTRA_VERSES !== "undefined" ? EXTRA_VERSES : [], typeof HEART_VERSES !== "undefined" ? HEART_VERSES : []).forEach(([id,ref,text])=>{ if(!seen.has(ref)) seen.set(ref, { ref, text }); });
+  let verses = 0; seen.forEach(v=>{ const m = v.ref.match(/:(\d+)(?:-(\d+))?$/); verses += m && m[2] ? (+m[2] - +m[1] + 1) : 1; });
+  const order = BOOKS.map(b=>b.name);
+  const refs = [...seen.keys()].sort((a,b)=>{ const ba = a.replace(/\s+\d+:.*$/,""), bb = b.replace(/\s+\d+:.*$/,""); const d = order.indexOf(ba) - order.indexOf(bb); if(d) return d; const ca = a.match(/(\d+):(\d+)/), cb = b.match(/(\d+):(\d+)/); return (+ca[1]-+cb[1]) || (+ca[2]-+cb[2]); });
+  return { passages: seen.size, verses, refs };
+}
+const RV_T = {
+  es: {
+    tag:"Información para revisores de licencias", title:`${APP_NAME}: aplicación gratuita para memorizar la Biblia`,
+    intro:"Gracias por revisar nuestra solicitud. Esta página resume cómo usamos el texto bíblico, para que puedan evaluarla sin necesidad de crear una cuenta.",
+    facts:[["Versión publicada","Reina-Valera 1960®"],["Versículos utilizados",n=>`${n.verses} versículos (${n.passages} pasajes)`],["Libros completos","Ninguno"],["Precio y publicidad","Gratuita, sin anuncios, sin ventas"],["Propósito","Ministerio: ayudar a las personas a memorizar las Escrituras"],["Plataforma","Aplicación web (se instala en el celular)"]],
+    howT:"Cómo se muestra el texto", how:["El texto se muestra completo y exacto en las tarjetas, en las listas y en las imágenes para compartir.","Al practicar, algunas palabras se ocultan por un momento (espacios en blanco o solo la primera letra de cada palabra) para ejercitar la memoria. Al terminar cada pregunta se muestra el texto completo.","Nunca se parafrasea ni se modifica el texto. Cada versículo fue comparado palabra por palabra con la Reina-Valera 1960."],
+    demoT:"Vea un ejemplo", tabs:["Tarjeta","Espacios","Iniciales","Imagen"], imgNote:"Imagen que los usuarios pueden compartir (incluye el nombre de la versión y el aviso).",
+    noticeT:"Aviso de derechos en la aplicación", noticeWhere:"Aparece completo en la Biblioteca, en Libros de la Biblia y en Perfil → Acerca de; y de forma abreviada en cada pantalla con versículos y en cada imagen compartida.",
+    ntvT:"Otras versiones", ntv:"La Nueva Traducción Viviente (NTV) no está publicada. Solo se activará cuando Tyndale House lo autorice por escrito.",
+    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsable", mail:"Correo", open:"Abrir la aplicación", lang:"English"
+  },
+  en: {
+    tag:"Information for licensing reviewers", title:`${APP_NAME}: a free app to memorize the Bible`,
+    intro:"Thank you for reviewing our request. This page summarizes how we use the Bible text, so you can evaluate it without creating an account.",
+    facts:[["Published version","Reina-Valera 1960®"],["Verses used",n=>`${n.verses} verses (${n.passages} passages)`],["Complete books","None"],["Price and ads","Free, no ads, no sales"],["Purpose","Ministry: helping people memorize Scripture"],["Platform","Web app (installable on phones)"]],
+    howT:"How the text is displayed", how:["The text is shown complete and exact on cards, in lists and in shareable images.","During practice, some words are hidden for a moment (blanks, or only the first letter of each word) as a memory exercise. After each question the full text is shown.","The text is never paraphrased or modified. Every verse was checked word for word against the Reina-Valera 1960."],
+    demoT:"See an example", tabs:["Card","Blanks","Initials","Image"], imgNote:"Image users can share (includes the version name and the notice).",
+    noticeT:"Copyright notice in the app", noticeWhere:"Shown in full in the Library, in Books of the Bible and in Profile → About; and in short form on every screen with verses and on every shared image.",
+    ntvT:"Other versions", ntv:"The Nueva Traducción Viviente (NTV) is not published. It will only be enabled once Tyndale House authorizes it in writing.",
+    listT:"Full list of passages", contactT:"Contact", resp:"Responsible", mail:"Email", open:"Open the app", lang:"Español"
+  }
+};
+let RV_TAB = 0;
+function rvDemo(){
+  const v = verse("jn-3-16"), t = RV_T[RV_LANG];
+  if(RV_TAB===0) return `<div class="rv-card"><small>${esc(v.ref)} · RVR1960®</small><p>${esc(v.text)}</p></div>`;
+  if(RV_TAB===1){ let k = 0; const html = v.text.split(" ").map(w=>{ k++; const m = w.match(/^(.*?)([.,;:!?]*)$/); return k%3===0 && m[1].length>2 ? `<span class="rv-blank">${" ".repeat(Math.max(4, m[1].length))}</span>${esc(m[2])}` : esc(w); }).join(" ");
+    return `<div class="rv-card"><small>${esc(v.ref)} · RVR1960®</small><p>${html}</p></div>`; }
+  if(RV_TAB===2) return `<div class="rv-card"><small>${esc(v.ref)} · RVR1960®</small><p class="rv-ini">${esc(initialsOf(v.text))}</p></div>`;
+  return `<div class="rv-img"><img id="rvImg" alt=""><small>${esc(t.imgNote)}</small></div>`;
+}
+function renderReviewers(){
+  const t = RV_T[RV_LANG], n = bibleStats();
+  document.documentElement.lang = RV_LANG; document.title = `${APP_NAME} · ${t.tag}`;
+  root.innerHTML = `<main class="rv">
+    <header class="rv-head"><div class="brand" style="padding:0"><div class="brand-mark">${I.lamp}</div><b>${esc(APP_NAME)}</b></div><button class="btn ghost" id="rvLang" style="padding:6px 12px">🌐 ${t.lang}</button></header>
+    <section class="rv-hero"><span class="eyebrow">${esc(t.tag)}</span><h1>${esc(t.title)}</h1><p>${esc(t.intro)}</p></section>
+    <section class="rv-facts">${t.facts.map(([k,v])=>`<div><small>${esc(k)}</small><b>${esc(typeof v==="function"?v(n):v)}</b></div>`).join("")}</section>
+    <section class="rv-sec"><h2>${esc(t.howT)}</h2><ul>${t.how.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
+    <section class="rv-sec"><h2>${esc(t.demoT)}</h2><div class="rv-tabs">${t.tabs.map((x,i)=>`<button data-rvtab="${i}" aria-pressed="${RV_TAB===i}">${esc(x)}</button>`).join("")}</div><div id="rvDemo">${rvDemo()}</div></section>
+    <section class="rv-sec"><h2>${esc(t.noticeT)}</h2><p class="rv-notice">${esc(RVR_NOTICE)}</p><p class="muted" style="margin:0;font-size:14px">${esc(t.noticeWhere)}</p></section>
+    <section class="rv-sec"><h2>${esc(t.ntvT)}</h2><p style="margin:0">${esc(t.ntv)}</p></section>
+    <section class="rv-sec"><details><summary><b>${esc(t.listT)}</b> (${n.passages})</summary><p class="rv-refs">${n.refs.map(esc).join(" · ")}</p></details></section>
+    <section class="rv-sec"><h2>${esc(t.contactT)}</h2><p style="margin:0">${esc(t.resp)}: <b>${esc(PRIV.responsable)}</b><br>${esc(t.mail)}: <a href="mailto:${esc(PRIV.correo)}">${esc(PRIV.correo)}</a></p></section>
+    <div style="display:flex;justify-content:center;padding:6px 0 30px"><a class="btn primary lg" href="${esc(location.pathname)}">${I.play} ${esc(t.open)}</a></div>
+  </main>`;
+  root.querySelector("#rvLang").onclick = ()=>{ RV_LANG = RV_LANG==="es" ? "en" : "es"; renderReviewers(); };
+  const paint = async ()=>{ root.querySelector("#rvDemo").innerHTML = rvDemo(); if(RV_TAB===3){ const bl = await verseImage("jn-3-16", "cielo-nubes", "9:16", "m"); const im = root.querySelector("#rvImg"); if(im && bl) im.src = URL.createObjectURL(bl); } };
+  root.querySelectorAll("[data-rvtab]").forEach(b=>b.onclick=()=>{ RV_TAB = +b.dataset.rvtab; root.querySelectorAll("[data-rvtab]").forEach(x=>x.setAttribute("aria-pressed", x===b)); paint(); });
+  if(RV_TAB===3) paint();
+}
+/* Aviso corto en las pantallas con versículos */
+const RVR_SHORT = "Reina-Valera 1960® © Sociedades Bíblicas Unidas";
+const rvrMark = () => `<p class="rvr-mark">${RVR_SHORT}</p>`;
+
 /* =========================================================
    ARRANQUE
    ========================================================= */
 function renderSplash(){ root.innerHTML = `<div class="wel"><div class="empty" style="margin:auto"><div class="brand-mark" style="width:48px;height:48px">${I.lamp}</div><b>Lámpara</b><span>Cargando tu progreso…</span></div></div>`; }
 (async function boot(){
+  logLinkOpen();
+  if(RV_PARAM !== null){ const ii = $("#intro"); if(ii) ii.remove(); renderReviewers(); return; }   // página para revisores: no pide cuenta
   if(SB){
     renderSplash();
     let user = null;
