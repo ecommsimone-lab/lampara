@@ -2402,7 +2402,7 @@ function prPost(r){
   </article>`;
 }
 function viewOracion(){
-  if(!cloudOn()) return `<div class="empty"><b>Oración necesita tu cuenta en la nube</b><span>Entra con tu correo para orar con tus amigos y grupos y llevar tu diario de oración.</span></div>`;
+  if(!cloudOn() && !isDemo()) return `<div class="empty"><b>Oración necesita tu cuenta en la nube</b><span>Entra con tu correo para orar con tus amigos y grupos y llevar tu diario de oración.</span></div>`;
   if(PR.groups===null) setTimeout(()=>prLoad("groups"),0);
   const tab = PR.tab;
   const head = `<div class="pr-sub"><button data-act="pr-tab" data-k="comunidad" aria-pressed="${tab==="comunidad"}">Peticiones</button><button data-act="pr-tab" data-k="diario" aria-pressed="${tab==="diario"}">🔒 Mi diario</button></div>${PR.err?`<div class="result-bar bad"><span>${esc(PR.err)}</span></div>`:""}`;
@@ -4123,7 +4123,7 @@ function duelRow(d){
 function duelOrder(d){ const me = d.creator===ME.id, my = me?d.creator_score:d.opponent_score, th = me?d.opponent_score:d.creator_score; return my==null ? 0 : th==null ? 1 : 2; }
 
 function viewCommunity(){
-  if(!cloudOn()) return `<div class="empty"><b>Comunidad necesita conexión con la nube</b><span>Entra con tu cuenta para orar con tus amigos y grupos y retarlos.</span></div>`;
+  if(!cloudOn() && !isDemo()) return `<div class="empty"><b>Comunidad necesita conexión con la nube</b><span>Entra con tu cuenta para orar con tus amigos y grupos y retarlos.</span></div>`;
   const seg = COMM.seg || "oracion";
   const head = `<section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Crecer juntos</span><h1 style="font-size:clamp(30px,5vw,40px)">Comunidad</h1></section>
   <div class="pr-tabs"><button data-act="comm-seg" data-k="oracion" aria-pressed="${seg==="oracion"}">🙏 Oración</button><button data-act="comm-seg" data-k="esgrima" aria-pressed="${seg==="esgrima"}">⚔️ Esgrima</button></div>`;
@@ -6170,6 +6170,7 @@ document.addEventListener("click", e=>{
   const a = t.dataset.act;
   if(!a && t.dataset.list){ go(t.dataset.list==="rev"?"review":"list",{list:t.dataset.list}); return; }
   const id = t.dataset.id;
+  if(isDemo() && a && demoAction(a, t)) return;
   switch(a){
     case "logout": signOut(); break;
     case "feedback": feedbackModal(); break;
@@ -6575,9 +6576,57 @@ function startDemo(){
   S.favs = ["jn-3-16","sal-23-1","flp-4-13"].filter(id=>verse(id));
   S.lists = [{ id:"l-demo", name:"Para memorizar en familia", ids:["jos-24-15","ef-6-1","prov-22-6"].filter(id=>verse(id)) }];
   syncPath();
+  try{ seedDemoCommunity(); }catch(e){}
   try{ localStorage.setItem("lampara.heartOpen", ""); }catch(e){}
   logLinkOpen("demo");
   go("home");
+}
+const isDemo = () => !!(ME && ME.mode==="demo");
+/* Comunidad de ejemplo para la demo: nombres y peticiones generales, no son personas reales */
+function seedDemoCommunity(){
+  const now = Date.now(), D = 86400000, H = 3600000, iso = t => new Date(t).toISOString();
+  const P = [["d1","María G.","mariag"],["d2","Andrés P.","andresp"],["d3","Laura M.","lauram"],["d4","Samuel R.","samuelr"],["d5","Daniela C.","danic"],["d6","Jorge L.","jorgel"]];
+  P.forEach(([id,n,u])=>{ COMM.profiles[id] = { user_id:id, display_name:n, username:u, avatar_url:null }; });
+  COMM.friends = [
+    { id:"fr1", user_id:"d1", display_name:"María G.", username:"mariag", status:"accepted", streak:"accepted", streak_since:todayKey(new Date(now-9*D)) },
+    { id:"fr2", user_id:"d2", display_name:"Andrés P.", username:"andresp", status:"accepted", streak:null },
+    { id:"fr3", user_id:"d3", display_name:"Laura M.", username:"lauram", status:"accepted", streak:"accepted", streak_since:todayKey(new Date(now-4*D)) },
+    { id:"fr5", user_id:"d5", display_name:"Daniela C.", username:"danic", status:"accepted", streak:null },
+    { id:"fr4", user_id:"d4", display_name:"Samuel R.", username:"samuelr", status:"pending", incoming:true }
+  ];
+  COMM.days = {}; ["demo","d1","d2","d3","d5"].forEach((id,k)=>{ COMM.days[id] = new Set(); for(let d=0; d<12; d++) if(id==="demo" || (d + k) % (k===2?5:3) !== 1) COMM.days[id].add(todayKey(new Date(now - d*D))); });
+  COMM.days.d2.delete(todayKey()); COMM.sdays = {}; COMM.counts = { demo: 4 };
+  COMM.duels = [
+    { id:"du1", code:"K7Q2", creator:"demo", opponent:"d1", creator_score:9, opponent_score:7, creator_ms:94000, opponent_ms:120000, created_at:iso(now-2*H), questions:[] },
+    { id:"du2", code:"M3X8", creator:"d3", opponent:"demo", creator_score:8, opponent_score:null, created_at:iso(now-5*H), questions:makeDuelQuestions() },
+    { id:"du3", code:"P5T1", creator:"demo", opponent:"d2", creator_score:6, opponent_score:8, creator_ms:150000, opponent_ms:110000, created_at:iso(now-2*D), questions:[] }
+  ];
+  COMM.loaded = true; COMM.loading = null; COMM.err = "";
+  PR.groups = [ { id:"g1", name:"Célula de jóvenes", color:"#7C5CFF", members:8, role:"admin", new:true }, { id:"g2", name:"Familia", color:"#16A36A", members:5, role:"member", new:false } ];
+  PR.invites = [];
+  const post = (o) => Object.assign({ my:[], pray:0, amen:0, heart:0, comments:0, scope:"group" }, o);
+  PR.feed = [
+    post({ id:"p1", author:"d1", author_name:"María G.", scope:"group", group_name:"Célula de jóvenes", cat:"salud", body:"Oren por la salud de mi abuela, esta semana tiene una cirugía.", created_at:iso(now-1*H), pray:6, pray_name:"Laura M.", amen:3, heart:2, comments:2, first_comment:{ name:"Andrés P.", body:"🙏 Estoy orando por ti" }, verse_id:"is-41-10" }),
+    post({ id:"p2", author:"d2", author_name:"Andrés P.", scope:"friends", cat:"trabajo", body:"Tengo una entrevista de trabajo el viernes. Pido sabiduría y paz.", created_at:iso(now-4*H), pray:4, pray_name:"María G.", amen:2, bg:2 }),
+    post({ id:"p3", author:null, anon:true, scope:"group", group_name:"Célula de jóvenes", cat:"familia", body:"Pido oración por la restauración de mi familia.", created_at:iso(now-9*H), pray:9, pray_name:"Daniela C.", amen:5, heart:4, comments:1, first_comment:{ name:"María G.", body:"No estás solo" } }),
+    post({ id:"p4", author:"d3", author_name:"Laura M.", scope:"group", group_name:"Familia", cat:"gratitud", body:"Gracias a todos por orar: ¡aprobé mi examen final!", created_at:iso(now-1.5*D), answered_at:iso(now-1*D), answer:"Dios me dio calma y pude responder todo. ¡Gloria a Dios!", pray:12, pray_name:"María G.", amen:8, heart:10, comments:4, first_comment:{ name:"Jorge L.", body:"¡Dios es fiel!" } }),
+    post({ id:"p5", author:"d5", author_name:"Daniela C.", scope:"friends", cat:"estudios", body:"Empiezo la universidad la próxima semana. Oren para que pueda ser luz con mis compañeros.", created_at:iso(now-2*D), pray:5, pray_name:"Andrés P.", amen:1 })
+  ];
+  PR.feedCache = { todo: PR.feed };
+  PR.mine = [
+    { id:"m1", scope:"private", body:"Que pueda ser más constante leyendo la Biblia.", created_at:iso(now-6*D), mine:true, pray:0 },
+    { id:"m2", scope:"group", group_name:"Célula de jóvenes", body:"Por mi hermano, para que vuelva a la iglesia.", created_at:iso(now-12*D), mine:true, pray:7, verse_id:"jn-3-16" },
+    { id:"m3", scope:"friends", body:"Por trabajo para mi papá.", created_at:iso(now-30*D), answered_at:iso(now-3*D), answer:"¡Lo contrataron! Gracias por orar.", mine:true, pray:9 }
+  ];
+  S.prayerList = [{ e:"👨‍👩‍👧", n:"Familia", items:["Mamá","Papá","Mi hermano"] }, { e:"⛪", n:"Iglesia y pastores", items:["Pastor Daniel","Mi célula"] }, { e:"🌍", n:"Misiones", items:["Misioneros en Asia"] }];
+}
+/* En la demo, lo que se guarda en la nube no se envía: se muestra un aviso (y las reacciones se ven en pantalla) */
+const DEMO_BLOCK = new Set(["pr-quick","pr-comments","pr-detail","pr-menu","pr-new","pr-new-private","pr-answer","pr-share","pr-group-new","pr-inv","pr-inv-no","pr-group-open","pr-invite","friend-search","streak-invite","streak-accept","streak-reject","streak-end","cheer-open","friend-add","friend-accept","friend-reject","friend-cancel","friend-remove","duel-pick","duel-friend","duel-new","duel-join","duel-play","duel-share","duel-view","amigos-open","feedback","logout","avatar","verse-send"]);
+function demoAction(act, t){
+  if(act==="pr-react"){ const r = (PR.feed||[]).find(x=>x.id===t.dataset.id), k = t.dataset.k; if(!r) return true;
+    const on = r.my.includes(k); r.my = on ? r.my.filter(x=>x!==k) : r.my.concat(k); r[k] = (+r[k]||0) + (on?-1:1); render(); return true; }
+  if(DEMO_BLOCK.has(act)){ toast("Demo: con una cuenta real, esto se guarda y lo ven tus amigos o tu grupo."); return true; }
+  return false;
 }
 function demoBar(){ return ME && ME.mode==="demo" ? `<div class="demo-bar"><span><b>Demo · Perfil de ejemplo</b><small>No se guarda nada · Sample profile, nothing is saved</small></span><button class="btn" data-act="demo-exit" style="padding:6px 12px">Salir · Exit</button></div>` : ""; }
 /* Aviso corto en las pantallas con versículos */
