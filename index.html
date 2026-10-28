@@ -477,6 +477,37 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.up-views{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface-2)}
+.up-views button{all:unset;cursor:pointer;text-align:center;padding:8px 6px;border-radius:10px;font-size:13.5px;font-weight:700;color:var(--muted)}
+.up-views button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.cc{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;border:1px solid var(--line);min-width:0}
+.cc-h{display:flex;flex-direction:column;gap:1px}
+.cc-h b{font-size:15px}
+.cc-h small{font-size:12px;color:var(--muted)}
+.cc-miss{margin:0;font-size:13px}
+.ch{width:100%;height:auto;display:block;overflow:visible}
+.ch .cx{font:600 10px Inter,system-ui,sans-serif;fill:var(--muted)}
+.ch .cbar:hover rect:last-of-type,.ch .cdot:hover circle:last-of-type{filter:brightness(1.12)}
+.hbx{display:flex;flex-direction:column;gap:7px}
+.hbx-r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 26px 34px;align-items:center;gap:8px}
+.hbx-l{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbx-t{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.hbx-t i{display:block;height:100%;border-radius:4px}
+.hbx-r b{font-size:13px;text-align:right}
+.hbx-r small{font-size:11.5px;color:var(--muted);text-align:right}
+.ut-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+.ut{border-collapse:collapse;width:max-content;min-width:100%;font-size:13px}
+.ut th,.ut td{padding:8px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+.ut th{background:var(--surface-2)}
+.ut th button{all:unset;cursor:pointer;font-weight:800;font-size:12px;color:var(--muted)}
+.ut td.tn,.ut th:first-child{position:sticky;left:0;z-index:1}
+.ut td.tn{background:var(--surface)}
+.ut th:first-child{background:var(--surface-2)}
+.ut td.tn>div{display:flex;align-items:center;gap:8px;max-width:170px}
+.ut td.tn span{display:flex;flex-direction:column;min-width:0}
+.ut td.tn small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.ut tbody tr:hover td{background:var(--surface-2)}
 .up{display:flex;flex-direction:column;gap:12px}
 .up-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .up-kpis>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
@@ -1521,7 +1552,7 @@ function render(){
         ${cloudOn()?navItem("avisos","Avisos",I.bell):""}
         ${navItem("review","Repaso",I.review)}
         ${navItem("profile","Perfil",I.user)}
-        ${TEAM.on?navItem("equipo","Tablero",I.list||I.review):""}
+        ${TEAM.on?navItem("equipo","Panel de control",I.list||I.review):""}
         <button data-act="feedback">${I.chat}<span>Enviar comentario</span></button>
       </nav>
       <div class="eyebrow" style="padding:0 10px">Tus listas</div>
@@ -4499,7 +4530,7 @@ function notifActions(n){
     }
     case "prayer_pray": case "prayer_comment": case "prayer_answered":
       return btn("open-oracion", n.type==="prayer_answered" ? "Ver testimonio" : "Ver petición", (n.data && n.data.prayer) || "", true);
-    case "team_assigned": case "link_open": return btn("team-go","Ver en el Tablero","",true);
+    case "team_assigned": case "link_open": return btn("team-go","Ver en el Panel de control","",true);
     case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
     case "cheer": {
       const vid = n.data && n.data.verse && SUG_MAP[n.data.verse] ? n.data.verse : null;
@@ -5569,7 +5600,7 @@ function tableroButton(){
   const faces = (TEAM.members||[]).slice(0,4).map(m=>teamAvatar(m,26)).join("");
   return `<button class="tablero-btn" data-go="equipo">
     <span class="tb-ic">📋</span>
-    <span class="tb-txt"><b>Tablero</b><span class="tb-bits">${bits.join("")}</span></span>
+    <span class="tb-txt"><b>Panel de control</b><span class="tb-bits">${bits.join("")}</span></span>
     ${faces?`<span class="tb-faces">${faces}</span>`:""}
     <span class="tb-go" aria-hidden="true">›</span>
   </button>`;
@@ -5599,10 +5630,95 @@ async function refreshLinks(){
 }
 setInterval(refreshLinks, 15000);
 setInterval(()=>{ if(VIEW.name==="equipo"){ const box = $("#teamLinks"); if(box && TEAM.linksAt) box.innerHTML = teamLinksHTML(); } }, 5000);
-function upInput(e){ if(e.target && e.target.id==="upQuery"){ UP.q = e.target.value; const l = $("#upList"); if(!l) return;
+function upInput(e){ if(e.target && e.target.id==="upQuery"){ UP.q = e.target.value;
+  if(UPV.view==="tabla"){ const w = document.querySelector(".ut-wrap"); if(!w) return; const q = normQ(UP.q||""); const list = (UP.rows||[]).filter(u=>!q || normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q)); const tmp = document.createElement("div"); tmp.innerHTML = tableHTML(list); w.nextElementSibling && w.nextElementSibling.remove(); w.replaceWith(...tmp.children); return; }
+  const l = $("#upList"); if(!l) return;
   const q = normQ(UP.q||""); let list = UP.step ? (UP.rows||[]).filter(u=>u.paso===UP.step) : (UP.rows||[]);
   if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
   l.innerHTML = list.length ? (UP.all ? list : list.slice(0,8)).map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`; } }
+/* ----- Panel de control: vistas Gráficos · Tabla · Tarjetas (SQL 21 y 22) ----- */
+const UPV = { view:"graf", sort:"registrado", dir:-1, daily:undefined };
+async function loadDaily(){ try{ UPV.daily = (await API.rpc("team_daily_stats", { p_days: 30 })) || []; }catch(e){ UPV.daily = null; } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); }
+const MES3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const fmtD = d => { const x = new Date(d+"T12:00:00"); return `${x.getDate()} ${MES3[x.getMonth()]}`; };
+const showLbl = (i, n, every) => i===n-1 || (i % every === 0 && n-1-i >= Math.ceil(every/2));
+/* Barras verticales simples (una serie, un color), con valor al pasar el dedo o el mouse */
+function svgBars(data, { color="var(--accent)", h=150, label=x=>x.k, every=1, unit="" }={}){
+  const W = 340, pad = { l:28, r:6, t:14, b:24 }, iw = W-pad.l-pad.r, ih = h-pad.t-pad.b;
+  const max = Math.max(1, ...data.map(x=>x.v)), step = Math.max(1, Math.ceil(max/4)), top = step*4, bw = iw/data.length;
+  const y = v => pad.t + ih - v/top*ih;
+  let g = "";
+  for(let t=0;t<=top;t+=step) g += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" ${t?'stroke-dasharray="2 4"':''}/><text x="${pad.l-6}" y="${y(t)+4}" text-anchor="end" class="cx">${t}</text>`;
+  data.forEach((x,i)=>{ const bx = pad.l + i*bw + Math.max(1, bw*.16), w = Math.max(2, bw*.68), hh = x.v/top*ih;
+    g += `<g class="cbar"><rect x="${pad.l+i*bw}" y="${pad.t}" width="${bw}" height="${ih}" fill="transparent"/><rect x="${bx}" y="${x.v?y(x.v):y(0)-2}" width="${w}" height="${x.v?hh:2}" rx="${Math.min(4,w/2)}" fill="${x.v?color:"var(--surface-2)"}"/><title>${esc(x.tip||label(x))}: ${x.v}${unit}</title></g>`;
+    if(showLbl(i, data.length, every)) g += `<text x="${bx+w/2}" y="${h-6}" text-anchor="middle" class="cx">${esc(label(x))}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${h}" class="ch" role="img">${g}</svg>`;
+}
+/* Línea (una serie) con puntos y tooltip */
+function svgLine(data, { color="var(--ok)", h=150, every=5 }={}){
+  const W = 340, pad = { l:28, r:10, t:14, b:24 }, iw = W-pad.l-pad.r, ih = h-pad.t-pad.b;
+  const max = Math.max(1, ...data.map(x=>x.v)), step = Math.max(1, Math.ceil(max/4)), top = step*4;
+  const X = i => pad.l + (data.length<2 ? iw/2 : i*iw/(data.length-1)), Y = v => pad.t + ih - v/top*ih;
+  let g = "";
+  for(let t=0;t<=top;t+=step) g += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)" ${t?'stroke-dasharray="2 4"':''}/><text x="${pad.l-6}" y="${Y(t)+4}" text-anchor="end" class="cx">${t}</text>`;
+  g += `<path d="${data.map((x,i)=>`${i?"L":"M"}${X(i).toFixed(1)},${Y(x.v).toFixed(1)}`).join("")}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  data.forEach((x,i)=>{ g += `<g class="cdot"><circle cx="${X(i)}" cy="${Y(x.v)}" r="9" fill="transparent"/><circle cx="${X(i)}" cy="${Y(x.v)}" r="${i===data.length-1?4.5:3}" fill="${color}" stroke="var(--surface)" stroke-width="2"/><title>${esc(x.tip)}: ${x.v}</title></g>`;
+    if(showLbl(i, data.length, every)) g += `<text x="${X(i)}" y="${h-6}" text-anchor="middle" class="cx">${esc(x.k)}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${h}" class="ch" role="img">${g}</svg>`;
+}
+/* Barras horizontales con porcentaje (embudo, distribuciones) */
+function hBars(rows, total){
+  const max = Math.max(1, ...rows.map(r=>r.v));
+  return `<div class="hbx">${rows.map(r=>`<div class="hbx-r" title="${esc(r.l)}: ${r.v}"><span class="hbx-l">${esc(r.l)}</span><span class="hbx-t"><i style="width:${Math.round(r.v/max*100)}%;background:${r.c||"var(--accent)"}"></i></span><b>${r.v}</b><small>${total?Math.round(r.v/total*100)+"%":""}</small></div>`).join("")}</div>`;
+}
+function chartsHTML(R){
+  const D = UPV.daily;
+  if(D===undefined) setTimeout(loadDaily, 0);
+  const total = R.length;
+  // retención por semana de registro (últimas 6 semanas): % que practicó al menos 1 día y % que volvió otro día
+  const wkStart = t => { const d = new Date(t); d.setHours(0,0,0,0); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return d.getTime(); };
+  const now = wkStart(Date.now()), weeks = [];
+  for(let w=5; w>=0; w--){ const s = now - w*7*DAY, us = R.filter(u=>wkStart(u.registrado)===s);
+    weeks.push({ k: fmtD(new Date(s).toISOString().slice(0,10)), n: us.length, v: us.length ? Math.round(us.filter(u=>u.paso===5).length/us.length*100) : 0, p: us.length ? Math.round(us.filter(u=>u.paso>=4).length/us.length*100) : 0 }); }
+  const rachas = [["0 días",u=>u.racha===0],["1–3 días",u=>u.racha>=1&&u.racha<=3],["4–7 días",u=>u.racha>=4&&u.racha<=7],["8+ días",u=>u.racha>=8]].map(([l,f])=>({ l, v:R.filter(f).length }));
+  const ritmos = [["🌱 Tranquilo","tranquilo"],["🔥 Constante","constante"],["⚡ Intensivo","intensivo"],["Sin elegir",""]].map(([l,k])=>({ l, v:R.filter(u=>(u.ritmo||"")===k).length }));
+  const daily = Array.isArray(D) ? D : [];
+  const sumReg = daily.reduce((a,x)=>a+x.registros,0);
+  return `
+    <div class="cg">
+      <div class="cc"><div class="cc-h"><b>Registros por día</b><small>últimos 30 días · ${sumReg} en total</small></div>
+        ${D===null ? `<p class="muted cc-miss">Falta correr el <b>SQL 22</b> en Supabase.</p>` : D===undefined ? `<p class="muted cc-miss">Cargando…</p>` : svgBars(daily.map(x=>({ k:fmtD(x.dia), tip:fmtD(x.dia), v:x.registros })), { every:7 })}</div>
+      <div class="cc"><div class="cc-h"><b>Personas que practicaron cada día</b><small>últimos 30 días${daily.length?` · hoy: ${daily[daily.length-1].activos}`:""}</small></div>
+        ${D===null ? `<p class="muted cc-miss">Falta correr el <b>SQL 22</b> en Supabase.</p>` : D===undefined ? `<p class="muted cc-miss">Cargando…</p>` : svgLine(daily.map(x=>({ k:fmtD(x.dia), tip:fmtD(x.dia), v:x.activos })), { every:7 })}</div>
+      <div class="cc"><div class="cc-h"><b>Embudo</b><small>en qué paso está cada persona · % del total</small></div>
+        ${hBars(UP_STEPS.map(([k,l,c])=>({ l:`${k} · ${l}`, v:R.filter(u=>u.paso===k).length, c })), total)}</div>
+      <div class="cc"><div class="cc-h"><b>¿Vuelven a practicar?</b><small>% de cada semana de registro que practicó más de un día</small></div>
+        ${svgBars(weeks.map(w=>({ k:w.k, tip:`Semana del ${w.k} · ${w.n} ${w.n===1?"registro":"registros"} · ${w.p}% practicó`, v:w.v })), { color:"var(--ok)", unit:"%" })}
+        <small class="muted" style="font-size:12px">Toca o pasa el mouse por una barra para ver cuántos se registraron esa semana.</small></div>
+      <div class="cc"><div class="cc-h"><b>Rachas actuales</b><small>cuántos días seguidos llevan</small></div>${hBars(rachas.map(r=>({ ...r, c:"#FF8A1A" })), total)}</div>
+      <div class="cc"><div class="cc-h"><b>Ritmo elegido</b><small>versículos nuevos por semana</small></div>${hBars(ritmos, total)}</div>
+    </div>`;
+}
+const UP_COLS = [["nombre","Nombre"],["registrado","Registro"],["paso","Paso"],["dias_practicados","Días"],["racha","Racha"],["ultimo_dia","Último día"],["aprendidos","Aprendidos"],["en_proceso","En proceso"],["acierto","Acierto"],["nivel","Nivel"],["amigos","Amigos"],["ritmo","Ritmo"]];
+function tableHTML(list){
+  const k = UPV.sort, d = UPV.dir;
+  const rows = list.slice().sort((a,b)=>{ const x = a[k], y = b[k]; if(x==null && y==null) return 0; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*d; });
+  const cell = (u,c) => c==="nombre" ? `<td class="tn"><div>${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 24)}<span><b>${esc(u.nombre||"—")}</b><small>${esc(u.correo||"")}</small></span></div></td>`
+    : c==="registrado" ? `<td>${new Date(u.registrado).toLocaleDateString("es-CO",{ day:"numeric", month:"short" })}</td>`
+    : c==="paso" ? (()=>{ const st = UP_STEPS.find(x=>x[0]===u.paso) || UP_STEPS[0]; return `<td><span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span></td>`; })()
+    : c==="ultimo_dia" ? `<td>${u.ultimo_dia ? fmtD(u.ultimo_dia) : "—"}</td>`
+    : c==="acierto" ? `<td>${u.acierto==null?"—":u.acierto+"%"}</td>`
+    : `<td>${esc(u[c]==null||u[c]===""?"—":String(u[c]))}</td>`;
+  return `<div class="ut-wrap"><table class="ut"><thead><tr>${UP_COLS.map(([c,l])=>`<th><button data-act="up-sort" data-k="${c}">${esc(l)}${k===c?(d>0?" ▲":" ▼"):""}</button></th>`).join("")}</tr></thead>
+    <tbody>${rows.map(u=>`<tr>${UP_COLS.map(([c])=>cell(u,c)).join("")}</tr>`).join("")}</tbody></table></div>
+    <button class="btn" data-act="up-csv" style="align-self:flex-start">⬇ Descargar CSV (Excel)</button>`;
+}
+function downloadUsersCSV(){
+  const R = UP.rows || []; const cols = ["nombre","usuario","correo","registrado","paso","ritmo","dias_practicados","racha","ultimo_dia","respuestas","acierto","puntos","nivel","en_proceso","aprendidos","amigos","logros","escudos","ultima_actividad"];
+  const q = v => { v = v==null ? "" : String(v); return /[",;\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v; };
+  const csv = "﻿" + cols.join(",") + "\n" + R.map(u=>cols.map(c=>q(u[c])).join(",")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })); a.download = `usuarios-${todayKey()}.csv`; document.body.appendChild(a); a.click(); a.remove();
+}
 /* Panel de usuarios (SQL 21): lo mismo que la consulta "PANEL DE USUARIOS" de Supabase, dentro del Tablero */
 const UP = { rows:undefined, loading:false, step:0, q:"", all:false, at:0 };
 const UP_STEPS = [[1,"Solo se registró","#98A2B3"],[2,"Sin bienvenida","#E0A100"],[3,"Entró, sin practicar","#FF8A1A"],[4,"Practicó 1 día","#3B82F6"],[5,"Volvió a practicar","#16A36A"]];
@@ -5635,8 +5751,12 @@ function usersPanelHTML(){
   if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
   const shown = UP.all ? list : list.slice(0, 8);
   const max = Math.max(1, ...UP_STEPS.map(([k])=>R.filter(u=>u.paso===k).length));
-  return `<section class="panel up">
-    <div class="spread" style="align-items:center"><b>👥 Usuarios</b><span class="tm-live"><i></i>En vivo</span></div>
+  const V = UPV.view, vt = (k,l) => `<button data-act="up-view" data-k="${k}" aria-pressed="${V===k}">${l}</button>`;
+  const kpis = `<div class="up-kpis"><div><b>${R.length}</b><small>registrados</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>`;
+  const head = `<div class="spread" style="align-items:center"><b>👥 Usuarios</b><span class="tm-live"><i></i>En vivo</span></div><div class="up-views">${vt("graf","📊 Gráficos")}${vt("tabla","📋 Tabla")}${vt("tarj","🪪 Tarjetas")}</div>`;
+  if(V==="graf") return `<section class="panel up">${head}${kpis}${chartsHTML(R)}</section>`;
+  if(V==="tabla") return `<section class="panel up">${head}${kpis}<input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">${tableHTML(list)}</section>`;
+  return `<section class="panel up">${head}
     <div class="up-kpis"><div><b>${R.length}</b><small>registrados</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>
     <div class="up-funnel">${UP_STEPS.map(([k,l,c])=>{ const n = R.filter(u=>u.paso===k).length; return `<button data-act="up-step" data-k="${k}" aria-pressed="${UP.step===k}" style="--sc:${c}"><span class="up-fl">${k} · ${esc(l)}</span><span class="up-bar"><i style="width:${Math.round(n/max*100)}%"></i></span><b>${n}</b></button>`; }).join("")}</div>
     <input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">
@@ -5645,7 +5765,7 @@ function usersPanelHTML(){
     ${UP.step ? `<button class="linkbtn" data-act="up-step" data-k="${UP.step}" style="align-self:flex-start;padding:0">Quitar filtro</button>` : ""}
   </section>`;
 }
-setInterval(()=>{ if(VIEW.name==="equipo" && TEAM.on && !document.hidden && !document.activeElement?.matches?.("#upQuery")) loadUsersPanel(); }, 60000);
+setInterval(()=>{ if(VIEW.name==="equipo" && TEAM.on && !document.hidden && !document.activeElement?.matches?.("#upQuery")){ loadUsersPanel(); if(UPV.view==="graf") loadDaily(); } }, 60000);
 /* Perfil del equipo: cuándo y desde qué país abrieron la demo o la página para revisores (SQL 20), en vivo */
 const REV = { rows:undefined, at:0, loading:false, all:false };
 const REV_LABEL = { demo:["🎬","Abrieron la demo"], revisores:["📄","Página para revisores (desde el inicio)"], abs:["📄","Página para Sociedades Bíblicas"], tyndale:["📄","Página para Tyndale"], lockman:["📄","Página para Lockman"] };
@@ -5682,7 +5802,7 @@ function viewEquipo(){
   const quad = ([k,l,d,c,e]) => { const n = byPrio.filter(it=>it.prioridad===k).length; return `<button class="tm-quad" data-act="team-prio" data-k="${k}" aria-pressed="${TEAM.prio===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small><span>${n}</span></button>`; };
   const trashN = TEAM.trash ? TEAM.trash.length : null;
   return `
-  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Tablero</h1></div>
+  <section class="spread" style="align-items:flex-end;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Panel de control</h1></div>
     <div class="row" style="gap:6px"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""} Actualizar</button><button class="btn primary" data-act="team-add">${I.plus} Agregar</button></div></section>
   ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
   ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
@@ -6376,6 +6496,9 @@ document.addEventListener("click", e=>{
     case "method-help": methodModal(); break;
     case "punct-toggle": { S.prefs.punct = punctFlex() ? "exacto" : "flexible"; persist(); const w = $("#writeBox"), val = w ? w.value : ""; render(); const w2 = $("#writeBox"); if(w2){ w2.value = val; w2.focus(); } toast(punctFlex() ? "Listo: los signos de puntuación ya no cuentan." : "Listo: los signos de puntuación vuelven a contar."); break; }
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
+    case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
+    case "up-sort": { const k = t.dataset.k; UPV.dir = UPV.sort===k ? -UPV.dir : (k==="nombre"||k==="ritmo" ? 1 : -1); UPV.sort = k; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
+    case "up-csv": downloadUsersCSV(); break;
     case "up-all": UP.all = !UP.all; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "rev-all": REV.all = !REV.all; { const box = $("#revEvents"); if(box) box.innerHTML = revEventsHTML(); } break;
     case "demo-exit": { closeModal(); SESSION = null; ME = null; S = null; VIEW = { name:"home" }; window.scrollTo(0,0); renderReviewers(); break; }
