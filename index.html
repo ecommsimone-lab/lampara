@@ -336,7 +336,7 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pr-cmrow small{display:block;font-size:12px}
 .pr-vres{display:flex;flex-direction:column;gap:4px}
 .pr-vres button{all:unset;cursor:pointer;font-size:13px;padding:6px 10px;border-radius:10px;background:var(--surface-2)}
-.pd-it{all:unset;cursor:pointer;font-size:12.5px;padding:3px 9px;border-radius:999px;background:var(--surface-2)}
+.pd-it{all:unset;cursor:pointer;font-size:12.5px;padding:3px 9px;border-radius:12px;background:var(--surface-2);white-space:normal;overflow-wrap:anywhere;line-height:1.4;max-width:100%;box-sizing:border-box}
 .pd-it:hover{background:var(--bad-soft);color:var(--bad);text-decoration:line-through}
 .pr-invite{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:12px;border-radius:16px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
 .pr-invite .cv{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:800}
@@ -2714,11 +2714,13 @@ async function prGroupModal(gid){
 function pdAddModal(si){
   const sec = prayerList()[si]; if(!sec) return;
   modal(`<div class="spread"><h2 style="font-size:22px">${sec.e} ${esc(sec.n)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <div class="field"><label for="pdIt">¿Por quién o por qué quieres orar?</label><input class="input" id="pdIt" maxlength="40" placeholder="Ej. Mamá, Pastor Luis, paz en el país…"></div>
+    <div class="field"><label for="pdIt">¿Por quién o por qué quieres orar?</label><textarea class="textarea" id="pdIt" maxlength="300" rows="3" placeholder="Ej. Mamá, que se recupere pronto · Pastor Luis · paz en el país…" style="min-height:84px;font-size:15px"></textarea><small class="muted" id="pdCount" style="align-self:flex-end;font-size:12px">0 / 300</small></div>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn primary" id="pdGo">Agregar</button></div>`, sc=>{
     sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
     const add = ()=>{ const v = sc.querySelector("#pdIt").value.trim(); if(!v) return; sec.items.push(v); persist(); closeModal(); render(); };
-    sc.querySelector("#pdGo").onclick = add; sc.querySelector("#pdIt").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } });
+    const ta = sc.querySelector("#pdIt"), cnt = sc.querySelector("#pdCount");
+    ta.addEventListener("input", ()=>{ cnt.textContent = `${ta.value.length} / 300`; });
+    sc.querySelector("#pdGo").onclick = add; ta.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); add(); } });
     setTimeout(()=>sc.querySelector("#pdIt").focus(), 50);
   });
 }
