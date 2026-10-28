@@ -477,13 +477,25 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
-.up-dates{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px}
-.up-dates::-webkit-scrollbar{display:none}
-.up-dates button{all:unset;cursor:pointer;flex:none;padding:6px 11px;border-radius:999px;border:1.5px solid var(--line);font-size:12.5px;font-weight:700;color:var(--muted)}
-.up-dates button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
-.up-custom{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.up-custom label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
-.up-custom .input{padding:8px 10px;font-size:14px}
+.dr{position:relative;align-self:flex-start}
+.dr-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 12px 9px 11px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,24,40,.05);font-size:14px;font-weight:600;color:var(--ink)}
+.dr-btn svg{color:var(--muted);flex:none}
+.dr-btn:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
+.dr-btn[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.dr-btn[aria-expanded="true"] .dr-car{transform:rotate(180deg)}
+.dr-car{transition:transform .15s}
+.dr-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:min(300px,82vw);padding:6px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 12px 32px -8px rgba(16,24,40,.25);animation:drIn .14s ease}
+@keyframes drIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.dr-list{display:flex;flex-direction:column}
+.dr-list button{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:9px;font-size:14px;color:var(--ink)}
+.dr-list button:hover{background:var(--surface-2)}
+.dr-list button[aria-pressed="true"]{font-weight:700;color:var(--accent)}
+.dr-list i{font-style:normal;font-weight:800}
+.dr-custom{display:flex;flex-direction:column;gap:6px;margin-top:4px;padding:10px;border-top:1px solid var(--line)}
+.dr-custom small{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.dr-custom>div{display:flex;align-items:center;gap:6px}
+.dr-custom span{color:var(--muted)}
+.dr-custom input{flex:1;min-width:0;font:inherit;font-size:13.5px;padding:7px 8px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
 .up-views{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface-2)}
 .up-views button{all:unset;cursor:pointer;text-align:center;padding:8px 6px;border-radius:10px;font-size:13.5px;font-weight:700;color:var(--muted)}
 .up-views button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -5637,7 +5649,8 @@ async function refreshLinks(){
 }
 setInterval(refreshLinks, 15000);
 setInterval(()=>{ if(VIEW.name==="equipo"){ const box = $("#teamLinks"); if(box && TEAM.linksAt) box.innerHTML = teamLinksHTML(); } }, 5000);
-document.addEventListener("change", e=>{ if(e.target && (e.target.id==="upFrom" || e.target.id==="upTo")){ UPV[e.target.id==="upFrom"?"from":"to"] = e.target.value; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } });
+document.addEventListener("pointerdown", e=>{ if(UPV.open && !e.target.closest(".dr")){ UPV.open = false; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } });
+document.addEventListener("change", e=>{ if(e.target && (e.target.id==="upFrom" || e.target.id==="upTo")){ UPV[e.target.id==="upFrom"?"from":"to"] = e.target.value; UPV.range = "custom"; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } });
 function upInput(e){ if(e.target && e.target.id==="upQuery"){ UP.q = e.target.value;
   if(UPV.view==="tabla"){ const w = document.querySelector(".ut-wrap"); if(!w) return; const q = normQ(UP.q||""); const list = (UP.rows||[]).filter(inRange).filter(u=>!q || normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q)); const tmp = document.createElement("div"); tmp.innerHTML = tableHTML(list); w.nextElementSibling && w.nextElementSibling.remove(); w.replaceWith(...tmp.children); return; }
   const l = $("#upList"); if(!l) return;
@@ -5773,8 +5786,15 @@ function usersPanelHTML(){
   const shown = UP.all ? list : list.slice(0, 8);
   const max = Math.max(1, ...UP_STEPS.map(([k])=>R.filter(u=>u.paso===k).length));
   const V = UPV.view, vt = (k,l) => `<button data-act="up-view" data-k="${k}" aria-pressed="${V===k}">${l}</button>`;
-  const dates = `<div class="up-dates">${UP_RANGES.map(([k,l])=>`<button data-act="up-range" data-k="${k}" aria-pressed="${UPV.range===k}">${l}</button>`).join("")}</div>
-    ${UPV.range==="custom" ? `<div class="up-custom"><label>Desde<input type="date" class="input" id="upFrom" value="${esc(UPV.from)}" max="${todayKey()}"></label><label>Hasta<input type="date" class="input" id="upTo" value="${esc(UPV.to)}" max="${todayKey()}"></label></div>` : ""}`;
+  const cal = `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>`;
+  const lbl = UPV.range==="todo" ? "Todo el tiempo" : UPV.range==="hoy" ? "Hoy" : UPV.range==="custom" ? upRangeLabel() : `Últimos ${UPV.range} días`;
+  const dates = `<div class="dr">
+    <button class="dr-btn" data-act="up-dr" aria-expanded="${!!UPV.open}">${cal}<span>${esc(lbl)}</span><svg class="dr-car" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    ${UPV.open ? `<div class="dr-pop" role="dialog" aria-label="Elegir periodo">
+      <div class="dr-list">${[["hoy","Hoy"],["7","Últimos 7 días"],["30","Últimos 30 días"],["90","Últimos 90 días"],["todo","Todo el tiempo"]].map(([k,l])=>`<button data-act="up-range" data-k="${k}" aria-pressed="${UPV.range===k}"><span>${l}</span>${UPV.range===k?"<i>✓</i>":""}</button>`).join("")}</div>
+      <div class="dr-custom"><small>Rango personalizado</small><div><input type="date" id="upFrom" value="${esc(UPV.from)}" max="${todayKey()}" aria-label="Desde"><span>→</span><input type="date" id="upTo" value="${esc(UPV.to)}" max="${todayKey()}" aria-label="Hasta"></div></div>
+    </div>` : ""}
+  </div>`;
   const kpis = dates + `<div class="up-kpis"><div><b>${R.length}</b><small>${UPV.range==="todo" ? "registrados" : `registrados ${esc(upRangeLabel())}`}</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>`;
   const head = `<div class="spread" style="align-items:center"><b>👥 Usuarios</b><span class="tm-live"><i></i>En vivo</span></div><div class="up-views">${vt("graf","📊 Gráficos")}${vt("tabla","📋 Tabla")}${vt("tarj","🪪 Tarjetas")}</div>`;
   if(V==="graf") return `<section class="panel up">${head}${kpis}${chartsHTML(R)}</section>`;
@@ -6519,7 +6539,8 @@ document.addEventListener("click", e=>{
     case "method-help": methodModal(); break;
     case "punct-toggle": { S.prefs.punct = punctFlex() ? "exacto" : "flexible"; persist(); const w = $("#writeBox"), val = w ? w.value : ""; render(); const w2 = $("#writeBox"); if(w2){ w2.value = val; w2.focus(); } toast(punctFlex() ? "Listo: los signos de puntuación ya no cuentan." : "Listo: los signos de puntuación vuelven a contar."); break; }
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
-    case "up-range": { UPV.range = t.dataset.k; if(UPV.range==="custom" && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
+    case "up-range": { UPV.range = t.dataset.k; UPV.open = false; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
+    case "up-dr": { UPV.open = !UPV.open; if(UPV.open && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-sort": { const k = t.dataset.k; UPV.dir = UPV.sort===k ? -UPV.dir : (k==="nombre"||k==="ritmo" ? 1 : -1); UPV.sort = k; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
