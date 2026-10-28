@@ -6163,7 +6163,7 @@ function viewProfile(){
       <button class="blue" data-go="camino"><b>${x.lv}</b><span>Nivel</span></button>
       <button class="gold" data-go="racha"><b>${I.flame}${st}</b><span>Racha</span></button>
       <button class="green" data-go="review"><b>${learned}</b><span>Aprendidos</span></button>
-      ${cloudOn()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
+      ${cloudOn()||isDemo()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
   ${TEAM.on ? tableroButton() : ""}
   ${TEAM.on ? `<div id="revEvents">${revEventsHTML()}</div>` : ""}
