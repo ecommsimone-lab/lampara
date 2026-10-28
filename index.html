@@ -6476,7 +6476,8 @@ function bibleStats(){
   const refs = [...seen.keys()].sort((a,b)=>{ const ba = a.replace(/\s+\d+:.*$/,""), bb = b.replace(/\s+\d+:.*$/,""); const d = order.indexOf(ba) - order.indexOf(bb); if(d) return d; const ca = a.match(/(\d+):(\d+)/), cb = b.match(/(\d+):(\d+)/); return (+ca[1]-+cb[1]) || (+ca[2]-+cb[2]); });
   return { passages: seen.size, verses, refs };
 }
-const RV_CONTACTS = ["juliana1507@hotmail.com", "crex13rodriguez@gmail.com"];   // correos usados en las solicitudes de permiso
+const RV_CONTACTS = ["crex13rodriguez@gmail.com", "juliana1507@hotmail.com"];
+const RV_RESP = ["Cristian Rodriguez", "Juliana Alarcón Montaña"];   // responsables que aparecen en la página para revisores   // correos usados en las solicitudes de permiso
 /* Para quién es la visita: cambia el texto de la solicitud según el enlace */
 const RV_REQ = {
   abs:     { es:"Solicitud de permiso para usar la Reina-Valera 1960 (Sociedades Bíblicas Unidas / American Bible Society).", en:"Permission request to use the Reina-Valera 1960 (United Bible Societies / American Bible Society)." },
@@ -6492,7 +6493,7 @@ const RV_T = {
     demoT:"Vea un ejemplo", tabs:["Tarjeta","Espacios","Iniciales","Imagen"], imgNote:"Imagen que los usuarios pueden compartir (incluye el nombre de la versión y el aviso).",
     noticeT:"Aviso de derechos en la aplicación", noticeWhere:"Aparece completo en la Biblioteca, en Libros de la Biblia y en Perfil → Acerca de; y de forma abreviada en cada pantalla con versículos y en cada imagen compartida.",
     ntvT:"Otras versiones", ntv:"La Nueva Traducción Viviente (NTV) y la Nueva Biblia de las Américas (NBLA) no están publicadas. Cada una se activará solo cuando su editorial (Tyndale House y The Lockman Foundation) lo autorice por escrito, con los mismos cuidados: texto exacto, aviso de derechos y uso gratuito.",
-    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsable", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación", lang:"English"
+    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsables", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación", lang:"English"
   },
   en: {
     tag:"Information for licensing reviewers", title:`${APP_NAME}: a free app to memorize the Bible`,
@@ -6526,7 +6527,7 @@ function renderReviewers(){
     <section class="rv-sec"><h2>${esc(t.noticeT)}</h2><p class="rv-notice">${esc(RVR_NOTICE)}</p><p class="muted" style="margin:0;font-size:14px">${esc(t.noticeWhere)}</p></section>
     <section class="rv-sec"><h2>${esc(t.ntvT)}</h2><p style="margin:0">${esc(t.ntv)}</p></section>
     <section class="rv-sec"><details><summary><b>${esc(t.listT)}</b> (${n.passages})</summary><p class="rv-refs">${n.refs.map(esc).join(" · ")}</p></details></section>
-    <section class="rv-sec"><h2>${esc(t.contactT)}</h2><p style="margin:0;line-height:1.7">${esc(t.resp)}: <b>${esc(PRIV.responsable)}</b><br>${esc(t.mail)}: ${RV_CONTACTS.map(m=>`<a href="mailto:${esc(m)}">${esc(m)}</a>`).join(" · ")}<br>${esc(t.app)}: <a href="mailto:${esc(PRIV.correo)}">${esc(PRIV.correo)}</a></p></section>
+    <section class="rv-sec"><h2>${esc(t.contactT)}</h2><p style="margin:0;line-height:1.7">${esc(t.resp)}: <b>${RV_RESP.map(esc).join("</b> · <b>")}</b><br>${esc(t.mail)}: ${RV_CONTACTS.map(m=>`<a href="mailto:${esc(m)}">${esc(m)}</a>`).join(" · ")}<br>${esc(t.app)}: <a href="mailto:${esc(PRIV.correo)}">${esc(PRIV.correo)}</a></p></section>
     <div style="display:flex;justify-content:center;padding:6px 0 30px"><a class="btn primary lg" href="${esc(location.pathname)}">${I.play} ${esc(t.open)}</a></div>
   </main>`;
   root.querySelector("#rvLang").onclick = ()=>{ RV_LANG = RV_LANG==="es" ? "en" : "es"; renderReviewers(); };
