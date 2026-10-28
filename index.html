@@ -5722,7 +5722,7 @@ const UP = { rows:undefined, loading:false, step:0, q:"", all:false, at:0 };
 const UP_STEPS = [[1,"Solo se registró","#98A2B3"],[2,"Sin bienvenida","#E0A100"],[3,"Entró, sin practicar","#FF8A1A"],[4,"Practicó 1 día","#3B82F6"],[5,"Volvió a practicar","#16A36A"]];
 async function loadUsersPanel(){
   if(!TEAM.on || UP.loading) return; UP.loading = true;
-  try{ UP.rows = (await API.rpc("team_users_panel")) || []; }catch(e){ UP.rows = null; }
+  try{ UP.rows = (await API.rpc("team_users_panel")) || []; UP.err = ""; }catch(e){ UP.rows = null; UP.err = String((e && (e.message || e.details || e.hint)) || e).slice(0, 220); }
   UP.loading = false; UP.at = Date.now();
   const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML();
 }
@@ -5739,7 +5739,8 @@ function upRow(u){
 }
 function usersPanelHTML(){
   if(UP.rows===undefined){ setTimeout(loadUsersPanel, 0); return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">Cargando…</p></section>`; }
-  if(UP.rows===null) return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">Para ver el panel de usuarios aquí falta correr el <b>SQL 21</b> en Supabase.</p></section>`;
+  if(UP.rows===null){ const missing = /could not find|does not exist|schema cache|PGRST202/i.test(UP.err||"");
+    return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">${missing ? `Para ver el panel de usuarios aquí falta correr el <b>SQL 21</b> en Supabase.` : `No se pudo cargar el panel de usuarios.`}</p>${UP.err?`<p class="mono" style="margin:0;font-size:11.5px;color:var(--bad);word-break:break-word">Detalle: ${esc(UP.err)}</p>`:""}<button class="btn" data-act="up-retry" style="align-self:flex-start;padding:6px 12px">Reintentar</button></section>`; }
   const R = UP.rows, today = todayKey(), wk = Date.now() - 7*DAY;
   const nuevos = R.filter(u=>new Date(u.registrado).getTime() >= wk).length;
   const hoy = R.filter(u=>u.ultimo_dia===today).length;
@@ -6494,6 +6495,7 @@ document.addEventListener("click", e=>{
     case "method-help": methodModal(); break;
     case "punct-toggle": { S.prefs.punct = punctFlex() ? "exacto" : "flexible"; persist(); const w = $("#writeBox"), val = w ? w.value : ""; render(); const w2 = $("#writeBox"); if(w2){ w2.value = val; w2.focus(); } toast(punctFlex() ? "Listo: los signos de puntuación ya no cuentan." : "Listo: los signos de puntuación vuelven a contar."); break; }
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
+    case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-sort": { const k = t.dataset.k; UPV.dir = UPV.sort===k ? -UPV.dir : (k==="nombre"||k==="ritmo" ? 1 : -1); UPV.sort = k; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-csv": downloadUsersCSV(); break;
