@@ -2076,7 +2076,9 @@ async function verseImage(id, fondo, fmt="9:16", size="g"){
   { let ff = sq ? 19 : 22; const foot = `${APP_NAME.toUpperCase()} · ${RVR_SHORT.toUpperCase()}`;
     g.font = `500 ${ff}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = "3px"; g.globalAlpha = .75;
     while(g.measureText(foot).width > W - X*2 && ff > 12){ ff--; g.font = `500 ${ff}px "Roboto", sans-serif`; }
-    g.fillText(foot, X, H - (sq ? 64 : 110)); }
+    // justo debajo del versículo (no suelto al fondo); nunca dentro de la zona que tapan las redes
+    const fy = Math.min(H - (sq ? 64 : 300), top + blockH + (sq ? 46 : 64));
+    g.fillText(foot, X, fy); }
   g.globalAlpha = 1; if("letterSpacing" in g) g.letterSpacing = "0px"; g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/jpeg", .9));
 }
