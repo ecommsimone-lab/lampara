@@ -5166,7 +5166,12 @@ function startDuelPlay(duel){
 }
 async function finishDuel(){
   const ms = Date.now() - BQ.started;
-  BQ.done = true; BQ.saving = true; render();
+  BQ.done = true;
+  if(isDemo()){ const d = BQ.duel, mine = d.creator==="demo";
+    if(mine){ d.creator_score = BQ.score; d.creator_ms = ms; d.opponent_score = Math.max(3, Math.min(10, BQ.score + Math.round(Math.random()*4) - 2)); d.opponent_ms = ms + Math.round((Math.random()-.5)*40000); }
+    else { d.opponent_score = BQ.score; d.opponent_ms = ms; d.creator_ms = d.creator_ms || ms + 15000; }
+    render(); return; }
+  BQ.saving = true; render();
   const ids = [BQ.duel.creator, BQ.duel.opponent].filter(x=>x && x!==ME.id && !COMM.profiles[x]);
   const profs = ids.length ? API.profiles(ids).then(r=>r.forEach(p=>COMM.profiles[p.user_id]=p)).catch(()=>{}) : null;
   try{ await API.submitDuel(BQ.duel.id, BQ.score, ms); BQ.duel = await API.getDuel(BQ.duel.id) || BQ.duel; }
@@ -6635,9 +6640,9 @@ function seedDemoCommunity(){
   COMM.days = {}; ["demo","d1","d2","d3","d5"].forEach((id,k)=>{ COMM.days[id] = new Set(); for(let d=0; d<12; d++) if(id==="demo" || (d + k) % (k===2?5:3) !== 1) COMM.days[id].add(todayKey(new Date(now - d*D))); });
   COMM.days.d2.delete(todayKey()); COMM.sdays = {}; COMM.counts = { demo: 4 };
   COMM.duels = [
-    { id:"du1", code:"K7Q2", creator:"demo", opponent:"d1", creator_score:9, opponent_score:7, creator_ms:94000, opponent_ms:120000, created_at:iso(now-2*H), questions:[] },
+    { id:"du1", code:"K7Q2", creator:"demo", opponent:"d1", creator_score:9, opponent_score:7, creator_ms:94000, opponent_ms:120000, created_at:iso(now-2*H), questions:makeDuelQuestions() },
     { id:"du2", code:"M3X8", creator:"d3", opponent:"demo", creator_score:8, opponent_score:null, created_at:iso(now-5*H), questions:makeDuelQuestions() },
-    { id:"du3", code:"P5T1", creator:"demo", opponent:"d2", creator_score:6, opponent_score:8, creator_ms:150000, opponent_ms:110000, created_at:iso(now-2*D), questions:[] }
+    { id:"du3", code:"P5T1", creator:"demo", opponent:"d2", creator_score:6, opponent_score:8, creator_ms:150000, opponent_ms:110000, created_at:iso(now-2*D), questions:makeDuelQuestions() }
   ];
   COMM.loaded = true; COMM.loading = null; COMM.err = "";
   PR.groups = [ { id:"g1", name:"Célula de jóvenes", color:"#7C5CFF", members:8, role:"admin", new:true }, { id:"g2", name:"Familia", color:"#16A36A", members:5, role:"member", new:false } ];
@@ -6659,8 +6664,14 @@ function seedDemoCommunity(){
   S.prayerList = [{ e:"👨‍👩‍👧", n:"Familia", items:["Mamá","Papá","Mi hermano"] }, { e:"⛪", n:"Iglesia y pastores", items:["Pastor Daniel","Mi célula"] }, { e:"🌍", n:"Misiones", items:["Misioneros en Asia"] }];
 }
 /* En la demo, lo que se guarda en la nube no se envía: se muestra un aviso (y las reacciones se ven en pantalla) */
-const DEMO_BLOCK = new Set(["pr-quick","pr-comments","pr-detail","pr-menu","pr-new","pr-new-private","pr-answer","pr-share","pr-group-new","pr-inv","pr-inv-no","pr-group-open","pr-invite","friend-search","streak-invite","streak-accept","streak-reject","streak-end","cheer-open","friend-add","friend-accept","friend-reject","friend-cancel","friend-remove","duel-pick","duel-friend","duel-new","duel-join","duel-play","duel-share","duel-view","amigos-open","feedback","logout","avatar","verse-send"]);
+const DEMO_BLOCK = new Set(["pr-quick","pr-comments","pr-detail","pr-menu","pr-new","pr-new-private","pr-answer","pr-share","pr-group-new","pr-inv","pr-inv-no","pr-group-open","pr-invite","friend-search","streak-invite","streak-accept","streak-reject","streak-end","cheer-open","friend-add","friend-accept","friend-reject","friend-cancel","friend-remove","duel-join","amigos-open","feedback","logout","avatar","verse-send"]);
+/* Esgrima en la demo: se juega de verdad, pero el resultado queda solo en pantalla y el rival responde al azar */
+function demoDuel(opp){
+  const d = { id:"dd"+Date.now(), code:"DEMO", creator:"demo", opponent:opp, creator_score:null, opponent_score:null, created_at:new Date().toISOString(), questions:makeDuelQuestions() };
+  COMM.duels.unshift(d); return d;
+}
 function demoAction(act, t){
+  if(act==="duel-friend" || act==="duel-new"){ if(t.closest(".modal")) closeModal(); startDuelPlay(demoDuel(t.dataset.id || "d1")); return true; }
   if(act==="pr-react"){ const r = (PR.feed||[]).find(x=>x.id===t.dataset.id), k = t.dataset.k; if(!r) return true;
     const on = r.my.includes(k); r.my = on ? r.my.filter(x=>x!==k) : r.my.concat(k); r[k] = (+r[k]||0) + (on?-1:1); render(); return true; }
   if(DEMO_BLOCK.has(act)){ toast("Demo: con una cuenta real, esto se guarda y lo ven tus amigos o tu grupo."); return true; }
