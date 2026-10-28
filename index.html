@@ -5597,7 +5597,7 @@ function revEventsHTML(){
     <small class="muted" style="font-size:11.5px">Solo lo ve el equipo. El país es aproximado (zona horaria del navegador); no se guarda la IP.</small>
   </section>`;
 }
-setInterval(()=>{ if(VIEW.name==="profile" && TEAM.on && !document.hidden) loadRevEvents(); }, 15000);
+setInterval(()=>{ if(VIEW.name==="equipo" && TEAM.on && !document.hidden) loadRevEvents(); }, 15000);
 function viewEquipo(){
   if(!TEAM.on) return `<div class="empty"><b>Esta sección es solo para el equipo</b></div>`;
   if(!TEAM.loaded && !TEAM.loading) setTimeout(loadTeam, 0);
@@ -5623,7 +5623,7 @@ function viewEquipo(){
   ${f==="⚫ descartado" && M && base.some(it=>estOf(it)===f) ? (TEAM.sel ? `<div class="tm-selbar"><button class="linkbtn" data-act="team-sel-all" style="padding:0">Seleccionar todos</button><span style="flex:1"></span><button class="btn ghost" data-act="team-sel" style="padding:6px 12px">Cancelar</button><button class="btn tm-del" data-act="team-trash-move" ${TEAM.sel.size?"":"disabled"} style="padding:6px 12px">🗑 Mover a la papelera${TEAM.sel.size?` (${TEAM.sel.size})`:""}</button></div>` : `<div class="tm-selbar"><span class="muted" style="font-size:13px">Lo descartado se puede mover a la papelera.</span><span style="flex:1"></span><button class="btn" data-act="team-sel" style="padding:6px 12px">Seleccionar</button></div>`) : ""}
   ${f==="trash" ? "" : `<input class="input" id="teamQuery" placeholder="Buscar en la lista…" value="${esc(TEAM.q||"")}" style="max-width:420px">`}
   <div class="tm-list" id="teamList">${f==="trash" ? teamTrashHTML() : teamListHTML()}</div>
-  <div id="teamLinks">${teamLinksHTML()}</div>`;
+  ${f==="trash" ? "" : `<div id="revEvents">${revEventsHTML()}</div>`}`;
 }
 function teamTrashHTML(){
   if(TEAM.trash===null){ setTimeout(loadTrash, 0); return `<div class="empty"><b>Cargando…</b></div>`; }
@@ -6166,7 +6166,6 @@ function viewProfile(){
       ${cloudOn()||isDemo()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
   ${TEAM.on ? tableroButton() : ""}
-  ${TEAM.on ? `<div id="revEvents">${revEventsHTML()}</div>` : ""}
   ${badgesSection()}
   ${profileCommunityPanel()}
   ${notifPrefsPanel()}
