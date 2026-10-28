@@ -477,6 +477,13 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.up-dates{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px}
+.up-dates::-webkit-scrollbar{display:none}
+.up-dates button{all:unset;cursor:pointer;flex:none;padding:6px 11px;border-radius:999px;border:1.5px solid var(--line);font-size:12.5px;font-weight:700;color:var(--muted)}
+.up-dates button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.up-custom{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.up-custom label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.up-custom .input{padding:8px 10px;font-size:14px}
 .up-views{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface-2)}
 .up-views button{all:unset;cursor:pointer;text-align:center;padding:8px 6px;border-radius:10px;font-size:13.5px;font-weight:700;color:var(--muted)}
 .up-views button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -5630,15 +5637,28 @@ async function refreshLinks(){
 }
 setInterval(refreshLinks, 15000);
 setInterval(()=>{ if(VIEW.name==="equipo"){ const box = $("#teamLinks"); if(box && TEAM.linksAt) box.innerHTML = teamLinksHTML(); } }, 5000);
+document.addEventListener("change", e=>{ if(e.target && (e.target.id==="upFrom" || e.target.id==="upTo")){ UPV[e.target.id==="upFrom"?"from":"to"] = e.target.value; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } });
 function upInput(e){ if(e.target && e.target.id==="upQuery"){ UP.q = e.target.value;
-  if(UPV.view==="tabla"){ const w = document.querySelector(".ut-wrap"); if(!w) return; const q = normQ(UP.q||""); const list = (UP.rows||[]).filter(u=>!q || normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q)); const tmp = document.createElement("div"); tmp.innerHTML = tableHTML(list); w.nextElementSibling && w.nextElementSibling.remove(); w.replaceWith(...tmp.children); return; }
+  if(UPV.view==="tabla"){ const w = document.querySelector(".ut-wrap"); if(!w) return; const q = normQ(UP.q||""); const list = (UP.rows||[]).filter(inRange).filter(u=>!q || normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q)); const tmp = document.createElement("div"); tmp.innerHTML = tableHTML(list); w.nextElementSibling && w.nextElementSibling.remove(); w.replaceWith(...tmp.children); return; }
   const l = $("#upList"); if(!l) return;
-  const q = normQ(UP.q||""); let list = UP.step ? (UP.rows||[]).filter(u=>u.paso===UP.step) : (UP.rows||[]);
+  const q = normQ(UP.q||""); const RR = (UP.rows||[]).filter(inRange); let list = UP.step ? RR.filter(u=>u.paso===UP.step) : RR;
   if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
   l.innerHTML = list.length ? (UP.all ? list : list.slice(0,8)).map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`; } }
 /* ----- Panel de control: vistas Gráficos · Tabla · Tarjetas (SQL 21 y 22) ----- */
-const UPV = { view:"graf", sort:"registrado", dir:-1, daily:undefined };
-async function loadDaily(){ try{ UPV.daily = (await API.rpc("team_daily_stats", { p_days: 30 })) || []; }catch(e){ UPV.daily = null; } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); }
+const UPV = { view:"graf", sort:"registrado", dir:-1, daily:undefined, range:"todo", from:"", to:"" };
+/* Filtro de fechas del panel: por fecha de registro (y los gráficos diarios muestran ese periodo) */
+const UP_RANGES = [["hoy","Hoy"],["7","7 días"],["30","30 días"],["90","90 días"],["todo","Todo"],["custom","Elegir fechas"]];
+function upRange(){
+  const r = UPV.range, end = dayStart(Date.now()) + DAY - 1;
+  if(r==="hoy") return { a: dayStart(Date.now()), b: end, days: 7 };
+  if(r==="7" || r==="30" || r==="90") return { a: dayStart(Date.now()) - (+r - 1)*DAY, b: end, days: +r };
+  if(r==="custom"){ const a = UPV.from ? new Date(UPV.from+"T00:00:00").getTime() : 0, b = UPV.to ? new Date(UPV.to+"T23:59:59").getTime() : end;
+    return { a, b, days: Math.min(120, Math.max(7, Math.ceil((Date.now() - (a || Date.now()-30*DAY))/DAY) + 1)) }; }
+  return { a: 0, b: end, days: 30 };
+}
+const upRangeLabel = () => { const r = UPV.range; if(r==="todo") return "desde el inicio"; if(r==="hoy") return "hoy"; if(r==="custom") return `${UPV.from?fmtD(UPV.from):"inicio"} – ${UPV.to?fmtD(UPV.to):"hoy"}`; return `últimos ${r} días`; };
+const inRange = u => { const g = upRange(), t = new Date(u.registrado).getTime(); return t >= g.a && t <= g.b; };
+async function loadDaily(){ try{ UPV.daily = (await API.rpc("team_daily_stats", { p_days: upRange().days })) || []; }catch(e){ UPV.daily = null; } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); }
 const MES3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const fmtD = d => { const x = new Date(d+"T12:00:00"); return `${x.getDate()} ${MES3[x.getMonth()]}`; };
 const showLbl = (i, n, every) => i===n-1 || (i % every === 0 && n-1-i >= Math.ceil(every/2));
@@ -5681,14 +5701,15 @@ function chartsHTML(R){
   for(let w=5; w>=0; w--){ const s = now - w*7*DAY, us = R.filter(u=>wkStart(u.registrado)===s);
     weeks.push({ k: fmtD(new Date(s).toISOString().slice(0,10)), n: us.length, v: us.length ? Math.round(us.filter(u=>u.paso===5).length/us.length*100) : 0, p: us.length ? Math.round(us.filter(u=>u.paso>=4).length/us.length*100) : 0 }); }
   const rachas = [["0 días",u=>u.racha===0],["1–3 días",u=>u.racha>=1&&u.racha<=3],["4–7 días",u=>u.racha>=4&&u.racha<=7],["8+ días",u=>u.racha>=8]].map(([l,f])=>({ l, v:R.filter(f).length }));
-  const daily = Array.isArray(D) ? D : [];
+  const g0 = upRange(), dDays = g0.days;
+  const daily = (Array.isArray(D) ? D : []).filter(x=>{ const t = new Date(x.dia+"T12:00:00").getTime(); return t >= (UPV.range==="todo"||UPV.range==="hoy" ? 0 : g0.a) && t <= g0.b; }).slice(UPV.range==="hoy" ? -7 : 0);
   const sumReg = daily.reduce((a,x)=>a+x.registros,0);
   return `
     <div class="cg">
-      <div class="cc"><div class="cc-h"><b>Registros por día</b><small>últimos 30 días · ${sumReg} en total</small></div>
-        ${D===null ? `<p class="muted cc-miss">Falta correr el <b>SQL 22</b> en Supabase.</p>` : D===undefined ? `<p class="muted cc-miss">Cargando…</p>` : svgBars(daily.map(x=>({ k:fmtD(x.dia), tip:fmtD(x.dia), v:x.registros })), { every:7 })}</div>
-      <div class="cc"><div class="cc-h"><b>Personas que practicaron cada día</b><small>últimos 30 días${daily.length?` · hoy: ${daily[daily.length-1].activos}`:""}</small></div>
-        ${D===null ? `<p class="muted cc-miss">Falta correr el <b>SQL 22</b> en Supabase.</p>` : D===undefined ? `<p class="muted cc-miss">Cargando…</p>` : svgLine(daily.map(x=>({ k:fmtD(x.dia), tip:fmtD(x.dia), v:x.activos })), { every:7 })}</div>
+      <div class="cc"><div class="cc-h"><b>Registros por día</b><small>${UPV.range==="todo"||UPV.range==="hoy"?`últimos ${daily.length} días`:esc(upRangeLabel())} · ${sumReg} en total</small></div>
+        ${D===null ? `<p class="muted cc-miss">Falta correr el <b>SQL 22</b> en Supabase.</p>` : D===undefined ? `<p class="muted cc-miss">Cargando…</p>` : svgBars(daily.map(x=>({ k:fmtD(x.dia), tip:fmtD(x.dia), v:x.registros })), { every:Math.max(1, Math.round(daily.length/4.5)) })}</div>
+      <div class="cc"><div class="cc-h"><b>Personas que practicaron cada día</b><small>${UPV.range==="todo"||UPV.range==="hoy"?`últimos ${daily.length} días`:esc(upRangeLabel())}${daily.length?` · hoy: ${daily[daily.length-1].activos}`:""}</small></div>
+        ${D===null ? `<p class="muted cc-miss">Falta correr el <b>SQL 22</b> en Supabase.</p>` : D===undefined ? `<p class="muted cc-miss">Cargando…</p>` : svgLine(daily.map(x=>({ k:fmtD(x.dia), tip:fmtD(x.dia), v:x.activos })), { every:Math.max(1, Math.round(daily.length/4.5)) })}</div>
       <div class="cc"><div class="cc-h"><b>Embudo</b><small>en qué paso está cada persona · % del total</small></div>
         ${hBars(UP_STEPS.map(([k,l,c])=>({ l:`${k} · ${l}`, v:R.filter(u=>u.paso===k).length, c })), total)}</div>
       <div class="cc"><div class="cc-h"><b>¿Vuelven a practicar?</b><small>% de cada semana de registro que practicó más de un día</small></div>
@@ -5741,22 +5762,25 @@ function usersPanelHTML(){
   if(UP.rows===undefined){ setTimeout(loadUsersPanel, 0); return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">Cargando…</p></section>`; }
   if(UP.rows===null){ const missing = /could not find|does not exist|schema cache|PGRST202/i.test(UP.err||"");
     return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">${missing ? `Para ver el panel de usuarios aquí falta correr el <b>SQL 21</b> en Supabase.` : `No se pudo cargar el panel de usuarios.`}</p>${UP.err?`<p class="mono" style="margin:0;font-size:11.5px;color:var(--bad);word-break:break-word">Detalle: ${esc(UP.err)}</p>`:""}<button class="btn" data-act="up-retry" style="align-self:flex-start;padding:6px 12px">Reintentar</button></section>`; }
-  const R = UP.rows, today = todayKey(), wk = Date.now() - 7*DAY;
-  const nuevos = R.filter(u=>new Date(u.registrado).getTime() >= wk).length;
-  const hoy = R.filter(u=>u.ultimo_dia===today).length;
-  const activos = R.filter(u=>u.ultimo_dia && new Date(u.ultimo_dia+"T12:00:00").getTime() >= wk).length;
+  const R = UP.rows.filter(inRange), today = todayKey(), wk = Date.now() - 7*DAY;
+  const ALL = UP.rows;
+  const nuevos = ALL.filter(u=>new Date(u.registrado).getTime() >= wk).length;
+  const hoy = ALL.filter(u=>u.ultimo_dia===today).length;
+  const activos = ALL.filter(u=>u.ultimo_dia && new Date(u.ultimo_dia+"T12:00:00").getTime() >= wk).length;
   const q = normQ(UP.q||"");
   let list = UP.step ? R.filter(u=>u.paso===UP.step) : R;
   if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
   const shown = UP.all ? list : list.slice(0, 8);
   const max = Math.max(1, ...UP_STEPS.map(([k])=>R.filter(u=>u.paso===k).length));
   const V = UPV.view, vt = (k,l) => `<button data-act="up-view" data-k="${k}" aria-pressed="${V===k}">${l}</button>`;
-  const kpis = `<div class="up-kpis"><div><b>${R.length}</b><small>registrados</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>`;
+  const dates = `<div class="up-dates">${UP_RANGES.map(([k,l])=>`<button data-act="up-range" data-k="${k}" aria-pressed="${UPV.range===k}">${l}</button>`).join("")}</div>
+    ${UPV.range==="custom" ? `<div class="up-custom"><label>Desde<input type="date" class="input" id="upFrom" value="${esc(UPV.from)}" max="${todayKey()}"></label><label>Hasta<input type="date" class="input" id="upTo" value="${esc(UPV.to)}" max="${todayKey()}"></label></div>` : ""}`;
+  const kpis = dates + `<div class="up-kpis"><div><b>${R.length}</b><small>${UPV.range==="todo" ? "registrados" : `registrados ${esc(upRangeLabel())}`}</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>`;
   const head = `<div class="spread" style="align-items:center"><b>👥 Usuarios</b><span class="tm-live"><i></i>En vivo</span></div><div class="up-views">${vt("graf","📊 Gráficos")}${vt("tabla","📋 Tabla")}${vt("tarj","🪪 Tarjetas")}</div>`;
   if(V==="graf") return `<section class="panel up">${head}${kpis}${chartsHTML(R)}</section>`;
   if(V==="tabla") return `<section class="panel up">${head}${kpis}<input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">${tableHTML(list)}</section>`;
   return `<section class="panel up">${head}
-    <div class="up-kpis"><div><b>${R.length}</b><small>registrados</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>
+    ${kpis}
     <div class="up-funnel">${UP_STEPS.map(([k,l,c])=>{ const n = R.filter(u=>u.paso===k).length; return `<button data-act="up-step" data-k="${k}" aria-pressed="${UP.step===k}" style="--sc:${c}"><span class="up-fl">${k} · ${esc(l)}</span><span class="up-bar"><i style="width:${Math.round(n/max*100)}%"></i></span><b>${n}</b></button>`; }).join("")}</div>
     <input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">
     <div class="up-list" id="upList">${shown.length ? shown.map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`}</div>
@@ -6495,6 +6519,7 @@ document.addEventListener("click", e=>{
     case "method-help": methodModal(); break;
     case "punct-toggle": { S.prefs.punct = punctFlex() ? "exacto" : "flexible"; persist(); const w = $("#writeBox"), val = w ? w.value : ""; render(); const w2 = $("#writeBox"); if(w2){ w2.value = val; w2.focus(); } toast(punctFlex() ? "Listo: los signos de puntuación ya no cuentan." : "Listo: los signos de puntuación vuelven a contar."); break; }
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
+    case "up-range": { UPV.range = t.dataset.k; if(UPV.range==="custom" && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-sort": { const k = t.dataset.k; UPV.dir = UPV.sort===k ? -UPV.dir : (k==="nombre"||k==="ritmo" ? 1 : -1); UPV.sort = k; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
