@@ -477,6 +477,29 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
+.up{display:flex;flex-direction:column;gap:12px}
+.up-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.up-kpis>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.up-kpis b{font-size:22px;font-weight:800;line-height:1.1}
+.up-kpis small{font-size:11.5px;color:var(--muted);line-height:1.25}
+@media (max-width:520px){.up-kpis{grid-template-columns:1fr 1fr}}
+.up-funnel{display:flex;flex-direction:column;gap:6px}
+.up-funnel button{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:10px}
+.up-funnel button[aria-pressed="true"]{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--sc)}
+.up-fl{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.up-bar{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.up-bar i{display:block;height:100%;border-radius:999px;background:var(--sc)}
+.up-funnel b{font-size:14px;min-width:22px;text-align:right}
+.up-list{display:flex;flex-direction:column;gap:10px}
+.up-row{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;border:1px solid var(--line)}
+.up-top{display:flex;align-items:center;gap:10px}
+.up-id{flex:1;min-width:0;display:flex;flex-direction:column}
+.up-id b{font-size:15px}
+.up-id small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.up-step{align-self:flex-start;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;color:var(--sc);border:1px solid var(--sc);white-space:nowrap}
+.up-stats{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted)}
+.up-stats b{color:var(--ink)}
+.up-foot{font-size:12px;color:var(--muted)}
 .rev-ev{display:flex;flex-direction:column;gap:10px}
 .rev-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rev-sum>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
@@ -1541,6 +1564,7 @@ function render(){
   else if(VIEW.name==="equipo") v.innerHTML = mtop + viewEquipo();
   else if(VIEW.name==="privacy") v.innerHTML = mtop + `<section class="panel" style="max-width:760px">${privacyHTML()}</section>`;
   const fq = $("#friendQuery"); if(fq && VIEW.name==="amigos"){ const filt = ()=>{ const q = normQ(fq.value); let shown = 0; document.querySelectorAll("#amigosList [data-name]").forEach(r=>{ r.hidden = !!q && !r.dataset.name.includes(q); if(!r.hidden) shown++; }); const nm = $("#amigosNone"); if(nm) nm.hidden = !q || shown>0; }; fq.addEventListener("input", ()=>{ COMM.search = null; COMM.searchQ = fq.value; const fr = $("#friendResult"); if(fr) fr.innerHTML = ""; filt(); }); filt(); }
+  document.removeEventListener("input", upInput); document.addEventListener("input", upInput);
   const tq = $("#teamQuery"); if(tq) tq.addEventListener("input", ()=>{ TEAM.q = tq.value; const l = $("#teamList"); if(l) l.innerHTML = teamListHTML(); });
   const ts = $("#topicSearch"); if(ts) ts.addEventListener("input", ()=>{ TOPIC_QUERY = ts.value; $("#topicResults").innerHTML = topicCards(TOPIC_QUERY); });
   clearTimeout(window.__bt); window.__bt = setTimeout(()=>{ if(S && ME && !["session","bquiz","placement","welcome-goal"].includes(VIEW.name)){ checkShields(); checkBadges(); } }, 400);
@@ -5573,6 +5597,53 @@ async function refreshLinks(){
 }
 setInterval(refreshLinks, 15000);
 setInterval(()=>{ if(VIEW.name==="equipo"){ const box = $("#teamLinks"); if(box && TEAM.linksAt) box.innerHTML = teamLinksHTML(); } }, 5000);
+function upInput(e){ if(e.target && e.target.id==="upQuery"){ UP.q = e.target.value; const l = $("#upList"); if(!l) return;
+  const q = normQ(UP.q||""); let list = UP.step ? (UP.rows||[]).filter(u=>u.paso===UP.step) : (UP.rows||[]);
+  if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
+  l.innerHTML = list.length ? (UP.all ? list : list.slice(0,8)).map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`; } }
+/* Panel de usuarios (SQL 21): lo mismo que la consulta "PANEL DE USUARIOS" de Supabase, dentro del Tablero */
+const UP = { rows:undefined, loading:false, step:0, q:"", all:false, at:0 };
+const UP_STEPS = [[1,"Solo se registró","#98A2B3"],[2,"Sin bienvenida","#E0A100"],[3,"Entró, sin practicar","#FF8A1A"],[4,"Practicó 1 día","#3B82F6"],[5,"Volvió a practicar","#16A36A"]];
+async function loadUsersPanel(){
+  if(!TEAM.on || UP.loading) return; UP.loading = true;
+  try{ UP.rows = (await API.rpc("team_users_panel")) || []; }catch(e){ UP.rows = null; }
+  UP.loading = false; UP.at = Date.now();
+  const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML();
+}
+function upRow(u){
+  const st = UP_STEPS.find(x=>x[0]===u.paso) || UP_STEPS[0];
+  const sin = u.ultimo_dia ? Math.round((dayStart(Date.now()) - dayStart(new Date(u.ultimo_dia+"T12:00:00")))/DAY) : null;
+  const fecha = t => t ? new Date(t).toLocaleDateString("es-CO",{ day:"numeric", month:"short" }) : "—";
+  return `<div class="up-row">
+    <div class="up-top">${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 38)}<div class="up-id"><b>${esc(u.nombre||"—")}</b><small>${u.usuario?`@${esc(u.usuario)} · `:""}${esc(u.correo||"")}</small></div></div>
+    <span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span>
+    <div class="up-stats"><span>🔥 <b>${u.racha}</b> racha</span><span>📅 <b>${u.dias_practicados}</b> días</span><span>✅ <b>${u.aprendidos}</b> aprendidos</span><span>⏳ <b>${u.en_proceso}</b> en proceso</span><span>🎯 <b>${u.acierto==null?"—":u.acierto+"%"}</b></span><span>⭐ Nivel <b>${u.nivel}</b></span><span>👥 <b>${u.amigos}</b></span>${u.escudos?`<span>🛡️ <b>${u.escudos}</b></span>`:""}</div>
+    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
+  </div>`;
+}
+function usersPanelHTML(){
+  if(UP.rows===undefined){ setTimeout(loadUsersPanel, 0); return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">Cargando…</p></section>`; }
+  if(UP.rows===null) return `<section class="panel up"><b>👥 Usuarios</b><p class="muted" style="margin:0;font-size:13px">Para ver el panel de usuarios aquí falta correr el <b>SQL 21</b> en Supabase.</p></section>`;
+  const R = UP.rows, today = todayKey(), wk = Date.now() - 7*DAY;
+  const nuevos = R.filter(u=>new Date(u.registrado).getTime() >= wk).length;
+  const hoy = R.filter(u=>u.ultimo_dia===today).length;
+  const activos = R.filter(u=>u.ultimo_dia && new Date(u.ultimo_dia+"T12:00:00").getTime() >= wk).length;
+  const q = normQ(UP.q||"");
+  let list = UP.step ? R.filter(u=>u.paso===UP.step) : R;
+  if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
+  const shown = UP.all ? list : list.slice(0, 8);
+  const max = Math.max(1, ...UP_STEPS.map(([k])=>R.filter(u=>u.paso===k).length));
+  return `<section class="panel up">
+    <div class="spread" style="align-items:center"><b>👥 Usuarios</b><span class="tm-live"><i></i>En vivo</span></div>
+    <div class="up-kpis"><div><b>${R.length}</b><small>registrados</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>
+    <div class="up-funnel">${UP_STEPS.map(([k,l,c])=>{ const n = R.filter(u=>u.paso===k).length; return `<button data-act="up-step" data-k="${k}" aria-pressed="${UP.step===k}" style="--sc:${c}"><span class="up-fl">${k} · ${esc(l)}</span><span class="up-bar"><i style="width:${Math.round(n/max*100)}%"></i></span><b>${n}</b></button>`; }).join("")}</div>
+    <input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">
+    <div class="up-list" id="upList">${shown.length ? shown.map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`}</div>
+    ${list.length > 8 ? `<button class="linkbtn" data-act="up-all" style="align-self:flex-start;padding:0">${UP.all?"Ver menos":`Ver todos (${list.length})`}</button>` : ""}
+    ${UP.step ? `<button class="linkbtn" data-act="up-step" data-k="${UP.step}" style="align-self:flex-start;padding:0">Quitar filtro</button>` : ""}
+  </section>`;
+}
+setInterval(()=>{ if(VIEW.name==="equipo" && TEAM.on && !document.hidden && !document.activeElement?.matches?.("#upQuery")) loadUsersPanel(); }, 60000);
 /* Perfil del equipo: cuándo y desde qué país abrieron la demo o la página para revisores (SQL 20), en vivo */
 const REV = { rows:undefined, at:0, loading:false, all:false };
 const REV_LABEL = { demo:["🎬","Abrieron la demo"], revisores:["📄","Página para revisores (desde el inicio)"], abs:["📄","Página para Sociedades Bíblicas"], tyndale:["📄","Página para Tyndale"], lockman:["📄","Página para Lockman"] };
@@ -5623,7 +5694,7 @@ function viewEquipo(){
   ${f==="⚫ descartado" && M && base.some(it=>estOf(it)===f) ? (TEAM.sel ? `<div class="tm-selbar"><button class="linkbtn" data-act="team-sel-all" style="padding:0">Seleccionar todos</button><span style="flex:1"></span><button class="btn ghost" data-act="team-sel" style="padding:6px 12px">Cancelar</button><button class="btn tm-del" data-act="team-trash-move" ${TEAM.sel.size?"":"disabled"} style="padding:6px 12px">🗑 Mover a la papelera${TEAM.sel.size?` (${TEAM.sel.size})`:""}</button></div>` : `<div class="tm-selbar"><span class="muted" style="font-size:13px">Lo descartado se puede mover a la papelera.</span><span style="flex:1"></span><button class="btn" data-act="team-sel" style="padding:6px 12px">Seleccionar</button></div>`) : ""}
   ${f==="trash" ? "" : `<input class="input" id="teamQuery" placeholder="Buscar en la lista…" value="${esc(TEAM.q||"")}" style="max-width:420px">`}
   <div class="tm-list" id="teamList">${f==="trash" ? teamTrashHTML() : teamListHTML()}</div>
-  ${f==="trash" ? "" : `<div id="revEvents">${revEventsHTML()}</div>`}`;
+  ${f==="trash" ? "" : `<div id="usersPanel">${usersPanelHTML()}</div><div id="revEvents">${revEventsHTML()}</div>`}`;
 }
 function teamTrashHTML(){
   if(TEAM.trash===null){ setTimeout(loadTrash, 0); return `<div class="empty"><b>Cargando…</b></div>`; }
@@ -6300,6 +6371,8 @@ document.addEventListener("click", e=>{
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "sug-add": sugAdd(t.dataset.id, t); break;
     case "method-help": methodModal(); break;
+    case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
+    case "up-all": UP.all = !UP.all; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "rev-all": REV.all = !REV.all; { const box = $("#revEvents"); if(box) box.innerHTML = revEventsHTML(); } break;
     case "demo-exit": { closeModal(); SESSION = null; ME = null; S = null; VIEW = { name:"home" }; window.scrollTo(0,0); renderReviewers(); break; }
     case "celebrate": celebrateModal(masteredNow()); break;
