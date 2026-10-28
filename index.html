@@ -3050,7 +3050,7 @@ function quizBody(){
     }).join("")}</div><p class="muted" style="font-size:13px">Escribe cada palabra con sus tildes. Una tilde mal puesta cuenta medio punto.</p>`;
   } else if(q.mode==="write"){
     inner = `<textarea class="textarea" id="writeBox" placeholder="Escribe el versículo completo de memoria…" ${q.done?"disabled":""}></textarea>
-      <div class="row"><span class="muted" style="font-size:13px">Cuentan las tildes y los signos de puntuación (las mayúsculas no).</span></div>`;
+      <div class="row"><span class="muted" style="font-size:13px">${punctFlex() ? "Cuentan las tildes; los puntos, comas y otros signos no (puedes cambiarlo en Perfil)." : "Cuentan las tildes y los signos de puntuación (las mayúsculas no)."}</span><button class="linkbtn" data-act="punct-toggle" style="padding:0;font-size:13px">${punctFlex() ? "Contar signos" : "Sin signos"}</button></div>`;
   } else {
     inner = `
       <div style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
@@ -3181,6 +3181,8 @@ function errKind(target, got){
   if(norm(target)===norm(got)) return "tilde";
   return "ortografía";
 }
+/* Preferencia de cada persona: "exacto" (cuentan los signos de puntuación) o "flexible" (no cuentan) */
+const punctFlex = () => !!(S && S.prefs && S.prefs.punct === "flexible");
 function scoreStrict(text, attempt){
   const tRaw = text.split(/\s+/).filter(Boolean);
   const aRaw = attempt.trim().split(/\s+/).filter(Boolean);
@@ -3193,7 +3195,7 @@ function scoreStrict(text, attempt){
     const tw = tRaw[o.w], aw = aRaw[o.a];
     // El versículo puede terminar en coma o punto y coma porque la frase sigue en el siguiente; terminarlo con punto (o sin signo) también vale
     const lastT = o.w===tRaw.length-1 && /[,;:]$/.test(tw) && o.a===aRaw.length-1 && strictTok(tw.replace(/[,;:]$/,""))===strictTok(aw.replace(/[.,;:]$/,""));
-    if(strictTok(tw)===strictTok(aw) || lastT){ credit += 1; return `<span class="ok">${esc(tw)}</span>`; }
+    if(strictTok(tw)===strictTok(aw) || lastT || (punctFlex() && bareTok(tw)===bareTok(aw))){ credit += 1; return `<span class="ok">${esc(tw)}</span>`; }
     credit += 0.5; errs++;
     return `<span class="near" title="Error de ${errKind(tw,aw)}">${esc(tw)}<small>${esc(aw)}</small></span>`;
   }).join(" ");
@@ -6221,7 +6223,7 @@ function privacyHTML(){
 const RVR_NOTICE = "Texto bíblico tomado de la versión Reina-Valera © 1960 Sociedades Bíblicas en América Latina; © renovado 1988 Sociedades Bíblicas Unidas. Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas.";
 function noticeHTML(){ return `<p class="muted" style="font-size:11.5px;line-height:1.5;max-width:80ch">${esc(RVR_NOTICE)}</p>`; }
 function viewProfile(){
-  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):key==="ritmo"?ritmo():(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
+  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):key==="ritmo"?ritmo():key==="punct"?(S.prefs.punct||"exacto"):(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
   const act = activeIds(); const learned = act.filter(id=>status(id)==="ok").length;
   return `
   <section class="prof-head">
@@ -6246,6 +6248,7 @@ function viewProfile(){
       <div class="set-row"><div class="lbl"><b>Tu ritmo</b><small>${esc(RITMOS[ritmo()].desc)}</small></div>${seg("ritmo",[["tranquilo","🌱 Tranquilo"],["constante","🔥 Constante"],["intensivo","⚡ Intensivo"]])}</div>
       <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>Define cuántos versículos entran</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20"],[30,"30 min"]])}</div>
       <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto va subiendo según cada versículo</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["ini","Iniciales"],["write","Escribir"],["recite","Recitar"]])}</div>
+      <div class="set-row"><div class="lbl"><b>Al escribir el versículo</b><small>${punctFlex()?"No cuentan los puntos, comas ni otros signos. Sí cuentan las tildes.":"Cuenta todo: palabras, tildes y signos de puntuación."}</small></div>${seg("punct",[["exacto","Exacto"],["flexible","Sin signos"]])}</div>
     </div>
   </section>
   <section class="panel">
@@ -6371,6 +6374,7 @@ document.addEventListener("click", e=>{
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "sug-add": sugAdd(t.dataset.id, t); break;
     case "method-help": methodModal(); break;
+    case "punct-toggle": { S.prefs.punct = punctFlex() ? "exacto" : "flexible"; persist(); const w = $("#writeBox"), val = w ? w.value : ""; render(); const w2 = $("#writeBox"); if(w2){ w2.value = val; w2.focus(); } toast(punctFlex() ? "Listo: los signos de puntuación ya no cuentan." : "Listo: los signos de puntuación vuelven a contar."); break; }
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-all": UP.all = !UP.all; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "rev-all": REV.all = !REV.all; { const box = $("#revEvents"); if(box) box.innerHTML = revEventsHTML(); } break;
