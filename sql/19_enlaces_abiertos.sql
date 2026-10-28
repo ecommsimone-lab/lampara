@@ -23,7 +23,7 @@ create or replace function public.link_ref_name(r text) returns text
 language sql immutable set search_path = '' as $$
   select case r when 'abs' then 'Sociedades Bíblicas (RVR1960)' when 'tyndale' then 'Tyndale (NTV)'
                 when 'lockman' then 'Lockman (NBLA)' when 'revisores' then 'la página para revisores'
-                when 'inicio' then 'la app (enlace normal)' else r end;
+                when 'inicio' then 'la app (enlace normal)' when 'demo' then 'la demo de la app' else r end;
 $$;
 
 -- Registrar una apertura (lo puede llamar cualquiera, incluso sin cuenta)
@@ -42,7 +42,7 @@ begin
   values (r, left(coalesce(p_host, ''), 60), left(coalesce(p_device, ''), 20), left(coalesce(p_lang, ''), 12), left(coalesce(p_country, ''), 40));
   -- aviso al equipo (solo enlaces de revisores, y no más de uno cada 30 minutos por enlace)
   -- y para las visitas sin cuenta al enlace normal ("inicio"), solo si vienen de fuera de Colombia (posibles revisores)
-  if not reciente and (r in ('abs', 'tyndale', 'lockman', 'revisores')
+  if not reciente and (r in ('abs', 'tyndale', 'lockman', 'revisores', 'demo')
                        or (r = 'inicio' and coalesce(p_country, '') not in ('', 'Colombia'))) then
     sitio := case when coalesce(p_host, '') like '%lamparabiblica%' then 'Ner' when coalesce(p_host, '') like '%ecommsimone%' then 'Lámpara' else coalesce(p_host, '') end;
     for t in select user_id from public.team loop

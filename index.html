@@ -192,6 +192,11 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 @media (prefers-reduced-motion:reduce){.confetti{display:none}.celeb-badge,.celeb-card{animation:none}}
 .wel-rv{display:block;margin:14px auto 6px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--muted);text-align:center;text-decoration:underline;text-underline-offset:3px}
 .wel-rv:hover{color:var(--accent)}
+.demo-bar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:8px 12px;margin:-4px 0 6px;border-radius:14px;background:#FFF4D6;color:#5A3B00;border:1px solid #F5C451}
+.demo-bar span{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.demo-bar b{font-size:13px}
+.demo-bar small{font-size:11.5px;opacity:.85;line-height:1.3}
+.demo-bar .btn{flex:none;font-size:12.5px}
 .rvr-mark{margin:14px 0 0;font-size:11px;line-height:1.4;color:var(--muted);text-align:center;opacity:.85}
 .rv{max-width:760px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:18px}
 .rv-head{display:flex;align-items:center;justify-content:space-between}
@@ -1169,7 +1174,7 @@ function freshState(){
   return { v:1, created:Date.now(), unlocked:START_UNLOCKED, progress:{}, custom:[], favs:[], lists:[], log:{}, prefs:{mode:"mixto", size:SESSION_SIZE} };
 }
 function persist(){
-  if(!ME) return;
+  if(!ME || ME.mode==="demo") return;   // la demo no guarda nada
   S._savedAt = Date.now();
   LS.set("lampara.state."+ME.key, S);
   cloudSave();
@@ -1504,7 +1509,7 @@ function render(){
     </nav>
   </div>`;
   const v = $("#view");
-  const mtop = `<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button></div></div>`;
+  const mtop = `${demoBar()}<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button></div></div>`;
   if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
   else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
   else if(VIEW.name==="books"){ LIB.seg = "libros"; v.innerHTML = mtop + viewLibrary(); }
@@ -2884,7 +2889,7 @@ function renderSession(){
   else if(s.phase==="done"){
     body = summaryBody();
   }
-  root.innerHTML = `<main style="min-height:100%"><div class="stage">${top}${body}${rvrMark()}</div></main>`;
+  root.innerHTML = `<main style="min-height:100%">${demoBar()}<div class="stage">${top}${body}${rvrMark()}</div></main>`;
   sizeBlanks();
   if(s.phase==="quiz") afterQuizRender();
 }
@@ -5528,7 +5533,7 @@ function tableroButton(){
   </button>`;
 }
 /* Enlaces para revisores de licencias: avisan cuando alguien los abre (SQL 19) */
-const RV_ORGS = [["abs","Sociedades Bíblicas (RVR1960)"],["tyndale","Tyndale (NTV)"],["lockman","Lockman / NBLA"],["revisores","Botón “Para revisores” del inicio"],["inicio","Visitas sin cuenta (enlace normal)"]];
+const RV_ORGS = [["abs","Sociedades Bíblicas (RVR1960)"],["tyndale","Tyndale (NTV)"],["lockman","Lockman / NBLA"],["revisores","Botón “Para revisores” del inicio"],["demo","Demo de la app"],["inicio","Visitas sin cuenta (enlace normal)"]];
 function teamLinksHTML(){
   const base = location.origin + location.pathname.replace(/index\.html$/, "");
   const L = TEAM.links, total = Array.isArray(L) ? L.reduce((a,x)=>a+ +x.veces,0) : 0;
@@ -5537,7 +5542,7 @@ function teamLinksHTML(){
     <div class="spread" style="align-items:center"><b>🔗 Enlaces para revisores</b><span class="tm-live"><i></i>${ago===null?"En vivo":ago<5?"Actualizado ahora":`Actualizado hace ${ago<60?ago+" s":Math.round(ago/60)+" min"}`}</span></div>
     ${L===null || L===undefined ? `<p class="muted" style="font-size:13px;margin:8px 0 0">Para ver cuándo los abren falta correr el <b>SQL 19</b> en Supabase.</p>` : ""}
     <div class="tm-linklist">${RV_ORGS.map(([k,l])=>{ const rows = (L||[]).filter(x=>x.ref===k), n = rows.reduce((a,x)=>a+ +x.veces,0), last = rows.map(x=>x.ultima).sort().pop();
-      const url = k==="inicio" ? base : k==="revisores" ? `${base}?revisores` : `${base}?revisores=${k}`;
+      const url = k==="inicio" ? base : k==="revisores" ? `${base}?revisores` : k==="demo" ? `${base}?demo` : `${base}?revisores=${k}`;
       const sites = [...new Set(rows.map(x=>/lamparabiblica/.test(x.host||"")?"Ner":/ecommsimone/.test(x.host||"")?"Lámpara":(x.host||"")))].filter(Boolean);
       return `<div class="tm-link ${n?"seen":""}"><span class="tm-eye">${n?"👀":"⏳"}</span><div><b>${esc(l)}</b><small>${n ? `Abierto ${n} ${n===1?"vez":"veces"} · último: ${new Date(last).toLocaleString("es-CO",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}${sites.length?` · en ${esc(sites.join(" y "))}`:""}${rows.length?` · ${esc([...new Set(rows.map(x=>x.dispositivos))].join(", "))}`:""}${(()=>{ const ps = [...new Set(rows.flatMap(x=>(x.paises||"").split(", ")).filter(Boolean))]; return ps.length ? ` · 🌎 ${esc(ps.join(", "))}` : ""; })()}` : "Aún no lo han abierto"}</small><small class="mono">${esc(url)}</small></div>
         <button class="btn" data-act="copy-link" data-link="${esc(url)}" style="padding:6px 12px">Copiar</button></div>`; }).join("")}</div>
@@ -6456,7 +6461,7 @@ function playIntro(force){
 }
 playIntro();
 
-function RV_PARAM_EARLY(){ return /[?&](revisores|reviewers)(=|&|$)/.test(location.search); }
+function RV_PARAM_EARLY(){ return /[?&](revisores|reviewers|demo)(=|&|$)/.test(location.search); }
 /* =========================================================
    PÁGINA PARA REVISORES DE LICENCIAS (?revisores=abs, ?revisores=tyndale …)
    Solo se abre con ese enlace; los usuarios normales nunca la ven. Español / English.
@@ -6512,7 +6517,8 @@ const RV_T = {
     demoT:"Vea un ejemplo", tabs:["Tarjeta","Espacios","Iniciales","Imagen"], imgNote:"Imagen que los usuarios pueden compartir (incluye el nombre de la versión y el aviso).",
     noticeT:"Aviso de derechos en la aplicación", noticeWhere:"Aparece completo en la Biblioteca, en Libros de la Biblia y en Perfil → Acerca de; y de forma abreviada en cada pantalla con versículos y en cada imagen compartida.",
     ntvT:"Otras versiones", ntv:"La Nueva Traducción Viviente (NTV) y la Nueva Biblia de las Américas (NBLA) no están publicadas. Cada una se activará solo cuando su editorial (Tyndale House y The Lockman Foundation) lo autorice por escrito, con los mismos cuidados: texto exacto, aviso de derechos y uso gratuito.",
-    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsables", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación", lang:"English"
+    demoAppT:"Recorra la aplicación", demoApp:"Abra un perfil de demostración con avance de ejemplo: inicio, práctica, camino, biblioteca e imágenes para compartir. No necesita cuenta y no se guarda nada.", demoBtn:"Ver la demo de la aplicación",
+    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsables", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación (crear cuenta)", lang:"English"
   },
   en: {
     tag:"Information for licensing reviewers", title:`${APP_NAME}: a free app to memorize the Bible`,
@@ -6522,7 +6528,8 @@ const RV_T = {
     demoT:"See an example", tabs:["Card","Blanks","Initials","Image"], imgNote:"Image users can share (includes the version name and the notice).",
     noticeT:"Copyright notice in the app", noticeWhere:"Shown in full in the Library, in Books of the Bible and in Profile → About; and in short form on every screen with verses and on every shared image.",
     ntvT:"Other versions", ntv:"The Nueva Traducción Viviente (NTV) and the Nueva Biblia de las Américas (NBLA) are not published. Each will only be enabled once its publisher (Tyndale House and The Lockman Foundation) authorizes it in writing, with the same care: exact text, copyright notice and free use.",
-    listT:"Full list of passages", contactT:"Contact", resp:"Responsible", mail:"Contact emails", app:"App email", open:"Open the app", lang:"Español"
+    demoAppT:"Explore the app", demoApp:"Open a demo profile with sample progress: home, practice, learning path, library and shareable images. No account needed and nothing is saved.", demoBtn:"View the app demo",
+    listT:"Full list of passages", contactT:"Contact", resp:"Responsible", mail:"Contact emails", app:"App email", open:"Open the app (create an account)", lang:"Español"
   }
 };
 let RV_TAB = 0;
@@ -6540,6 +6547,7 @@ function renderReviewers(){
   root.innerHTML = `<main class="rv">
     <header class="rv-head"><div class="brand" style="padding:0"><div class="brand-mark">${I.lamp}</div><b>${esc(APP_NAME)}</b></div><button class="btn ghost" id="rvLang" style="padding:6px 12px">🌐 ${t.lang}</button></header>
     <section class="rv-hero"><span class="eyebrow">${esc(t.tag)}</span><h1>${esc(t.title)}</h1>${RV_REQ[RV_PARAM] ? `<p class="rv-req">${esc(RV_REQ[RV_PARAM][RV_LANG])}</p>` : ""}<p>${esc(t.intro)}</p></section>
+    <a class="btn primary" href="?demo" style="align-self:flex-start">${I.play} ${esc(t.demoBtn)}</a>
     <section class="rv-facts">${t.facts.map(([k,v])=>`<div><small>${esc(k)}</small><b>${esc(typeof v==="function"?v(n):v)}</b></div>`).join("")}</section>
     <section class="rv-sec"><h2>${esc(t.howT)}</h2><ul>${t.how.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
     <section class="rv-sec"><h2>${esc(t.demoT)}</h2><div class="rv-tabs">${t.tabs.map((x,i)=>`<button data-rvtab="${i}" aria-pressed="${RV_TAB===i}">${esc(x)}</button>`).join("")}</div><div id="rvDemo">${rvDemo()}</div></section>
@@ -6547,13 +6555,31 @@ function renderReviewers(){
     <section class="rv-sec"><h2>${esc(t.ntvT)}</h2><p style="margin:0">${esc(t.ntv)}</p></section>
     <section class="rv-sec"><details><summary><b>${esc(t.listT)}</b> (${n.passages})</summary><p class="rv-refs">${n.refs.map(esc).join(" · ")}</p></details></section>
     <section class="rv-sec"><h2>${esc(t.contactT)}</h2><p style="margin:0;line-height:1.7">${esc(t.resp)}: <b>${RV_RESP.map(esc).join("</b> · <b>")}</b><br>${esc(t.mail)}: ${RV_CONTACTS.map(m=>`<a href="mailto:${esc(m)}">${esc(m)}</a>`).join(" · ")}<br>${esc(t.app)}: <a href="mailto:${esc(PRIV.correo)}">${esc(PRIV.correo)}</a></p></section>
-    <div style="display:flex;justify-content:center;padding:6px 0 30px"><a class="btn primary lg" href="${esc(location.pathname)}">${I.play} ${esc(t.open)}</a></div>
+    <section class="rv-sec rv-demo"><h2>${esc(t.demoAppT)}</h2><p style="margin:0">${esc(t.demoApp)}</p><a class="btn primary lg" href="?demo" style="align-self:flex-start">${I.play} ${esc(t.demoBtn)}</a></section>
+    <div style="display:flex;justify-content:center;padding:6px 0 30px"><a class="btn ghost" href="${esc(location.pathname)}">${esc(t.open)}</a></div>
   </main>`;
   root.querySelector("#rvLang").onclick = ()=>{ RV_LANG = RV_LANG==="es" ? "en" : "es"; renderReviewers(); };
   const paint = async ()=>{ root.querySelector("#rvDemo").innerHTML = rvDemo(); if(RV_TAB===3){ const bl = await verseImage("jn-3-16", "cielo-nubes", "9:16", "m"); const im = root.querySelector("#rvImg"); if(im && bl) im.src = URL.createObjectURL(bl); } };
   root.querySelectorAll("[data-rvtab]").forEach(b=>b.onclick=()=>{ RV_TAB = +b.dataset.rvtab; root.querySelectorAll("[data-rvtab]").forEach(x=>x.setAttribute("aria-pressed", x===b)); paint(); });
   if(RV_TAB===3) paint();
 }
+/* ----- Demo para revisores: un perfil de ejemplo con avance, sin cuenta y sin guardar nada (?demo) ----- */
+const DEMO_PARAM = (()=>{ try{ return new URLSearchParams(location.search).has("demo"); }catch(e){ return false; } })();
+function startDemo(){
+  ME = { mode:"demo", id:"demo", name:"Ana (demo)", email:"", color:"#2F6FED", key:"demo" };
+  S = freshState();
+  S.unlocked = Math.max(S.unlocked, 12); S.methodSeen = true; S.placed = { skipped:true }; S.xp = 420;
+  const now = Date.now(), D = 86400000, path = pathIds();
+  path.slice(0, 14).forEach((id,i)=>{ S.progress[id] = { reps: 3 + (i%3), box: i<8 ? 5 : i<11 ? 3 : 1, due: now + ((i%4)+1)*D, hist: i===12 ? [60,70] : [100, 95, 100], lapses: i===12 ? 1 : 0, last: now - D }; });
+  for(let d=0; d<12; d++){ S.log[todayKey(new Date(now - d*D))] = { n: 10, sum: 8.5 + (d%3)*0.4 }; }
+  S.favs = ["jn-3-16","sal-23-1","flp-4-13"].filter(id=>verse(id));
+  S.lists = [{ id:"l-demo", name:"Para memorizar en familia", ids:["jos-24-15","ef-6-1","prov-22-6"].filter(id=>verse(id)) }];
+  syncPath();
+  try{ localStorage.setItem("lampara.heartOpen", ""); }catch(e){}
+  logLinkOpen("demo");
+  go("home");
+}
+function demoBar(){ return ME && ME.mode==="demo" ? `<div class="demo-bar"><span><b>Demo · Perfil de ejemplo</b><small>No se guarda nada · Sample profile, nothing is saved</small></span><a class="btn" href="?revisores" style="padding:6px 12px">Salir · Exit</a></div>` : ""; }
 /* Aviso corto en las pantallas con versículos */
 const RVR_SHORT = "Reina-Valera 1960® © Sociedades Bíblicas Unidas";
 const rvrMark = () => `<p class="rvr-mark">${RVR_SHORT}</p>`;
@@ -6564,7 +6590,8 @@ const rvrMark = () => `<p class="rvr-mark">${RVR_SHORT}</p>`;
 function renderSplash(){ root.innerHTML = `<div class="wel"><div class="empty" style="margin:auto"><div class="brand-mark" style="width:48px;height:48px">${I.lamp}</div><b>Lámpara</b><span>Cargando tu progreso…</span></div></div>`; }
 (async function boot(){
   logLinkOpen();
-  if(RV_PARAM !== null){ const ii = $("#intro"); if(ii) ii.remove(); renderReviewers(); return; }   // página para revisores: no pide cuenta
+  if(RV_PARAM !== null){ const ii = $("#intro"); if(ii) ii.remove(); renderReviewers(); return; }
+  if(DEMO_PARAM){ const ii = $("#intro"); if(ii) ii.remove(); startDemo(); return; }   // página para revisores: no pide cuenta
   if(SB){
     renderSplash();
     let user = null;
