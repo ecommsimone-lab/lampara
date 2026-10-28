@@ -6258,6 +6258,7 @@ document.addEventListener("click", e=>{
     case "friend-add": friendAction("add", t.dataset.id, t); break;
     case "sug-add": sugAdd(t.dataset.id, t); break;
     case "method-help": methodModal(); break;
+    case "demo-exit": { closeModal(); SESSION = null; ME = null; S = null; VIEW = { name:"home" }; window.scrollTo(0,0); renderReviewers(); break; }
     case "celebrate": celebrateModal(masteredNow()); break;
     case "sug-hide": sugHide(t.dataset.id); break;
     case "friend-accept": friendAction("accept", t.dataset.id, t); break;
@@ -6518,7 +6519,7 @@ const RV_T = {
     noticeT:"Aviso de derechos en la aplicación", noticeWhere:"Aparece completo en la Biblioteca, en Libros de la Biblia y en Perfil → Acerca de; y de forma abreviada en cada pantalla con versículos y en cada imagen compartida.",
     ntvT:"Otras versiones", ntv:"La Nueva Traducción Viviente (NTV) y la Nueva Biblia de las Américas (NBLA) no están publicadas. Cada una se activará solo cuando su editorial (Tyndale House y The Lockman Foundation) lo autorice por escrito, con los mismos cuidados: texto exacto, aviso de derechos y uso gratuito.",
     demoAppT:"Recorra la aplicación", demoApp:"Abra un perfil de demostración con avance de ejemplo: inicio, práctica, camino, biblioteca e imágenes para compartir. No necesita cuenta y no se guarda nada.", demoBtn:"Ver la demo de la aplicación",
-    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsables", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación (crear cuenta)", lang:"English"
+    listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsables", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación", openNote:"Se abre con un perfil de demostración: no necesita cuenta y no se guarda nada.", lang:"English"
   },
   en: {
     tag:"Information for licensing reviewers", title:`${APP_NAME}: a free app to memorize the Bible`,
@@ -6529,7 +6530,7 @@ const RV_T = {
     noticeT:"Copyright notice in the app", noticeWhere:"Shown in full in the Library, in Books of the Bible and in Profile → About; and in short form on every screen with verses and on every shared image.",
     ntvT:"Other versions", ntv:"The Nueva Traducción Viviente (NTV) and the Nueva Biblia de las Américas (NBLA) are not published. Each will only be enabled once its publisher (Tyndale House and The Lockman Foundation) authorizes it in writing, with the same care: exact text, copyright notice and free use.",
     demoAppT:"Explore the app", demoApp:"Open a demo profile with sample progress: home, practice, learning path, library and shareable images. No account needed and nothing is saved.", demoBtn:"View the app demo",
-    listT:"Full list of passages", contactT:"Contact", resp:"Responsible", mail:"Contact emails", app:"App email", open:"Open the app (create an account)", lang:"Español"
+    listT:"Full list of passages", contactT:"Contact", resp:"Responsible", mail:"Contact emails", app:"App email", open:"Open the app", openNote:"It opens with a demo profile: no account needed and nothing is saved.", lang:"Español"
   }
 };
 let RV_TAB = 0;
@@ -6547,7 +6548,6 @@ function renderReviewers(){
   root.innerHTML = `<main class="rv">
     <header class="rv-head"><div class="brand" style="padding:0"><div class="brand-mark">${I.lamp}</div><b>${esc(APP_NAME)}</b></div><button class="btn ghost" id="rvLang" style="padding:6px 12px">🌐 ${t.lang}</button></header>
     <section class="rv-hero"><span class="eyebrow">${esc(t.tag)}</span><h1>${esc(t.title)}</h1>${RV_REQ[RV_PARAM] ? `<p class="rv-req">${esc(RV_REQ[RV_PARAM][RV_LANG])}</p>` : ""}<p>${esc(t.intro)}</p></section>
-    <a class="btn primary" href="?demo" style="align-self:flex-start">${I.play} ${esc(t.demoBtn)}</a>
     <section class="rv-facts">${t.facts.map(([k,v])=>`<div><small>${esc(k)}</small><b>${esc(typeof v==="function"?v(n):v)}</b></div>`).join("")}</section>
     <section class="rv-sec"><h2>${esc(t.howT)}</h2><ul>${t.how.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
     <section class="rv-sec"><h2>${esc(t.demoT)}</h2><div class="rv-tabs">${t.tabs.map((x,i)=>`<button data-rvtab="${i}" aria-pressed="${RV_TAB===i}">${esc(x)}</button>`).join("")}</div><div id="rvDemo">${rvDemo()}</div></section>
@@ -6555,9 +6555,9 @@ function renderReviewers(){
     <section class="rv-sec"><h2>${esc(t.ntvT)}</h2><p style="margin:0">${esc(t.ntv)}</p></section>
     <section class="rv-sec"><details><summary><b>${esc(t.listT)}</b> (${n.passages})</summary><p class="rv-refs">${n.refs.map(esc).join(" · ")}</p></details></section>
     <section class="rv-sec"><h2>${esc(t.contactT)}</h2><p style="margin:0;line-height:1.7">${esc(t.resp)}: <b>${RV_RESP.map(esc).join("</b> · <b>")}</b><br>${esc(t.mail)}: ${RV_CONTACTS.map(m=>`<a href="mailto:${esc(m)}">${esc(m)}</a>`).join(" · ")}<br>${esc(t.app)}: <a href="mailto:${esc(PRIV.correo)}">${esc(PRIV.correo)}</a></p></section>
-    <section class="rv-sec rv-demo"><h2>${esc(t.demoAppT)}</h2><p style="margin:0">${esc(t.demoApp)}</p><a class="btn primary lg" href="?demo" style="align-self:flex-start">${I.play} ${esc(t.demoBtn)}</a></section>
-    <div style="display:flex;justify-content:center;padding:6px 0 30px"><a class="btn ghost" href="${esc(location.pathname)}">${esc(t.open)}</a></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 30px"><button class="btn primary lg" id="rvOpen">${I.play} ${esc(t.open)}</button><small class="muted" style="text-align:center">${esc(t.openNote)}</small></div>
   </main>`;
+  root.querySelector("#rvOpen").onclick = ()=>{ window.scrollTo(0,0); startDemo(); };
   root.querySelector("#rvLang").onclick = ()=>{ RV_LANG = RV_LANG==="es" ? "en" : "es"; renderReviewers(); };
   const paint = async ()=>{ root.querySelector("#rvDemo").innerHTML = rvDemo(); if(RV_TAB===3){ const bl = await verseImage("jn-3-16", "cielo-nubes", "9:16", "m"); const im = root.querySelector("#rvImg"); if(im && bl) im.src = URL.createObjectURL(bl); } };
   root.querySelectorAll("[data-rvtab]").forEach(b=>b.onclick=()=>{ RV_TAB = +b.dataset.rvtab; root.querySelectorAll("[data-rvtab]").forEach(x=>x.setAttribute("aria-pressed", x===b)); paint(); });
@@ -6579,7 +6579,7 @@ function startDemo(){
   logLinkOpen("demo");
   go("home");
 }
-function demoBar(){ return ME && ME.mode==="demo" ? `<div class="demo-bar"><span><b>Demo · Perfil de ejemplo</b><small>No se guarda nada · Sample profile, nothing is saved</small></span><a class="btn" href="?revisores" style="padding:6px 12px">Salir · Exit</a></div>` : ""; }
+function demoBar(){ return ME && ME.mode==="demo" ? `<div class="demo-bar"><span><b>Demo · Perfil de ejemplo</b><small>No se guarda nada · Sample profile, nothing is saved</small></span><button class="btn" data-act="demo-exit" style="padding:6px 12px">Salir · Exit</button></div>` : ""; }
 /* Aviso corto en las pantallas con versículos */
 const RVR_SHORT = "Reina-Valera 1960® © Sociedades Bíblicas Unidas";
 const rvrMark = () => `<p class="rvr-mark">${RVR_SHORT}</p>`;
