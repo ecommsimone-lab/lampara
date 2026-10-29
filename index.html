@@ -906,6 +906,48 @@ a.btn:not(.primary){color:var(--ink)}
 
 /* ---------- Estadísticas tipo Instagram ---------- */
 .pstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%}
+.pstats.p3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.prof-gear{margin-left:auto;align-self:flex-start}
+.psk{position:relative;overflow:hidden;border-radius:24px;padding:18px;background:linear-gradient(150deg,#FFB020,#FF7A00);color:#3A1E00;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 30px rgba(255,138,0,.25);cursor:pointer}
+.psk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.psk-num{display:flex;align-items:center;gap:10px}
+.psk-num .flame-md svg{width:44px;height:44px}
+.psk-num b{display:block;font-size:44px;line-height:1;letter-spacing:-.03em}
+.psk-num span{font-weight:700;font-size:14px;opacity:.85}
+.psk-side{text-align:right;display:flex;flex-direction:column;font-size:12.5px;font-weight:600;opacity:.9}
+.psk-side b{font-size:17px}
+.psk-status{margin:0;font-size:14.5px;font-weight:600;line-height:1.4}
+.psk-ok,.psk-warn{display:inline-block;background:rgba(255,255,255,.55);border-radius:999px;padding:2px 10px;margin-right:4px;font-weight:800}
+.psk-goal{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:600}
+.psk-bar{height:10px;border-radius:999px;background:rgba(255,255,255,.4);overflow:hidden}
+.psk-bar i{display:block;height:100%;border-radius:999px;background:#3A1E00}
+.psk-chips{display:flex;gap:6px;flex-wrap:wrap}
+.psk-chips span{background:rgba(255,255,255,.4);border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:700}
+.pn{display:flex;flex-direction:column;gap:14px;padding:18px}
+.pn-lv{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:-6px}
+.pn-lv i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.pn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pn-grid>div{background:var(--surface-2);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.pn-grid span{font-size:12.5px;color:var(--muted);font-weight:600}
+.pn-grid b{font-size:26px;letter-spacing:-.02em}
+.pn-d{font-size:12px;color:var(--muted);font-weight:600}
+.pn-d.up{color:var(--ok)} .pn-d.down{color:var(--bad)}
+.pn-go{padding:0;font-size:13px;align-self:flex-start}
+.pn-sub{display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.pn-bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
+.pn-bars>div{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:0}
+.pn-bars em{display:flex;align-items:flex-end;height:64px}
+.pn-bars u{display:block;width:100%;border-radius:5px;background:var(--line);text-decoration:none}
+.pn-bars u.on{background:var(--gold)} .pn-bars u.hoy{outline:2px solid var(--accent);outline-offset:1px}
+.pn-bars span{text-align:center}
+.pn-bars span{font-size:10.5px;color:var(--muted);font-weight:600;height:12px}
+.pn-stack{display:flex;height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.pn-stack i.ok{background:var(--ok)} .pn-stack i.mid{background:var(--mid)}
+.pn-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);font-weight:600}
+.pn-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--line);margin-right:5px;vertical-align:-1px}
+.pn-leg i.ok{background:var(--ok)} .pn-leg i.mid{background:var(--mid)}
+.prof-set-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px;width:100%;cursor:pointer;color:var(--ink);font:inherit;text-align:left}
+
 .pstats>*{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--card-border);text-align:center;min-width:0}
 .pstats button{cursor:pointer}
 .pstats button:focus-visible{outline:2px solid var(--accent)}
@@ -1240,6 +1282,8 @@ const LS = {
 
 /* ---------- Iconos ---------- */
 const I = {
+  gear:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  back:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
   home:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
   lib:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4v16M9 4v16M14 4l6 16"/></svg>',
   play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>',
@@ -1578,7 +1622,7 @@ function render(){
   if(VIEW.name==="bquiz" && BQ){ renderBookQuiz(); return; }
   const badge = commBadge();
   const unread = unreadCount();
-  const navItem = (id,label,icon) => { const n = id==="community" ? badge + (PR.invites||[]).length : id==="avisos" ? unread : id==="equipo" ? teamCount() : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || VIEW.name==="oracion" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="library" && (VIEW.name==="books" || VIEW.name==="topic" || VIEW.name==="list" || VIEW.name==="pildora")) || (id==="profile" && (VIEW.name==="logros" || VIEW.name==="equipo" || VIEW.name==="privacy" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
+  const navItem = (id,label,icon) => { const n = id==="community" ? badge + (PR.invites||[]).length : id==="avisos" ? unread : id==="equipo" ? teamCount() : 0; return `<button data-go="${id}" aria-current="${VIEW.name===id || (id==="community" && (VIEW.name==="friend" || VIEW.name==="oracion" || (VIEW.name==="amigos" && VIEW.uid!==ME.id))) || (id==="library" && (VIEW.name==="books" || VIEW.name==="topic" || VIEW.name==="list" || VIEW.name==="pildora")) || (id==="profile" && (VIEW.name==="logros" || VIEW.name==="ajustes" || VIEW.name==="equipo" || VIEW.name==="privacy" || (VIEW.name==="amigos" && VIEW.uid===ME.id)))}" style="position:relative">${icon}<span>${label}</span>${n?`<i class="nbadge" aria-label="${n} pendientes">${n>9?"9+":n}</i>`:""}</button>`; };
   const lists = listDefs();
   root.innerHTML = `
   <div class="app">
@@ -1622,6 +1666,7 @@ function render(){
   else if(VIEW.name==="list") v.innerHTML = mtop + viewList(VIEW.list);
   else if(VIEW.name==="review") v.innerHTML = mtop + viewList("rev");
   else if(VIEW.name==="profile") v.innerHTML = mtop + viewProfile();
+  else if(VIEW.name==="ajustes") v.innerHTML = mtop + viewAjustes();
   else if(VIEW.name==="topic") v.innerHTML = mtop + viewTopic(VIEW.topic);
   else if(VIEW.name==="community") v.innerHTML = mtop + viewCommunity();
   else if(VIEW.name==="oracion"){ COMM.seg = "oracion"; v.innerHTML = mtop + viewCommunity(); }
@@ -6478,24 +6523,81 @@ function privacyHTML(){
 }
 const RVR_NOTICE = "Texto bíblico tomado de la versión Reina-Valera © 1960 Sociedades Bíblicas en América Latina; © renovado 1988 Sociedades Bíblicas Unidas. Reina-Valera 1960® es una marca registrada de Sociedades Bíblicas Unidas.";
 function noticeHTML(){ return `<p class="muted" style="font-size:11.5px;line-height:1.5;max-width:80ch">${esc(RVR_NOTICE)}</p>`; }
+const STREAK_GOALS = [3,7,14,21,30,50,75,100,150,200,365,500,1000];
+function profileStreakCard(){
+  const st = streak(), best = Math.max(bestStreak(), st), done = practicedToday();
+  const goal = STREAK_GOALS.find(g=>g>st) || (st+100), from = [0].concat(STREAK_GOALS).filter(g=>g<=st).pop() || 0;
+  const pct = Math.round((st-from)/(goal-from)*100);
+  const now = new Date(), mid = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1), left = mid-now;
+  const hh = Math.floor(left/3600000), mm = Math.floor(left%3600000/60000);
+  const sh = S.shields||0, nextSh = sh>=SHIELD_MAX ? 0 : 7 - (st%7);
+  const status = done ? `<span class="psk-ok">✓ Hoy ya cuenta</span> Vuelve mañana para llegar a <b>${st+1}</b>.`
+    : st ? `<span class="psk-warn">⏳ Te quedan ${hh} h ${mm} min</span> para no perderla.`
+    : `Practica hoy y empieza una racha nueva.`;
+  return `<section class="psk" data-go="racha" role="button" tabindex="0" aria-label="Ver tu racha">
+    <div class="psk-top">
+      <div class="psk-num"><span class="flame-md">${I.flame}</span><div><b>${st}</b><span>${st===1?"día seguido":"días seguidos"}</span></div></div>
+      <div class="psk-side"><span>Mejor racha</span><b>${best} ${best===1?"día":"días"}</b></div>
+    </div>
+    <p class="psk-status">${status}</p>
+    ${weekStrip()}
+    <div class="psk-goal"><div class="spread" style="flex-wrap:nowrap"><span>Próxima meta: <b>${goal} días</b></span><span>faltan ${goal-st}</span></div><div class="psk-bar"><i style="width:${Math.max(4,pct)}%"></i></div></div>
+    <div class="psk-chips"><span>🛡️ ${sh} de ${SHIELD_MAX} escudos</span>${nextSh?`<span>Próximo escudo en ${nextSh} ${nextSh===1?"día":"días"}</span>`:`<span>Escudos completos</span>`}</div>
+  </section>`;
+}
+function profileNumbers(){
+  const sum = (from, to) => { let n=0, ok=0; for(let i=from;i<to;i++){ const L = S.log[todayKey(new Date(Date.now()-i*DAY))]; if(L){ n+=L.n||0; ok+=L.sum||0; } } return { n, acc: n ? Math.round(ok/n*100) : null }; };
+  const a30 = sum(0,30), p30 = sum(30,60), w = sum(0,7), pw = sum(7,14);
+  const dAcc = a30.acc!=null && p30.acc!=null ? a30.acc - p30.acc : null, dW = w.n - pw.n;
+  const act = activeIds(), ok = act.filter(id=>status(id)==="ok"), learning = act.filter(id=>{ const p = prog(id); return p && p.reps && status(id)!=="ok"; }).length;
+  const fresh = act.length - ok.length - learning, due = act.filter(id=>{ const p = prog(id); return p && p.reps && isDue(id); }).length;
+  const words = ok.reduce((t,id)=>{ const v = verse(id); return t + (v ? v.text.split(/\s+/).length : 0); }, 0);
+  const x = xpInfo();
+  const days = []; for(let i=13;i>=0;i--){ const d = new Date(Date.now()-i*DAY), k = todayKey(d), L = S.log[k]; days.push({ k, n: L ? L.n||0 : 0, d }); }
+  const max = Math.max(1, ...days.map(d=>d.n)), total14 = days.reduce((t,d)=>t+d.n,0), on14 = days.filter(d=>d.n).length;
+  const delta = (v, unit) => v==null || v===0 ? `<small class="pn-d">igual que antes</small>` : `<small class="pn-d ${v>0?"up":"down"}">${v>0?"▲":"▼"} ${Math.abs(v)}${unit}</small>`;
+  const tot = Math.max(1, act.length);
+  return `<section class="panel pn">
+    <div class="spread" style="flex-wrap:nowrap"><h3>Tus números</h3><span class="muted" style="font-size:13px">Nivel ${x.lv} · ${x.into}/${x.need} XP</span></div>
+    <div class="pn-lv"><i style="width:${x.pct}%"></i></div>
+    <div class="pn-grid">
+      <div><span>Acierto · 30 días</span><b>${a30.acc==null?"—":a30.acc+"%"}</b>${delta(dAcc," pts vs. mes anterior")}</div>
+      <div><span>Respuestas · semana</span><b>${w.n}</b>${delta(dW," vs. semana pasada")}</div>
+      <div><span>Palabras memorizadas</span><b>${words.toLocaleString("es-CO")}</b><small class="pn-d">en ${ok.length} ${ok.length===1?"versículo":"versículos"}</small></div>
+      <div><span>Para repasar hoy</span><b>${due}</b>${due?`<button class="linkbtn pn-go" data-go="review">Repasar →</button>`:`<small class="pn-d up">Al día ✓</small>`}</div>
+    </div>
+    <div class="pn-sub"><div class="spread" style="flex-wrap:nowrap"><b>Últimos 14 días</b><span class="muted">${on14} ${on14===1?"día":"días"} · ${total14} respuestas</span></div>
+      <div class="pn-bars">${days.map((d,i)=>`<div title="${d.k}: ${d.n} respuestas"><em><u style="height:${d.n?Math.max(10,Math.round(d.n/max*100)):6}%" class="${d.n?"on":""}${i===13?" hoy":""}"></u></em><span>${i%2===1||i===13?["D","L","M","M","J","V","S"][d.d.getDay()]:""}</span></div>`).join("")}</div></div>
+    <div class="pn-sub"><div class="spread" style="flex-wrap:nowrap"><b>Tu plan</b><span class="muted">${act.length} versículos</span></div>
+      <div class="pn-stack"><i class="ok" style="width:${ok.length/tot*100}%"></i><i class="mid" style="width:${learning/tot*100}%"></i></div>
+      <div class="pn-leg"><span><i class="ok"></i>Aprendidos ${ok.length}</span><span><i class="mid"></i>En proceso ${learning}</span><span><i></i>Por empezar ${fresh}</span></div></div>
+  </section>`;
+}
 function viewProfile(){
-  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):key==="ritmo"?ritmo():key==="punct"?(S.prefs.punct||"exacto"):(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
   const act = activeIds(); const learned = act.filter(id=>status(id)==="ok").length;
   return `
   <section class="prof-head">
     ${myAvatar(64)}
-    <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${myUsername()?`<b>@${esc(myUsername())}</b> · `:""}${esc(ME.email||"")}</span>
-</div>
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0;flex:1"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${myUsername()?`<b>@${esc(myUsername())}</b>`:esc(ME.email||"")}</span></div>
+    <button class="icon-btn prof-gear" data-go="ajustes" aria-label="Ajustes" title="Ajustes">${I.gear}</button>
   </section>
-  ${(()=>{ if(cloudOn() && !COMM.loaded && !COMM.loading) setTimeout(loadCommunity,0); const nf = friendsAccepted().length, st = streak(), x = xpInfo();
-    return `<section class="pstats">
+  ${(()=>{ if(cloudOn() && !COMM.loaded && !COMM.loading) setTimeout(loadCommunity,0); const nf = friendsAccepted().length, x = xpInfo();
+    return `<section class="pstats p3">
       <button class="blue" data-go="camino"><b>${x.lv}</b><span>Nivel</span></button>
-      <button class="gold" data-go="racha"><b>${I.flame}${st}</b><span>Racha</span></button>
       <button class="green" data-go="review"><b>${learned}</b><span>Aprendidos</span></button>
       ${cloudOn()||isDemo()?`<button data-act="amigos-open" data-id="${ME.id}"><b>${COMM.loaded?nf:"…"}</b><span>${nf===1?"Amigo":"Amigos"}</span></button>`:`<div><b>${act.length}</b><span>En tu plan</span></div>`}
     </section>`; })()}
+  ${profileStreakCard()}
+  ${profileNumbers()}
   ${TEAM.on ? tableroButton() : ""}
   ${badgesSection()}
+  <button class="panel prof-set-row" data-go="ajustes"><span class="row" style="gap:12px;flex-wrap:nowrap">${I.gear}<span style="display:flex;flex-direction:column;text-align:left"><b>Ajustes</b><small class="muted">Perfil público, práctica, avisos, apariencia y cuenta</small></span></span><span class="muted" style="transform:rotate(180deg);display:flex">${I.back}</span></button>`;
+}
+function viewAjustes(){
+  const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="pref" data-k="${key}" data-v="${v}" aria-pressed="${String(key==="theme"?(S.prefs.theme||"system"):key==="minutes"?(S.prefs.minutes||10):key==="ritmo"?ritmo():key==="punct"?(S.prefs.punct||"exacto"):(S.prefs[key]||"mixto"))===String(v)}">${l}</button>`).join("")}</div>`;
+  return `
+  <section class="row" style="gap:10px;flex-wrap:nowrap"><button class="icon-btn" data-go="profile" aria-label="Volver al perfil">${I.back}</button><h1 style="font-size:clamp(28px,5vw,40px)">Ajustes</h1></section>
+  <p class="muted" style="margin:-6px 0 0">${myUsername()?`@${esc(myUsername())} · `:""}${esc(ME.email||"")}</p>
   ${profileCommunityPanel()}
   ${notifPrefsPanel()}
   <section class="panel">
@@ -6619,7 +6721,7 @@ document.addEventListener("click", e=>{
     case "practice-hard": { const ids=hardestIds(activeIds()); startSession(shuffle(ids),{title:"Los que más te cuestan", source:ids.slice()}); break; }
     case "push-off": disablePush(); break;
     case "notif-clear": confirmBox("¿Borrar todos los avisos?", "Se borran de la lista. No afecta a tus amigos ni a tus retos.", "Borrar", ()=>NAPI.clear().then(()=>{ NOTIF.items=[]; render(); }).catch(e=>toast(notifError(e)))); break;
-    case "notif-settings": go("profile"); setTimeout(()=>{ const el=$("#avisos-ajustes"); if(el) el.scrollIntoView({behavior:"smooth"}); }, 50); break;
+    case "notif-settings": go("ajustes"); setTimeout(()=>{ const el=$("#avisos-ajustes"); if(el) el.scrollIntoView({behavior:"smooth"}); }, 50); break;
     case "streak-invite": streakAction("invite", t.dataset.id, t); break;
     case "streak-accept": streakAction("accept", t.dataset.id, t); break;
     case "streak-reject": streakAction("reject", t.dataset.id, t); break;
