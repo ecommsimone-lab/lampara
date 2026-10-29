@@ -6580,6 +6580,7 @@ function viewProfile(){
     <div style="display:flex;flex-direction:column;gap:4px;min-width:0;flex:1"><h1 style="font-size:clamp(28px,5vw,40px)">${esc(displayName())}</h1><span class="muted">${myUsername()?`<b>@${esc(myUsername())}</b>`:esc(ME.email||"")}</span></div>
     <button class="icon-btn prof-gear" data-go="ajustes" aria-label="Ajustes" title="Ajustes">${I.gear}</button>
   </section>
+  ${TEAM.on ? tableroButton() : ""}
   ${(()=>{ if(cloudOn() && !COMM.loaded && !COMM.loading) setTimeout(loadCommunity,0); const nf = friendsAccepted().length, x = xpInfo();
     return `<section class="pstats p3">
       <button class="blue" data-go="camino"><b>${x.lv}</b><span>Nivel</span></button>
@@ -6588,7 +6589,6 @@ function viewProfile(){
     </section>`; })()}
   ${profileStreakCard()}
   ${profileNumbers()}
-  ${TEAM.on ? tableroButton() : ""}
   ${badgesSection()}
   <button class="panel prof-set-row" data-go="ajustes"><span class="row" style="gap:12px;flex-wrap:nowrap">${I.gear}<span style="display:flex;flex-direction:column;text-align:left"><b>Ajustes</b><small class="muted">Perfil público, práctica, avisos, apariencia y cuenta</small></span></span><span class="muted" style="transform:rotate(180deg);display:flex">${I.back}</span></button>`;
 }
