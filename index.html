@@ -236,6 +236,12 @@ main{min-width:0;padding-inline:clamp(16px,4vw,48px);padding-block:28px 120px}
 .cx-cap p,.cx-word p{margin:0;font-size:14.5px;line-height:1.55}
 .cx-word{background:#FFF7E0}
 .cx-pron{color:var(--accent);letter-spacing:.02em}
+.wel-punct{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.wel-punct>b{font-size:15px}
+.wp-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wp-opts .goal{display:flex;flex-direction:column;gap:3px;text-align:left;padding:12px}
+.wp-opts .goal b{font-size:15px;letter-spacing:0}
+.wp-opts .goal small{font-size:12px;color:var(--muted);line-height:1.35}
 .ini-tip{font-size:12.5px;color:var(--muted);line-height:1.4}
 .mt{display:flex;flex-direction:column;gap:16px}
 .mt-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
@@ -3253,6 +3259,18 @@ function errKind(target, got){
 }
 /* Preferencia de cada persona: "exacto" (cuentan los signos de puntuación) o "flexible" (no cuentan) */
 const punctFlex = () => !!(S && S.prefs && S.prefs.punct === "flexible");
+function punctModal(){
+  let v = punctFlex() ? "flexible" : "exacto";
+  modal(`<div class="spread" style="flex-wrap:nowrap;align-items:flex-start;gap:10px"><h2 style="font-size:22px">✍️ ¿Cómo quieres escribir los versículos?</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0;font-size:14.5px">Novedad: ahora eliges si al escribir cuentan los signos de puntuación. Las tildes siempre cuentan.</p>
+    <div class="wp-opts" id="ppOpts"><button type="button" class="goal" data-k="exacto" aria-pressed="${v==="exacto"}"><b>Exacto</b><small>Palabras, tildes, puntos y comas</small></button><button type="button" class="goal" data-k="flexible" aria-pressed="${v==="flexible"}"><b>Sin signos</b><small>Palabras y tildes; los puntos y comas no cuentan</small></button></div>
+    <small class="muted">Lo puedes cambiar cuando quieras en Perfil → Práctica.</small>
+    <button class="btn primary lg" id="ppGo" style="justify-content:center">Guardar</button>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>{ persist(); closeModal(); });
+    sc.querySelectorAll("#ppOpts [data-k]").forEach(b=>b.onclick=()=>{ v = b.dataset.k; sc.querySelectorAll("#ppOpts [data-k]").forEach(x=>x.setAttribute("aria-pressed", x===b)); });
+    sc.querySelector("#ppGo").onclick = ()=>{ S.prefs.punct = v; persist(); closeModal(); render(); toast(v==="flexible" ? "Listo: los signos de puntuación no cuentan." : "Listo: cuentan los signos de puntuación."); };
+  });
+}
 function scoreStrict(text, attempt){
   const tRaw = text.split(/\s+/).filter(Boolean);
   const aRaw = attempt.trim().split(/\s+/).filter(Boolean);
@@ -4570,6 +4588,7 @@ function notifActions(n){
     case "prayer_pray": case "prayer_comment": case "prayer_answered":
       return btn("open-oracion", n.type==="prayer_answered" ? "Ver testimonio" : "Ver petición", (n.data && n.data.prayer) || "", true);
     case "team_assigned": case "link_open": return btn("team-go","Ver en el Panel de control","",true);
+    case "app_update": return (n.data && n.data.feature === "punct") ? btn("punct-pick", punctFlex() ? "Cambiar (ahora: sin signos)" : "Elegir cómo practicar", "", true) : "";
     case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
     case "cheer": {
       const vid = n.data && n.data.verse && SUG_MAP[n.data.verse] ? n.data.verse : null;
@@ -6235,6 +6254,9 @@ function renderWelcome(){
       <div style="display:flex;flex-direction:column;gap:10px">
         ${Object.entries(RITMOS).map(([k,r])=>`<button class="goal" data-act="wel-ritmo" data-k="${k}" aria-pressed="${(WEL.ritmo||"constante")===k}" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;text-align:left"><span style="font-size:28px">${r.em}</span><span style="display:flex;flex-direction:column;gap:2px"><b>${r.label}</b><small>${r.desc}</small></span></button>`).join("")}
       </div>
+      <div class="wel-punct"><b>Al escribir los versículos, ¿cuentan los signos de puntuación?</b>
+        <div class="wp-opts"><button class="goal" data-act="wel-punct" data-k="exacto" aria-pressed="${(WEL.punct||"exacto")==="exacto"}"><b>Exacto</b><small>Palabras, tildes, puntos y comas</small></button><button class="goal" data-act="wel-punct" data-k="flexible" aria-pressed="${WEL.punct==="flexible"}"><b>Sin signos</b><small>Palabras y tildes; los puntos y comas no cuentan</small></button></div>
+        <small class="muted">También lo puedes cambiar después en tu perfil.</small></div>
       <div class="wel-actions"><button class="btn primary lg" data-act="wel-finish">Empezar</button><p class="muted" style="font-size:13px;text-align:center;margin:0">¿Ya te sabes algunos versículos? Cuando te aparezcan, toca “Ya me lo sé” y escríbelo completo.</p></div>`;
   } else if(st==="forgot"){
     main = `
@@ -6609,6 +6631,7 @@ document.addEventListener("click", e=>{
     case "sug-add": sugAdd(t.dataset.id, t); break;
     case "method-help": methodModal(); break;
     case "ctx": contextModal(t.dataset.id); break;
+    case "punct-pick": punctModal(); break;
     case "punct-toggle": { S.prefs.punct = punctFlex() ? "exacto" : "flexible"; persist(); const w = $("#writeBox"), val = w ? w.value : ""; render(); const w2 = $("#writeBox"); if(w2){ w2.value = val; w2.focus(); } toast(punctFlex() ? "Listo: los signos de puntuación ya no cuentan." : "Listo: los signos de puntuación vuelven a contar."); break; }
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-range": { UPV.range = t.dataset.k; UPV.open = false; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
@@ -6664,9 +6687,10 @@ document.addEventListener("click", e=>{
     case "wel-username": saveWelcomeUsername(false); break;
     case "wel-username-skip": saveWelcomeUsername(true); break;
     case "wel-ritmo": WEL.ritmo=t.dataset.k; WEL.goal=RITMOS[t.dataset.k].min; root.querySelectorAll('[data-act="wel-ritmo"]').forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
+    case "wel-punct": WEL.punct=t.dataset.k; root.querySelectorAll('[data-act="wel-punct"]').forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-goal": WEL.goal=+t.dataset.m; root.querySelectorAll(".goal").forEach(b=>b.setAttribute("aria-pressed", b===t)); break;
     case "wel-finish": case "wel-finish-skip": {
-      S.prefs.ritmo = WEL.ritmo || "constante"; S.prefs.minutes = RITMOS[S.prefs.ritmo].min; S.prefs.size = versesFor(S.prefs.minutes); persist();
+      S.prefs.ritmo = WEL.ritmo || "constante"; S.prefs.punct = WEL.punct || "exacto"; S.prefs.minutes = RITMOS[S.prefs.ritmo].min; S.prefs.size = versesFor(S.prefs.minutes); persist();
       S.placed = S.placed || { level:"Principiante", score:null, date:todayKey(), skipped:true }; persist(); go("home"); handlePendingLink();
       break;
     }
