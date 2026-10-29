@@ -6531,7 +6531,7 @@ function profileStreakCard(){
   const now = new Date(), mid = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1), left = mid-now;
   const hh = Math.floor(left/3600000), mm = Math.floor(left%3600000/60000);
   const sh = S.shields||0, nextSh = sh>=SHIELD_MAX ? 0 : 7 - (st%7);
-  const status = done ? `<span class="psk-ok">✓ Hoy ya cuenta</span> Vuelve mañana para llegar a <b>${st+1}</b>.`
+  const status = done ? `<span class="psk-ok">✓ Hoy ya cuenta</span> Vuelve a practicar mañana.`
     : st ? `<span class="psk-warn">⏳ Te quedan ${hh} h ${mm} min</span> para no perderla.`
     : `Practica hoy y empieza una racha nueva.`;
   return `<section class="psk" data-go="racha" role="button" tabindex="0" aria-label="Ver tu racha">
@@ -6542,7 +6542,7 @@ function profileStreakCard(){
     <p class="psk-status">${status}</p>
     ${weekStrip()}
     <div class="psk-goal"><div class="spread" style="flex-wrap:nowrap"><span>Próxima meta: <b>${goal} días</b></span><span>faltan ${goal-st}</span></div><div class="psk-bar"><i style="width:${Math.max(4,pct)}%"></i></div></div>
-    <div class="psk-chips"><span>🛡️ ${sh} de ${SHIELD_MAX} escudos</span>${nextSh?`<span>Próximo escudo en ${nextSh} ${nextSh===1?"día":"días"}</span>`:`<span>Escudos completos</span>`}</div>
+    <div class="psk-chips"><span>🛡️ ${sh} de ${SHIELD_MAX} escudos</span>${nextSh?`<span>Próximo escudo en ${nextSh} ${nextSh===1?"día":"días"}</span>`:""}</div>
   </section>`;
 }
 function profileNumbers(){
