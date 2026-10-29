@@ -5986,7 +5986,7 @@ function viewEquipo(){
   ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
   ${M && f!=="trash" ? `<div class="tm-people">
       ${person("all", `<span class="tm-all">${I.users}</span>`, "Todos", byWho.length)}
-      ${M.map(m=>person(m.user_id, teamAvatar(m,44), esc(firstName(m.nombre))+(m.user_id===ME.id?" · tú":""), byWho.filter(it=>(it.asignados||[]).includes(m.user_id)).length)).join("")}
+      ${M.map(m=>person(m.user_id, teamAvatar(m,44), esc(firstName(m.nombre)), byWho.filter(it=>(it.asignados||[]).includes(m.user_id)).length)).join("")}
       ${person("none", `<span class="tm-none">?</span>`, "Sin asignar", byWho.filter(it=>!(it.asignados||[]).length).length)}
     </div>
     <div class="tm-matrix">${PRIOS.map(quad).join("")}</div>` : ""}
@@ -6057,7 +6057,7 @@ function teamPlanFields(it){
   const asg = new Set(it.asignados||[]), today = todayKey();
   const plus = n => todayKey(new Date(Date.now()+n*DAY));
   return `<div class="field"><label>Prioridad</label><div class="tm-priopick" id="tmPrio">${PRIOS.map(([k,l,d,c,e])=>`<button type="button" data-v="${k}" aria-pressed="${it.prioridad===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small></button>`).join("")}</div></div>
-    <div class="field"><label>Responsables <small class="muted" style="font-weight:500">(puedes elegir varios)</small></label><div class="tm-people" id="tmAsg">${TEAM.members.map(m=>`<button type="button" class="tm-person" data-v="${m.user_id}" aria-pressed="${asg.has(m.user_id)}"><span class="tm-face">${teamAvatar(m,40)}<i class="ok">✓</i></span><small>${esc(firstName(m.nombre))}${m.user_id===ME.id?" · tú":""}</small></button>`).join("")}</div></div>
+    <div class="field"><label>Responsables <small class="muted" style="font-weight:500">(puedes elegir varios)</small></label><div class="tm-people" id="tmAsg">${TEAM.members.map(m=>`<button type="button" class="tm-person" data-v="${m.user_id}" aria-pressed="${asg.has(m.user_id)}"><span class="tm-face">${teamAvatar(m,40)}<i class="ok">✓</i></span><small>${esc(firstName(m.nombre))}</small></button>`).join("")}</div></div>
     <div class="field"><label for="tmFecha">Fecha límite</label><div class="row" style="gap:6px;flex-wrap:wrap"><input class="input" type="date" id="tmFecha" value="${esc(it.fecha_limite||"")}" min="${today}" style="max-width:190px">
       <span class="tm-quick"><button type="button" data-day="${plus(0)}">Hoy</button><button type="button" data-day="${plus(1)}">Mañana</button><button type="button" data-day="${plus(7)}">En 1 semana</button><button type="button" data-day="">Sin fecha</button></span></div></div>`;
 }
