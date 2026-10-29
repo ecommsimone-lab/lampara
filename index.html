@@ -5974,10 +5974,9 @@ function viewEquipo(){
   const quad = ([k,l,d,c,e]) => { const n = byPrio.filter(it=>it.prioridad===k).length; return `<button class="tm-quad" data-act="team-prio" data-k="${k}" aria-pressed="${TEAM.prio===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small><span>${n}</span></button>`; };
   const trashN = TEAM.trash ? TEAM.trash.length : null;
   const SEC = TEAM.sec || "tareas", pendN = TEAM.items.filter(isPend).length;
-  const revN = Array.isArray(REV.rows) ? REV.rows.filter(r=>r.ref==="demo" && Date.now()-new Date(r.created_at).getTime() < 7*DAY).length : 0;
   const sec = (k,ic,l,n) => `<button class="pc-tab" data-act="pc-sec" data-k="${k}" aria-pressed="${SEC===k}"><span class="pc-ic">${ic}</span><span>${l}</span>${n?`<b>${n}</b>`:""}</button>`;
   const top = `<section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Panel de control</h1></section>
-  <nav class="pc-tabs">${sec("tareas","✅","Tareas",pendN)}${sec("metricas","📊","Métricas",0)}${sec("revisores","👀","Revisores",revN)}</nav>`;
+  <nav class="pc-tabs">${sec("tareas","✅","Tareas",pendN)}${sec("metricas","📊","Métricas",0)}${sec("revisores","👀","Revisores",0)}</nav>`;
   if(SEC==="metricas") return top + `<div id="usersPanel">${usersPanelHTML()}</div>`;
   if(SEC==="revisores") return top + `<div id="revEvents">${revEventsHTML()}</div>`;
   return top + `
