@@ -494,7 +494,7 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .pick-list button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-list .cv{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none}
 .tm-chips{display:flex;gap:6px;flex-wrap:wrap}
-.pc-tabs{position:sticky;top:6px;z-index:6;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:16px;background:var(--surface-2);box-shadow:0 0 0 6px var(--bg)}
+.pc-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:4px;border-radius:16px;background:var(--surface-2)}
 .pc-tab{all:unset;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-radius:12px;font-size:14px;font-weight:700;color:var(--muted)}
 .pc-tab[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .pc-tab b{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;display:grid;place-items:center}
@@ -575,7 +575,7 @@ button.stat .go{position:absolute;top:16px;right:16px;color:var(--muted);font-si
 .rev-ev{display:flex;flex-direction:column;gap:10px}
 .rev-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rev-sum>div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
-.rev-sum b{font-size:20px;font-weight:800;line-height:1.15}
+.rev-sum b{font-size:17px;font-weight:800;line-height:1.15}
 .rev-sum small{font-size:12px;color:var(--muted)}
 .rev-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .rev-list li{display:flex;gap:10px;align-items:flex-start}
@@ -907,6 +907,10 @@ a.btn:not(.primary){color:var(--ink)}
 /* ---------- Estadísticas tipo Instagram ---------- */
 .pstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%}
 .pstats.p3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pc-bar{position:sticky;top:6px;z-index:6;display:flex;align-items:center;gap:8px;background:var(--bg);box-shadow:0 0 0 6px var(--bg);border-radius:16px}
+.pc-bar .pc-tabs{flex:1;min-width:0}
+.tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
+.tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
 .psk{position:relative;overflow:hidden;border-radius:24px;padding:18px;background:linear-gradient(150deg,#FFB020,#FF7A00);color:#3A1E00;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 30px rgba(255,138,0,.25);cursor:pointer}
 .psk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
@@ -5683,7 +5687,7 @@ function dueInfo(it){
   return { t:`Vence el ${fmt}`, c:"none" };
 }
 const ESTADOS = [
-  ["⚪ nuevo","Nuevo","#98A2B3"], ["🔵 revisado","Revisado","#3B82F6"], ["🟡 en proceso","En proceso","#E0A100"],
+  ["⚪ nuevo","Pendiente","#98A2B3"], ["🔵 revisado","Revisado","#3B82F6"], ["🟡 en proceso","En proceso","#E0A100"],
   ["🟢 corregido","Completado","#16A36A"], ["⚫ descartado","Descartado","#5B6474"]
 ];
 const EST = Object.fromEntries(ESTADOS.map(([v,l,c])=>[v,{l,c}]));
@@ -5950,15 +5954,14 @@ async function loadRevEvents(){
 function revEventsHTML(){
   if(REV.rows===undefined){ setTimeout(loadRevEvents, 0); return `<section class="panel rev-ev"><b>👀 Revisores</b><p class="muted" style="margin:0;font-size:13px">Cargando…</p></section>`; }
   if(REV.rows===null) return `<section class="panel rev-ev"><b>👀 Revisores</b><p class="muted" style="margin:0;font-size:13px">Para ver cuándo abren la demo falta correr el <b>SQL 20</b> en Supabase.</p></section>`;
-  const demos = REV.rows.filter(r=>r.ref==="demo"), list = REV.all ? REV.rows : REV.rows.slice(0, 6);
-  const last = demos[0];
+  const list = REV.rows, last = REV.rows[0];
   const site = h => /lamparabiblica/.test(h||"") ? "Ner" : /ecommsimone/.test(h||"") ? "Lámpara" : (h||"");
   const when = t => new Date(t).toLocaleString("es-CO",{ weekday:"short", day:"numeric", month:"short", hour:"numeric", minute:"2-digit" });
   return `<section class="panel rev-ev">
     <div class="spread" style="align-items:center"><b>👀 Revisores</b><span class="tm-live"><i></i>En vivo</span></div>
-    <div class="rev-sum"><div><b>${demos.length}</b><small>${demos.length===1?"vez abrieron":"veces abrieron"} la demo</small></div><div><b>${last ? esc(last.country || "—") : "—"}</b><small>${last ? "última: " + esc(when(last.created_at)) : "aún nadie la ha abierto"}</small></div></div>
-    ${list.length ? `<ul class="rev-list">${list.map(r=>{ const [ic, l] = REV_LABEL[r.ref] || ["🔗", r.ref]; return `<li><span>${ic}</span><div><b>${esc(l)}</b><small>${esc(when(r.created_at))} · ${r.country?`🌎 ${esc(r.country)}`:"país desconocido"} · ${esc(r.device||"")}${site(r.host)?` · ${esc(site(r.host))}`:""}</small></div></li>`; }).join("")}</ul>` : ""}
-    ${REV.rows.length > 6 ? `<button class="linkbtn" data-act="rev-all" style="align-self:flex-start;padding:0">${REV.all ? "Ver menos" : `Ver todas (${REV.rows.length})`}</button>` : ""}
+    <div class="rev-sum"><div><b>${last ? esc(when(last.created_at)) : "—"}</b><small>${last ? "última apertura (demo o revisores)" : "aún nadie la ha abierto"}</small></div><div><b>${last ? esc(last.country || "—") : "—"}</b><small>país</small></div></div>
+    ${list.length ? `<button class="linkbtn" data-act="rev-all" style="align-self:flex-start;padding:0">${REV.all ? "Ocultar historial ▴" : `Ver historial (${list.length}) ▾`}</button>` : ""}
+    ${REV.all && list.length ? `<ul class="rev-list">${list.map(r=>{ const [ic, l] = REV_LABEL[r.ref] || ["🔗", r.ref]; return `<li><span>${ic}</span><div><b>${esc(l)}</b><small>${esc(when(r.created_at))} · ${r.country?`🌎 ${esc(r.country)}`:"país desconocido"} · ${esc(r.device||"")}${site(r.host)?` · ${esc(site(r.host))}`:""}</small></div></li>`; }).join("")}</ul>` : ""}
     <small class="muted" style="font-size:11.5px">Solo lo ve el equipo. El país es aproximado (zona horaria del navegador); no se guarda la IP.</small>
   </section>`;
 }
@@ -5973,14 +5976,12 @@ function viewEquipo(){
   const byPrio = teamFiltered("prio").filter(isPend);
   const quad = ([k,l,d,c,e]) => { const n = byPrio.filter(it=>it.prioridad===k).length; return `<button class="tm-quad" data-act="team-prio" data-k="${k}" aria-pressed="${TEAM.prio===k}" style="--pc:${c}"><b>${e} ${l}</b><small>${d}</small><span>${n}</span></button>`; };
   const trashN = TEAM.trash ? TEAM.trash.length : null;
-  const SEC = TEAM.sec || "tareas", pendN = TEAM.items.filter(isPend).length;
+  const SEC = TEAM.sec==="metricas" ? "metricas" : "tareas", pendN = TEAM.items.filter(isPend).length;
   const sec = (k,ic,l,n) => `<button class="pc-tab" data-act="pc-sec" data-k="${k}" aria-pressed="${SEC===k}"><span class="pc-ic">${ic}</span><span>${l}</span>${n?`<b>${n}</b>`:""}</button>`;
   const top = `<section style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Solo para el equipo</span><h1 style="font-size:clamp(30px,5vw,46px)">Panel de control</h1></section>
-  <nav class="pc-tabs">${sec("tareas","✅","Tareas",pendN)}${sec("metricas","📊","Métricas",0)}${sec("revisores","👀","Revisores",0)}</nav>`;
-  if(SEC==="metricas") return top + `<div id="usersPanel">${usersPanelHTML()}</div>`;
-  if(SEC==="revisores") return top + `<div id="revEvents">${revEventsHTML()}</div>`;
+  <div class="pc-bar"><nav class="pc-tabs">${sec("tareas","✅","Tareas",pendN)}${sec("metricas","📊","Métricas",0)}</nav>${SEC==="tareas"?`<button class="icon-btn" data-act="team-reload" aria-label="Actualizar" title="Actualizar">${I.review||""}</button><button class="tm-fab" data-act="team-add" aria-label="Agregar tarea" title="Agregar tarea">${I.plus}</button>`:""}</div>`;
+  if(SEC==="metricas") return top + `<div id="usersPanel">${usersPanelHTML()}</div><div id="revEvents">${revEventsHTML()}</div>`;
   return top + `
-  <div class="spread" style="align-items:center;gap:8px;flex-wrap:nowrap"><b style="font-size:16px;min-width:0">Tareas, mejoras y errores</b><div class="row" style="gap:6px;flex-wrap:nowrap;flex:none"><button class="btn ghost" data-act="team-reload" style="padding:6px 12px" aria-label="Actualizar">${I.review||""}</button><button class="btn primary" data-act="team-add" style="padding:7px 14px">${I.plus} Agregar</button></div></div>
   ${TEAM.err?`<div class="result-bar bad"><span>${esc(TEAM.err)}</span></div>`:""}
   ${TEAM.loaded && !M ? `<div class="result-bar mid"><span>Para asignar responsables, fechas, prioridad, papelera e historial falta correr el <b>SQL 18</b> en Supabase.</span></div>` : ""}
   ${M && f!=="trash" ? `<div class="tm-people">
