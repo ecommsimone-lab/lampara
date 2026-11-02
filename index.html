@@ -4930,7 +4930,9 @@ const ritmo = () => { if(!S || !S.prefs) return "constante"; if(RITMOS[S.prefs.r
 function diffTier(){ return Math.max(0, Math.min(TIERS.length-1, tierOf(Math.min(currentStage(), stageCount()-1)))); }   // solo da puntos extra en etapas avanzadas
 /* Cuántos versículos nuevos puedes empezar aún esta semana según tu ritmo */
 function newBudget(){
-  const since = Date.now() - 7*DAY;
+  // ventana de 7 días de calendario (desde la medianoche): el cupo de nuevos solo cambia al empezar el día,
+  // no a la hora exacta en que empezaste un versículo hace una semana (antes aparecían "pendientes" en la noche)
+  const since = dayStart(Date.now(), -6);
   const started = Object.values(S.progress||{}).filter(p=>p && !p.placed && !p.known && p.introduced && p.introduced >= since && p.reps>0).length;   // los que ya sabías no cuentan   // los que ya sabías en la prueba de nivel no cuentan
   return Math.max(0, RITMOS[ritmo()].week - started);
 }
