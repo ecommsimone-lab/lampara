@@ -6395,7 +6395,7 @@ function tableHTML(list){
     : c==="registrado" ? `<td>${new Date(u.registrado).toLocaleDateString("es-CO",{ day:"numeric", month:"short" })}</td>`
     : c==="paso" ? (()=>{ const st = UP_STEPS.find(x=>x[0]===u.paso) || UP_STEPS[0]; return `<td><span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span></td>`; })()
     : c==="ultimo_dia" ? `<td>${u.ultimo_dia ? fmtD(u.ultimo_dia) : "—"}</td>`
-    : c==="hora_racha" ? (()=>{ const f = upFirst(u, u.ultimo_dia); return `<td>${f ? `<button class="up-hora${early9(u.ultimo_dia, f)?" ok":""}" data-act="up-horas" data-id="${esc(u.user_id)}">${fmtHora(f)}</button>` : u.horas ? `<button class="up-hora" data-act="up-horas" data-id="${esc(u.user_id)}">—</button>` : "—"}</td>`; })()
+    : c==="hora_racha" ? (()=>{ const f = upFirst(u, u.ultimo_dia); return `<td>${f ? `<button class="up-hora${early9(u.ultimo_dia, f)?" ok":""}" data-act="up-horas" data-id="${esc(u.user_id)}">${fmtHora(f)}</button>` : `<button class="up-hora" data-act="up-horas" data-id="${esc(u.user_id)}" aria-label="Ver la hora de cada día">—</button>`}</td>`; })()
     : c==="acierto" ? `<td>${u.acierto==null?"—":u.acierto+"%"}</td>`
     : `<td>${esc(u[c]==null||u[c]===""?"—":String(u[c]))}</td>`;
   return `<div class="ut-wrap"><table class="ut"><thead><tr>${UP_COLS.map(([c,l])=>`<th><button data-act="up-sort" data-k="${c}">${esc(l)}${k===c?(d>0?" ▲":" ▼"):""}</button></th>`).join("")}</tr></thead>
@@ -6425,7 +6425,7 @@ function upRow(u){
     <div class="up-top">${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 38)}<div class="up-id"><b>${esc(u.nombre||"—")}</b><small>${u.usuario?`@${esc(u.usuario)} · `:""}${esc(u.correo||"")}</small></div></div>
     <span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span>
     <div class="up-stats"><span>🔥 <b>${u.racha}</b> racha</span><span>📅 <b>${u.dias_practicados}</b> días</span><span>✅ <b>${u.aprendidos}</b> aprendidos</span><span>⏳ <b>${u.en_proceso}</b> en proceso</span><span>🎯 <b>${u.acierto==null?"—":u.acierto+"%"}</b></span><span>⭐ Nivel <b>${u.nivel}</b></span><span>👥 <b>${u.amigos}</b></span>${u.escudos?`<span>🛡️ <b>${u.escudos}</b></span>`:""}</div>
-    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}${u.ultima_practica && sin<=1 ? ` a las ${fmtHora(u.ultima_practica)}` : ""}`:""}${u.hora_habitual!=null?` · suele practicar hacia las ${fmtHH(u.hora_habitual)}`:""}${u.horas?` · <button class="linkbtn" data-act="up-horas" data-id="${esc(u.user_id)}" style="padding:0;font-size:inherit">ver hora de cada día</button>`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
+    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}${u.ultima_practica && sin<=1 ? ` a las ${fmtHora(u.ultima_practica)}` : ""}`:""}${u.hora_habitual!=null?` · suele practicar hacia las ${fmtHH(u.hora_habitual)}`:""}${u.dias_practicados?` · <button class="linkbtn" data-act="up-horas" data-id="${esc(u.user_id)}" style="padding:0;font-size:inherit">ver hora de cada día</button>`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
   </div>`;
 }
 function usersPanelHTML(){
