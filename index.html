@@ -3324,21 +3324,33 @@ function scoreFreeText(text, attempt){
 /* Recitación: el reconocimiento de voz "moderniza" el español de la RVR1960
    (pedid → pedí/pedir, hallaréis → allá reís/hallarás, os → los/nos, buscad → buscar).
    Aceptamos esas formas para no marcar como error lo que sí dijiste bien. */
-const OS_LIKE = ["os","los","nos","o","vos","us","hos","oz","dos"];
+const OS_LIKE = ["os","los","nos","o","vos","us","hos","oz","dos","les","le","se"];
+/* Cómo suena: b/v, ll/y, c/s/z, la h muda, qu/k… así "haya" = "allá", "vendrá" = "bendrá" */
+function phon(w){
+  return String(w).replace(/ch/g,"\u0001").replace(/h/g,"").replace(/\u0001/g,"ch")
+    .replace(/v/g,"b").replace(/ll/g,"y").replace(/z/g,"s").replace(/c([ei])/g,"s$1").replace(/qu([ei])/g,"k$1").replace(/c/g,"k")
+    .replace(/g([ei])/g,"j$1").replace(/x/g,"ks").replace(/(.)\1+/g,"$1").replace(/d$/,"");
+}
 function spokenVariants(w){
   const v = new Set([w]); let m;
   if(w==="os") OS_LIKE.forEach(x=>v.add(x));
   if(w==="vosotros") ["ustedes","nosotros","vosotras"].forEach(x=>v.add(x));
-  if((m = w.match(/^(.{2,})([aei])d$/))){ const s0 = m[1], vw = m[2]; [vw+"r", vw, vw+"n", vw+"s", "en", "an", "a", "e"].forEach(e=>v.add(s0+e)); }      // pedid, buscad, llamad
+  if((m = w.match(/^(.{2,})([aei])d$/))){ const s0 = m[1], vw = m[2];
+    const stems = new Set([s0, s0.replace(/e([^aeiou]*)$/, "i$1"), s0.replace(/c$/, "qu"), s0.replace(/g$/, "gu"), s0.replace(/z$/, "c")]);   // pedid → pide/pidan, buscad → busquen
+    stems.forEach(st=>[vw+"r", vw, vw+"n", vw+"s", "en", "an", "a", "e", "es", "as"].forEach(e=>v.add(st+e))); }      // pedid, buscad, llamad
   if((m = w.match(/^(.{2,})reis$/))){ ["ras","ran","rais","re","res","ren"].forEach(e=>v.add(m[1]+e)); }                                                  // hallaréis, seréis
   else if((m = w.match(/^(.{2,})([aei])is$/))){ [m[2]+"s", m[2]+"n", "es", "as", "an", "en"].forEach(e=>v.add(m[1]+e)); }                               // estáis, sabéis
   if((m = w.match(/^(.{2,})os$/)) && /(aos|eos|ios)$/.test(w)){ v.add(m[1]+"se"); }                                                                        // amaos → amarse
   if(w.startsWith("h")) v.add(w.slice(1));                                                                                                                 // la h no suena
+  if(w==="y") ["e","i","de"].forEach(x=>v.add(x));
   return v;
 }
 function spokenEq(t, a){
   if(t===a) return true;
   if(spokenVariants(t).has(a)) return true;
+  const pt = phon(t), pa = phon(a);
+  if(pt && pt===pa) return true;
+  if(pt.length>=5 && lev(pt,pa)<=1) return true;
   if(t.length>=7 && lev(t,a)<=2) return true;
   if(t.length>=4 && lev(t,a)<=1) return true;
   return false;
@@ -3355,6 +3367,18 @@ function scoreSpoken(text, attempt){
     else merged.push(aw[i]);
   }
   aw = merged;
+  // separar palabras que el reconocimiento juntó ("seos" → "se os", "encristo" → "en cristo", "pueden cristo" → "puedo en cristo")
+  const split = [];
+  aw.forEach(a=>{
+    if(tw.some(t=>spokenEq(t,a))){ split.push(a); return; }
+    let hit = null;
+    for(let n=2; n<=3 && !hit; n++) for(let i=0; i+n<=tw.length && !hit; i++){
+      const parts = tw.slice(i,i+n), j = parts.join(""), pj = phon(j), pa = phon(a);
+      if(j===a || pj===pa || (pj.length>=6 && lev(pj,pa)<=1)) hit = parts;
+    }
+    if(hit) split.push(...hit); else split.push(a);
+  });
+  aw = split;
   const { lcs, ops } = lcsAlign(tw, aw, spokenEq);
   const score = (2*lcs)/(tw.length+aw.length);
   const disp = text.split(/\s+/);
