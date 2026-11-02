@@ -1,5 +1,7 @@
 -- Ner · 25 · Hora de práctica en el Panel de control (solo para el equipo)
--- Agrega al panel de usuarios: la hora de la última práctica y la hora a la que cada persona suele practicar (hora de Bogotá).
+-- Agrega al panel de usuarios la hora de la racha de cada día (primera práctica del día, hora de Bogotá, últimos 90 días),
+-- la hora de la última práctica y la hora a la que cada persona suele practicar.
+-- Se puede correr aunque ya se haya corrido una versión anterior de este SQL 25.
 -- La app empieza a guardar la hora desde esta actualización; los días anteriores no tienen hora.
 -- Reemplaza la función del SQL 21. Solo lectura: no cambia datos.
 -- Supabase → SQL Editor → pegar → Run (una sola vez).
@@ -11,7 +13,7 @@ returns table (
   registrado timestamptz, paso int, ritmo text, dias_practicados int, racha int,
   ultimo_dia date, respuestas int, acierto int, puntos int, nivel int,
   en_proceso int, aprendidos int, amigos int, logros int, escudos int, ultima_actividad timestamptz,
-  ultima_practica timestamptz, hora_habitual int
+  ultima_practica timestamptz, hora_habitual int, horas jsonb
 )
 language plpgsql stable security definer set search_path = '' as $$
 begin
@@ -60,7 +62,9 @@ begin
   ),
   horas as (
     select d.id, to_timestamp(max(d.l) / 1000) as ultima,
-           (mode() within group (order by extract(hour from to_timestamp(d.f / 1000) at time zone 'America/Bogota')))::int as habitual
+           (mode() within group (order by extract(hour from to_timestamp(d.f / 1000) at time zone 'America/Bogota')))::int as habitual,
+           jsonb_object_agg(d.d::text, jsonb_build_object('f', d.f, 'l', d.l))
+             filter (where d.d >= (now() at time zone 'America/Bogota')::date - 90) as horas
     from dias_ok d where d.f is not null or d.l is not null
     group by d.id
   ),
@@ -89,7 +93,7 @@ begin
     (select count(*) from jsonb_object_keys(case when jsonb_typeof(b.s->'badges') = 'object' then b.s->'badges' else '{}'::jsonb end))::int,
     coalesce((b.s->>'shields')::int, 0),
     greatest(b.last_sign_in_at, b.updated_at),
-    h.ultima, h.habitual
+    h.ultima, h.habitual, h.horas
   from base b
   left join horas h on h.id = b.id
   left join resumen rs on rs.id = b.id

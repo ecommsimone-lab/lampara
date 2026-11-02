@@ -909,6 +909,18 @@ a.btn:not(.primary){color:var(--ink)}
 .pstats.p3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .pc-bar{position:sticky;top:6px;z-index:6;display:flex;align-items:center;gap:8px;background:var(--bg);box-shadow:0 0 0 6px var(--bg);border-radius:16px}
 .pc-bar .pc-tabs{flex:1;min-width:0}
+.up-hora{border:0;background:var(--surface-2);color:var(--ink);border-radius:8px;padding:3px 8px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.up-hora.ok{background:var(--ok-soft);color:var(--ok)}
+.hz-sum{background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:14px}
+.hz-sum b{font-size:18px}
+.hz-wrap{max-height:50vh;overflow:auto;border-radius:12px;border:1px solid var(--line)}
+.hz-t{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.hz-t th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:12px;color:var(--muted);padding:8px 10px}
+.hz-t td{padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.hz-t td small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.hz-t tr.we td{color:var(--muted)}
+.hz{font-size:14px;font-weight:700;border-radius:999px;padding:2px 9px;display:inline-block}
+.hz.ok{background:var(--ok-soft);color:var(--ok)} .hz.late{background:var(--bad-soft);color:var(--bad)} .hz.we{background:var(--surface-2);color:var(--muted)}
 .tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
 .tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
@@ -1347,7 +1359,43 @@ const LINK_ERROR = /error_code=otp_expired|error=access_denied/.test(location.ha
 try{ if(window.supabase && SB_KEY) SB = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true, storageKey:"lampara.auth" } }); }catch(e){ SB = null; }
 let RECOVERY = IS_RECOVERY;
 if(SB){ try{ SB.auth.onAuthStateChange((event)=>{ if(event==="PASSWORD_RECOVERY") RECOVERY = true; }); }catch(e){} }
-let cloudTimer = null, cloudDirty = false, cloudWarned = false, cloudLoaded = false, cloudLastSync = null;
+let cloudTimer = null, cloudDirty = false, cloudWarned = false, cloudLoaded = false, cloudLastSync = null, cloudSeen = 0;
+/* Unir dos versiones del progreso (por ejemplo, celular y computador abiertos a la vez):
+   no se pierde ningún día practicado ni ningún avance de un versículo */
+function mergeStates(a, b){
+  if(!a) return b; if(!b) return a;
+  const [base, other] = (a._savedAt||0) >= (b._savedAt||0) ? [a, b] : [b, a];
+  const m = Object.assign({}, other, base);
+  const log = Object.assign({}, other.log||{});
+  Object.entries(base.log||{}).forEach(([k, L])=>{ const O = log[k]; if(!O){ log[k] = L; return; }
+    const big = (L.n||0) >= (O.n||0) ? L : O, x = Object.assign({}, big);
+    x.xp = Math.max(L.xp||0, O.xp||0) || undefined;
+    const fs = [L.f, O.f].filter(Boolean), ls = [L.l, O.l].filter(Boolean);
+    if(fs.length) x.f = Math.min(...fs); if(ls.length) x.l = Math.max(...ls);
+    log[k] = x; });
+  m.log = log;
+  const prog = Object.assign({}, other.progress||{});
+  Object.entries(base.progress||{}).forEach(([id, P])=>{ const O = prog[id]; prog[id] = !O || (P.reps||0) > (O.reps||0) || ((P.reps||0) === (O.reps||0) && (P.last||0) >= (O.last||0)) ? P : O; });
+  m.progress = prog;
+  const uni = k => [...new Set([].concat(base[k]||[], other[k]||[]))];
+  ["favs","extraActive","queued","shieldDays"].forEach(k=>{ if(base[k] || other[k]) m[k] = uni(k); });
+  if(base.badges || other.badges) m.badges = Object.assign({}, other.badges||{}, base.badges||{});
+  ["xp","unlocked"].forEach(k=>{ if(base[k]!=null || other[k]!=null) m[k] = Math.max(base[k]||0, other[k]||0); });
+  const byId = (x, y) => (x||[]).concat((y||[]).filter(it=>!(x||[]).some(z=>z.id===it.id)));
+  m.custom = byId(base.custom, other.custom); m.lists = byId(base.lists, other.lists);
+  m._savedAt = Math.max(a._savedAt||0, b._savedAt||0);
+  return m;
+}
+/* Si otro dispositivo guardó algo más nuevo, unirlo antes de guardar (antes se sobrescribía) */
+async function cloudCatchUp(){
+  let rts = 0;
+  try{ const { data, error } = await SB.from("progress").select("ts:state->_savedAt").eq("user_id", ME.id).maybeSingle(); if(error) return false; rts = data ? +data.ts || 0 : 0; }catch(e){ return false; }
+  if(!rts || rts <= cloudSeen || rts === S._savedAt) return false;
+  const row = await cloudRead(ME.id); if(!row || !row.state) return false;
+  S = Object.assign(freshState(), mergeStates(S, row.state)); cloudSeen = Math.max(cloudSeen, rts);
+  LS.set("lampara.state."+ME.key, S);
+  return true;
+}
 function colorFor(id){ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))|0; return COLORS[Math.abs(h)%COLORS.length]; }
 function cloudSave(){
   if(!SB || !ME || ME.mode!=="cloud") return;
@@ -1366,20 +1414,21 @@ async function cloudFlush(){
       // No se pudo leer la nube al entrar: primero comparar, para no borrar progreso de otro dispositivo
       const row = await cloudRead(ME.id);
       const remote = row && row.state;
-      if(remote && (remote._savedAt||0) > (S._savedAt||0)){ S = Object.assign(freshState(), remote); LS.set("lampara.state."+ME.key, S); cloudLoaded = true; cloudDirty = false; render(); return; }
+      if(remote){ S = Object.assign(freshState(), mergeStates(S, remote)); cloudSeen = remote._savedAt||0; LS.set("lampara.state."+ME.key, S); }
       cloudLoaded = true;
-    }
-    cloudDirty = false;
+    } else if(await cloudCatchUp()) render();
+    cloudDirty = false; S._savedAt = Math.max(Date.now(), S._savedAt||0);
     const { error } = await SB.from("progress").upsert({ user_id: ME.id, name: ME.name, state: S, updated_at: new Date().toISOString() });
     if(error) throw error;
-    cloudWarned = false; cloudLastSync = new Date();
+    cloudWarned = false; cloudLastSync = new Date(); cloudSeen = S._savedAt;
   }catch(e){
     cloudDirty = true;
     if(!cloudWarned){ cloudWarned = true; toast("Sin conexión: tu progreso se guardará en la nube cuando vuelva internet."); }
   }
 }
 window.addEventListener("online", ()=>cloudFlush());
-document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") cloudFlush(); });
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") cloudFlush();
+  else if(SB && ME && ME.mode==="cloud" && cloudLoaded && !SESSION) cloudCatchUp().then(ch=>{ if(ch){ persist(); render(); } }).catch(()=>{}); });
 
 
 /* ---------- Acceso a versículos ---------- */
@@ -6218,11 +6267,18 @@ setInterval(refreshLinks, 15000);
 setInterval(()=>{ if(VIEW.name==="equipo"){ const box = $("#teamLinks"); if(box && TEAM.linksAt) box.innerHTML = teamLinksHTML(); } }, 5000);
 document.addEventListener("pointerdown", e=>{ if(UPV.open && !e.target.closest(".dr")){ UPV.open = false; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } });
 document.addEventListener("change", e=>{ if(e.target && (e.target.id==="upFrom" || e.target.id==="upTo")){ UPV[e.target.id==="upFrom"?"from":"to"] = e.target.value; UPV.range = "custom"; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } });
+/* Buscar varios a la vez, separados por coma: "gabriel, juliana, cristian" */
+function upMatch(u, raw){
+  const terms = String(raw||"").split(/[,;]+/).map(t=>normQ(t.trim().replace(/^@/,""))).filter(Boolean);
+  if(!terms.length) return true;
+  const hay = normQ([u.nombre,u.usuario,u.correo].join(" "));
+  return terms.some(t=>hay.includes(t));
+}
 function upInput(e){ if(e.target && e.target.id==="upQuery"){ UP.q = e.target.value;
-  if(UPV.view==="tabla"){ const w = document.querySelector(".ut-wrap"); if(!w) return; const q = normQ(UP.q||""); const list = (UP.rows||[]).filter(inRange).filter(u=>!q || normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q)); const tmp = document.createElement("div"); tmp.innerHTML = tableHTML(list); w.nextElementSibling && w.nextElementSibling.remove(); w.replaceWith(...tmp.children); return; }
+  if(UPV.view==="tabla"){ const w = document.querySelector(".ut-wrap"); if(!w) return; const list = (UP.rows||[]).filter(inRange).filter(u=>upMatch(u, UP.q)); const tmp = document.createElement("div"); tmp.innerHTML = tableHTML(list); w.nextElementSibling && w.nextElementSibling.remove(); w.replaceWith(...tmp.children); return; }
   const l = $("#upList"); if(!l) return;
-  const q = normQ(UP.q||""); const RR = (UP.rows||[]).filter(inRange); let list = UP.step ? RR.filter(u=>u.paso===UP.step) : RR;
-  if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
+  const RR = (UP.rows||[]).filter(inRange); let list = UP.step ? RR.filter(u=>u.paso===UP.step) : RR;
+  list = list.filter(u=>upMatch(u, UP.q));
   l.innerHTML = list.length ? (UP.all ? list : list.slice(0,8)).map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`; } }
 /* ----- Panel de control: vistas Gráficos · Tabla · Tarjetas (SQL 21 y 22) ----- */
 const UPV = { view:"graf", sort:"registrado", dir:-1, daily:undefined, range:"todo", from:"", to:"" };
@@ -6300,15 +6356,33 @@ function chartsHTML(R){
 }
 const fmtHora = t => new Date(t).toLocaleTimeString("es-CO",{ hour:"numeric", minute:"2-digit", timeZone:"America/Bogota" });
 const fmtHH = h => { const ap = h<12 ? "a. m." : "p. m."; const x = h%12 || 12; return `${x} ${ap}`; };
-const UP_COLS = [["nombre","Nombre"],["registrado","Registro"],["paso","Paso"],["dias_practicados","Días"],["racha","Racha"],["ultimo_dia","Último día"],["hora_habitual","Suele practicar"],["aprendidos","Aprendidos"],["en_proceso","En proceso"],["acierto","Acierto"],["nivel","Nivel"],["amigos","Amigos"],["ritmo","Ritmo"]];
+/* Hora de la racha = primera práctica del día (hora de Bogotá) */
+const upFirst = (u, day) => { const h = u && u.horas && day && u.horas[day]; return h && (h.f || h.l) ? +(h.f || h.l) : null; };
+const bogMin = t => { const p = new Intl.DateTimeFormat("en-GB",{ hour:"2-digit", minute:"2-digit", hourCycle:"h23", timeZone:"America/Bogota" }).formatToParts(new Date(t)); return +p.find(x=>x.type==="hour").value*60 + +p.find(x=>x.type==="minute").value; };
+const isWeekday = day => { const d = new Date(day+"T12:00:00").getDay(); return d>=1 && d<=5; };
+const early9 = (day, t) => isWeekday(day) && bogMin(t) < 9*60;
+function upHorasModal(uid){
+  const u = (UP.rows||[]).find(x=>x.user_id===uid); if(!u) return;
+  const days = []; for(let i=0;i<30;i++){ const k = todayKey(new Date(Date.now()-i*DAY)); days.push(k); }
+  const wd = ["dom","lun","mar","mié","jue","vie","sáb"];
+  const rows = days.map(k=>{ const h = u.horas && u.horas[k], f = upFirst(u, k), d = new Date(k+"T12:00:00"), weekday = isWeekday(k);
+    const cls = !f || !weekday ? "" : early9(k, f) ? "ok" : "late";
+    return `<tr class="${weekday?"":"we"}"><td>${wd[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}</td><td><span class="hz ${cls}">${f ? (cls==="ok"?"✓ ":cls==="late"?"✗ ":"") + fmtHora(f) : "—"}</span>${h && h.l && h.f && h.l - h.f > 60000 ? `<small>hasta ${fmtHora(h.l)}</small>` : ""}</td></tr>`; }).join("");
+  const wk = days.filter(isWeekday), ok = wk.filter(k=>{ const f = upFirst(u,k); return f && early9(k,f); }).length;
+  modal(`<div class="spread" style="flex-wrap:nowrap;align-items:flex-start"><div style="display:flex;gap:10px;align-items:center">${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 36)}<div><span class="eyebrow">Hora de la racha</span><h2 style="font-size:20px;margin-top:2px">${esc(u.nombre||"—")}</h2></div></div><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <div class="hz-sum"><b>${ok}</b> de ${wk.length} días entre semana practicó antes de las 9 a. m. <small>(últimos 30 días)</small></div>
+    <div class="hz-wrap"><table class="hz-t"><thead><tr><th>Día</th><th>Hora de la racha</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <small class="muted" style="font-size:11.5px">✓ antes de las 9 a. m. · ✗ después, de lunes a viernes. Hora de Bogotá. La hora se guarda desde el 1 de noviembre; antes solo se guardaba el día.</small>`, sc=>sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal));
+}
+const UP_COLS = [["nombre","Nombre"],["registrado","Registro"],["paso","Paso"],["dias_practicados","Días"],["racha","Racha"],["ultimo_dia","Último día"],["hora_racha","Hora"],["aprendidos","Aprendidos"],["en_proceso","En proceso"],["acierto","Acierto"],["nivel","Nivel"],["amigos","Amigos"],["ritmo","Ritmo"]];
 function tableHTML(list){
   const k = UPV.sort, d = UPV.dir;
   const rows = list.slice().sort((a,b)=>{ const x = a[k], y = b[k]; if(x==null && y==null) return 0; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*d; });
   const cell = (u,c) => c==="nombre" ? `<td class="tn"><div>${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 24)}<span><b>${esc(u.nombre||"—")}</b><small>${esc(u.correo||"")}</small></span></div></td>`
     : c==="registrado" ? `<td>${new Date(u.registrado).toLocaleDateString("es-CO",{ day:"numeric", month:"short" })}</td>`
     : c==="paso" ? (()=>{ const st = UP_STEPS.find(x=>x[0]===u.paso) || UP_STEPS[0]; return `<td><span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span></td>`; })()
-    : c==="ultimo_dia" ? `<td>${u.ultimo_dia ? fmtD(u.ultimo_dia) + (u.ultima_practica ? ` · ${fmtHora(u.ultima_practica)}` : "") : "—"}</td>`
-    : c==="hora_habitual" ? `<td>${u.hora_habitual==null ? "—" : fmtHH(u.hora_habitual)}</td>`
+    : c==="ultimo_dia" ? `<td>${u.ultimo_dia ? fmtD(u.ultimo_dia) : "—"}</td>`
+    : c==="hora_racha" ? (()=>{ const f = upFirst(u, u.ultimo_dia); return `<td>${f ? `<button class="up-hora${early9(u.ultimo_dia, f)?" ok":""}" data-act="up-horas" data-id="${esc(u.user_id)}">${fmtHora(f)}</button>` : u.horas ? `<button class="up-hora" data-act="up-horas" data-id="${esc(u.user_id)}">—</button>` : "—"}</td>`; })()
     : c==="acierto" ? `<td>${u.acierto==null?"—":u.acierto+"%"}</td>`
     : `<td>${esc(u[c]==null||u[c]===""?"—":String(u[c]))}</td>`;
   return `<div class="ut-wrap"><table class="ut"><thead><tr>${UP_COLS.map(([c,l])=>`<th><button data-act="up-sort" data-k="${c}">${esc(l)}${k===c?(d>0?" ▲":" ▼"):""}</button></th>`).join("")}</tr></thead>
@@ -6316,7 +6390,7 @@ function tableHTML(list){
     <button class="btn" data-act="up-csv" style="align-self:flex-start">⬇ Descargar CSV (Excel)</button>`;
 }
 function downloadUsersCSV(){
-  const R = UP.rows || []; const cols = ["nombre","usuario","correo","registrado","paso","ritmo","dias_practicados","racha","ultimo_dia","ultima_practica","hora_habitual","respuestas","acierto","puntos","nivel","en_proceso","aprendidos","amigos","logros","escudos","ultima_actividad"];
+  const R = UP.rows || []; const cols = ["nombre","usuario","correo","registrado","paso","ritmo","dias_practicados","racha","ultimo_dia","hora_racha_txt","hora_habitual","respuestas","acierto","puntos","nivel","en_proceso","aprendidos","amigos","logros","escudos","ultima_actividad"];
   const q = v => { v = v==null ? "" : String(v); return /[",;\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v; };
   const csv = "﻿" + cols.join(",") + "\n" + R.map(u=>cols.map(c=>q(u[c])).join(",")).join("\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })); a.download = `usuarios-${todayKey()}.csv`; document.body.appendChild(a); a.click(); a.remove();
@@ -6326,7 +6400,7 @@ const UP = { rows:undefined, loading:false, step:0, q:"", all:false, at:0 };
 const UP_STEPS = [[1,"Solo se registró","#98A2B3"],[2,"Sin bienvenida","#E0A100"],[3,"Entró, sin practicar","#FF8A1A"],[4,"Practicó 1 día","#3B82F6"],[5,"Volvió a practicar","#16A36A"]];
 async function loadUsersPanel(){
   if(!TEAM.on || UP.loading) return; UP.loading = true;
-  try{ UP.rows = (await API.rpc("team_users_panel")) || []; UP.err = ""; }catch(e){ UP.rows = null; UP.err = String((e && (e.message || e.details || e.hint)) || e).slice(0, 220); }
+  try{ UP.rows = (await API.rpc("team_users_panel")) || []; UP.err = ""; UP.rows.forEach(u=>{ const f = upFirst(u, u.ultimo_dia); u.hora_racha = f ? bogMin(f) : null; u.hora_racha_txt = f ? fmtHora(f) : ""; }); }catch(e){ UP.rows = null; UP.err = String((e && (e.message || e.details || e.hint)) || e).slice(0, 220); }
   UP.loading = false; UP.at = Date.now();
   const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML();
 }
@@ -6338,7 +6412,7 @@ function upRow(u){
     <div class="up-top">${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 38)}<div class="up-id"><b>${esc(u.nombre||"—")}</b><small>${u.usuario?`@${esc(u.usuario)} · `:""}${esc(u.correo||"")}</small></div></div>
     <span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span>
     <div class="up-stats"><span>🔥 <b>${u.racha}</b> racha</span><span>📅 <b>${u.dias_practicados}</b> días</span><span>✅ <b>${u.aprendidos}</b> aprendidos</span><span>⏳ <b>${u.en_proceso}</b> en proceso</span><span>🎯 <b>${u.acierto==null?"—":u.acierto+"%"}</b></span><span>⭐ Nivel <b>${u.nivel}</b></span><span>👥 <b>${u.amigos}</b></span>${u.escudos?`<span>🛡️ <b>${u.escudos}</b></span>`:""}</div>
-    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}${u.ultima_practica && sin<=1 ? ` a las ${fmtHora(u.ultima_practica)}` : ""}`:""}${u.hora_habitual!=null?` · suele practicar hacia las ${fmtHH(u.hora_habitual)}`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
+    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}${u.ultima_practica && sin<=1 ? ` a las ${fmtHora(u.ultima_practica)}` : ""}`:""}${u.hora_habitual!=null?` · suele practicar hacia las ${fmtHH(u.hora_habitual)}`:""}${u.horas?` · <button class="linkbtn" data-act="up-horas" data-id="${esc(u.user_id)}" style="padding:0;font-size:inherit">ver hora de cada día</button>`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
   </div>`;
 }
 function usersPanelHTML(){
@@ -6350,9 +6424,8 @@ function usersPanelHTML(){
   const nuevos = ALL.filter(u=>new Date(u.registrado).getTime() >= wk).length;
   const hoy = ALL.filter(u=>u.ultimo_dia===today).length;
   const activos = ALL.filter(u=>u.ultimo_dia && new Date(u.ultimo_dia+"T12:00:00").getTime() >= wk).length;
-  const q = normQ(UP.q||"");
   let list = UP.step ? R.filter(u=>u.paso===UP.step) : R;
-  if(q) list = list.filter(u=>normQ([u.nombre,u.usuario,u.correo].join(" ")).includes(q));
+  list = list.filter(u=>upMatch(u, UP.q));
   const shown = UP.all ? list : list.slice(0, 8);
   const max = Math.max(1, ...UP_STEPS.map(([k])=>R.filter(u=>u.paso===k).length));
   const V = UPV.view, vt = (k,l) => `<button data-act="up-view" data-k="${k}" aria-pressed="${V===k}">${l}</button>`;
@@ -6368,11 +6441,11 @@ function usersPanelHTML(){
   const kpis = dates + `<div class="up-kpis"><div><b>${R.length}</b><small>${UPV.range==="todo" ? "registrados" : `registrados ${esc(upRangeLabel())}`}</small></div><div><b>${nuevos}</b><small>nuevos esta semana</small></div><div><b>${hoy}</b><small>practicaron hoy</small></div><div><b>${activos}</b><small>activos (7 días)</small></div></div>`;
   const head = `<div class="spread" style="align-items:center"><b>👥 Usuarios</b><span class="tm-live"><i></i>En vivo</span></div><div class="up-views">${vt("graf","📊 Gráficos")}${vt("tabla","📋 Tabla")}${vt("tarj","🪪 Tarjetas")}</div>`;
   if(V==="graf") return `<section class="panel up">${head}${kpis}${chartsHTML(R)}</section>`;
-  if(V==="tabla") return `<section class="panel up">${head}${kpis}<input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">${tableHTML(list)}</section>`;
+  if(V==="tabla") return `<section class="panel up">${head}${kpis}<input class="input" id="upQuery" placeholder="Buscar… (varios separados por coma: gabriel, juliana)" value="${esc(UP.q||"")}">${tableHTML(list)}</section>`;
   return `<section class="panel up">${head}
     ${kpis}
     <div class="up-funnel">${UP_STEPS.map(([k,l,c])=>{ const n = R.filter(u=>u.paso===k).length; return `<button data-act="up-step" data-k="${k}" aria-pressed="${UP.step===k}" style="--sc:${c}"><span class="up-fl">${k} · ${esc(l)}</span><span class="up-bar"><i style="width:${Math.round(n/max*100)}%"></i></span><b>${n}</b></button>`; }).join("")}</div>
-    <input class="input" id="upQuery" placeholder="Buscar por nombre, @usuario o correo…" value="${esc(UP.q||"")}">
+    <input class="input" id="upQuery" placeholder="Buscar… (varios separados por coma: gabriel, juliana)" value="${esc(UP.q||"")}">
     <div class="up-list" id="upList">${shown.length ? shown.map(upRow).join("") : `<p class="muted" style="margin:0;font-size:13.5px">Nadie coincide.</p>`}</div>
     ${list.length > 8 ? `<button class="linkbtn" data-act="up-all" style="align-self:flex-start;padding:0">${UP.all?"Ver menos":`Ver todos (${list.length})`}</button>` : ""}
     ${UP.step ? `<button class="linkbtn" data-act="up-step" data-k="${UP.step}" style="align-self:flex-start;padding:0">Quitar filtro</button>` : ""}
@@ -6872,7 +6945,8 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   const key = "cloud:"+user.id;
   const cached = LS.get("lampara.state."+key, null);
   let state = row && row.state && Object.keys(row.state).length ? row.state : null;
-  if(cached && (!state || (cached._savedAt||0) > (state._savedAt||0))) state = cached;
+  cloudSeen = state ? (state._savedAt||0) : 0;
+  if(cached && state) state = mergeStates(cached, state); else if(cached) state = cached;
   const seeded = !state && seed;
   if(seeded) state = seed;
   ME = { mode:"cloud", created:user.created_at || null, id:user.id, name:(row&&row.name) || name || meta.name || user.email.split("@")[0], email:user.email, color:colorFor(user.id), key };
@@ -7175,6 +7249,7 @@ document.addEventListener("click", e=>{
     case "up-step": UP.step = UP.step===+t.dataset.k ? 0 : +t.dataset.k; UP.all = false; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-range": { UPV.range = t.dataset.k; UPV.open = false; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-dr": { UPV.open = !UPV.open; if(UPV.open && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
+    case "up-horas": upHorasModal(t.dataset.id); break;
     case "pc-sec": TEAM.sec = t.dataset.k; render(); window.scrollTo({top:0}); break;
     case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
