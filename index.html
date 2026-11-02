@@ -1450,7 +1450,7 @@ function applyResult(id, score){
   S.progress[id] = p;
   const k = todayKey();
   const L = S.log[k] || { n:0, sum:0 };
-  L.n++; L.sum += score; S.log[k] = L;
+  L.n++; L.sum += score; stampLog(L); S.log[k] = L;
   return outcome;
 }
 function maybeUnlock(){
@@ -1465,6 +1465,8 @@ function maybeUnlock(){
 /* Un día cuenta para la racha si practicaste o si un escudo lo protegió */
 const shieldDay = k => (S.shieldDays||[]).includes(k);
 const streakDay = k => !!(S.log[k] && S.log[k].n) || shieldDay(k);
+/* Hora de práctica del día: primera (f) y última (l), para el Panel de control */
+function stampLog(L){ const t = Date.now(); if(!L.f) L.f = t; L.l = t; }
 function streak(){
   let d = new Date(); let n = 0;
   if(!streakDay(todayKey(d))) d = new Date(Date.now()-DAY);
@@ -3902,7 +3904,7 @@ function answerBook(ok){
   BQ.answered = true; q.ok = ok; if(ok){ BQ.score++; gainXP(3); }
   if(BQ.kind==="books") recordBook(q.type==="order"?q.answer:q.books, ok);
   markToday();
-  const k = todayKey(); const L = S.log[k] || { n:0, sum:0 }; L.n++; L.sum += ok?1:0; S.log[k] = L;
+  const k = todayKey(); const L = S.log[k] || { n:0, sum:0 }; L.n++; L.sum += ok?1:0; stampLog(L); S.log[k] = L;
   persist();
   render();
 }
@@ -6296,14 +6298,17 @@ function chartsHTML(R){
       <div class="cc"><div class="cc-h"><b>Rachas actuales</b><small>cuántos días seguidos llevan</small></div>${hBars(rachas.map(r=>({ ...r, c:"#FF8A1A" })), total)}</div>
     </div>`;
 }
-const UP_COLS = [["nombre","Nombre"],["registrado","Registro"],["paso","Paso"],["dias_practicados","Días"],["racha","Racha"],["ultimo_dia","Último día"],["aprendidos","Aprendidos"],["en_proceso","En proceso"],["acierto","Acierto"],["nivel","Nivel"],["amigos","Amigos"],["ritmo","Ritmo"]];
+const fmtHora = t => new Date(t).toLocaleTimeString("es-CO",{ hour:"numeric", minute:"2-digit", timeZone:"America/Bogota" });
+const fmtHH = h => { const ap = h<12 ? "a. m." : "p. m."; const x = h%12 || 12; return `${x} ${ap}`; };
+const UP_COLS = [["nombre","Nombre"],["registrado","Registro"],["paso","Paso"],["dias_practicados","Días"],["racha","Racha"],["ultimo_dia","Último día"],["hora_habitual","Suele practicar"],["aprendidos","Aprendidos"],["en_proceso","En proceso"],["acierto","Acierto"],["nivel","Nivel"],["amigos","Amigos"],["ritmo","Ritmo"]];
 function tableHTML(list){
   const k = UPV.sort, d = UPV.dir;
   const rows = list.slice().sort((a,b)=>{ const x = a[k], y = b[k]; if(x==null && y==null) return 0; if(x==null) return 1; if(y==null) return -1; return (x>y?1:x<y?-1:0)*d; });
   const cell = (u,c) => c==="nombre" ? `<td class="tn"><div>${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 24)}<span><b>${esc(u.nombre||"—")}</b><small>${esc(u.correo||"")}</small></span></div></td>`
     : c==="registrado" ? `<td>${new Date(u.registrado).toLocaleDateString("es-CO",{ day:"numeric", month:"short" })}</td>`
     : c==="paso" ? (()=>{ const st = UP_STEPS.find(x=>x[0]===u.paso) || UP_STEPS[0]; return `<td><span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span></td>`; })()
-    : c==="ultimo_dia" ? `<td>${u.ultimo_dia ? fmtD(u.ultimo_dia) : "—"}</td>`
+    : c==="ultimo_dia" ? `<td>${u.ultimo_dia ? fmtD(u.ultimo_dia) + (u.ultima_practica ? ` · ${fmtHora(u.ultima_practica)}` : "") : "—"}</td>`
+    : c==="hora_habitual" ? `<td>${u.hora_habitual==null ? "—" : fmtHH(u.hora_habitual)}</td>`
     : c==="acierto" ? `<td>${u.acierto==null?"—":u.acierto+"%"}</td>`
     : `<td>${esc(u[c]==null||u[c]===""?"—":String(u[c]))}</td>`;
   return `<div class="ut-wrap"><table class="ut"><thead><tr>${UP_COLS.map(([c,l])=>`<th><button data-act="up-sort" data-k="${c}">${esc(l)}${k===c?(d>0?" ▲":" ▼"):""}</button></th>`).join("")}</tr></thead>
@@ -6311,7 +6316,7 @@ function tableHTML(list){
     <button class="btn" data-act="up-csv" style="align-self:flex-start">⬇ Descargar CSV (Excel)</button>`;
 }
 function downloadUsersCSV(){
-  const R = UP.rows || []; const cols = ["nombre","usuario","correo","registrado","paso","ritmo","dias_practicados","racha","ultimo_dia","respuestas","acierto","puntos","nivel","en_proceso","aprendidos","amigos","logros","escudos","ultima_actividad"];
+  const R = UP.rows || []; const cols = ["nombre","usuario","correo","registrado","paso","ritmo","dias_practicados","racha","ultimo_dia","ultima_practica","hora_habitual","respuestas","acierto","puntos","nivel","en_proceso","aprendidos","amigos","logros","escudos","ultima_actividad"];
   const q = v => { v = v==null ? "" : String(v); return /[",;\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v; };
   const csv = "﻿" + cols.join(",") + "\n" + R.map(u=>cols.map(c=>q(u[c])).join(",")).join("\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })); a.download = `usuarios-${todayKey()}.csv`; document.body.appendChild(a); a.click(); a.remove();
@@ -6333,7 +6338,7 @@ function upRow(u){
     <div class="up-top">${avatarHTML(u.nombre||"?", colorFor(u.user_id), u.avatar_url, 38)}<div class="up-id"><b>${esc(u.nombre||"—")}</b><small>${u.usuario?`@${esc(u.usuario)} · `:""}${esc(u.correo||"")}</small></div></div>
     <span class="up-step" style="--sc:${st[2]}">${st[0]} · ${esc(st[1])}</span>
     <div class="up-stats"><span>🔥 <b>${u.racha}</b> racha</span><span>📅 <b>${u.dias_practicados}</b> días</span><span>✅ <b>${u.aprendidos}</b> aprendidos</span><span>⏳ <b>${u.en_proceso}</b> en proceso</span><span>🎯 <b>${u.acierto==null?"—":u.acierto+"%"}</b></span><span>⭐ Nivel <b>${u.nivel}</b></span><span>👥 <b>${u.amigos}</b></span>${u.escudos?`<span>🛡️ <b>${u.escudos}</b></span>`:""}</div>
-    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
+    <small class="up-foot">Se registró el ${fecha(u.registrado)}${u.ritmo?` · ritmo ${esc(u.ritmo)}`:""}${sin!=null?` · ${sin===0?"practicó hoy":sin===1?"practicó ayer":`${sin} días sin practicar`}${u.ultima_practica && sin<=1 ? ` a las ${fmtHora(u.ultima_practica)}` : ""}`:""}${u.hora_habitual!=null?` · suele practicar hacia las ${fmtHH(u.hora_habitual)}`:""}${u.ultima_actividad?` · última actividad ${timeAgo(u.ultima_actividad)}`:""}</small>
   </div>`;
 }
 function usersPanelHTML(){
