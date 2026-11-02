@@ -1,6 +1,7 @@
 -- Ner · 25 · Hora de práctica en el Panel de control (solo para el equipo)
 -- Agrega al panel de usuarios la hora de la racha de cada día (primera práctica del día, hora de Bogotá, últimos 90 días),
 -- la hora de la última práctica y la hora a la que cada persona suele practicar.
+-- El último día, los días y la racha también usan la tabla "activity", así salen bien aunque el progreso se haya sobrescrito.
 -- Se puede correr aunque ya se haya corrido una versión anterior de este SQL 25.
 -- La app empieza a guardar la hora desde esta actualización; los días anteriores no tienen hora.
 -- Reemplaza la función del SQL 21. Solo lectura: no cambia datos.
@@ -35,6 +36,12 @@ begin
     from base b, jsonb_object_keys(case when jsonb_typeof(b.s->'log') = 'object' then b.s->'log' else '{}'::jsonb end) k
   ),
   dias_ok as (select * from dias where dias.n > 0),
+  -- días practicados: los del progreso más los de la tabla "activity" (por si el progreso se sobrescribió desde otro dispositivo)
+  todos as (
+    select x.id, x.d from dias_ok x
+    union select a.user_id, a.day from public.activity a join base b on b.id = a.user_id
+  ),
+  todos_res as (select t.id, count(*)::int as dias, max(t.d) as ultimo from todos t group by t.id),
   resumen as (
     select d.id, count(*)::int as dias, max(d.d) as ultimo, sum(d.n)::int as resp,
            case when sum(d.n) > 0 then round(100 * sum(d.suma) / sum(d.n))::int end as acierto
@@ -46,7 +53,7 @@ begin
              last_value(t2.grp) over (partition by t2.id order by t2.d rows between unbounded preceding and unbounded following) as grp_ultimo
       from (
         select t.id, t.d, t.d - (row_number() over (partition by t.id order by t.d))::int as grp
-        from (select dd.id, dd.d from dias_ok dd
+        from (select dd.id, dd.d from todos dd
               union select b.id, (x)::date from base b, jsonb_array_elements_text(coalesce(b.s->'shieldDays', '[]'::jsonb)) x) t
       ) t2
     ) g
@@ -78,15 +85,15 @@ begin
     b.id, b.nombre, b.username, b.email, b.avatar_url, b.created_at,
     case
       when not b.tiene_progreso then 1
-      when b.s->'placed' is null and rs.id is null then 2
-      when rs.id is null then 3
-      when rs.dias = 1 then 4
+      when b.s->'placed' is null and tr.id is null then 2
+      when tr.id is null then 3
+      when tr.dias = 1 then 4
       else 5
     end,
     coalesce(b.s->'prefs'->>'ritmo',
       case when (b.s->'prefs'->>'minutes')::int <= 5 then 'tranquilo' when (b.s->'prefs'->>'minutes')::int >= 20 then 'intensivo'
            when b.s->'prefs' is not null then 'constante' end, ''),
-    coalesce(rs.dias, 0), coalesce(r.racha, 0), rs.ultimo, coalesce(rs.resp, 0), rs.acierto,
+    coalesce(tr.dias, 0), coalesce(r.racha, 0), tr.ultimo, coalesce(rs.resp, 0), rs.acierto,
     coalesce((b.s->>'xp')::int, 0),
     floor((1 + sqrt(1 + 0.16 * coalesce((b.s->>'xp')::int, 0))) / 2)::int,
     coalesce(v.en_proceso, 0), coalesce(v.aprendidos, 0), coalesce(a.amigos, 0),
@@ -97,6 +104,7 @@ begin
   from base b
   left join horas h on h.id = b.id
   left join resumen rs on rs.id = b.id
+  left join todos_res tr on tr.id = b.id
   left join racha r on r.id = b.id
   left join versos v on v.id = b.id
   left join amigos a on a.uid = b.id

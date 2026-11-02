@@ -1386,6 +1386,19 @@ function mergeStates(a, b){
   m._savedAt = Math.max(a._savedAt||0, b._savedAt||0);
   return m;
 }
+/* Recupera los días practicados que se perdieron del progreso (cuando otro dispositivo lo sobrescribía),
+   usando la tabla "activity", donde la app anota cada día que practicas */
+async function restoreDays(){
+  if(!SB || !ME || ME.mode!=="cloud" || !S) return;
+  try{
+    const since = todayKey(new Date(Date.now()-180*DAY));
+    const { data, error } = await SB.from("activity").select("day").eq("user_id", ME.id).gte("day", since);
+    if(error || !data) return;
+    let added = 0;
+    data.forEach(r=>{ const k = r.day; if(!S.log[k] || !S.log[k].n){ S.log[k] = Object.assign({}, S.log[k]||{}, { n:1, sum:1, r:1 }); added++; } });
+    if(added){ persist(); render(); }
+  }catch(e){}
+}
 /* Si otro dispositivo guardó algo más nuevo, unirlo antes de guardar (antes se sobrescribía) */
 async function cloudCatchUp(){
   let rts = 0;
@@ -6953,7 +6966,7 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   S = Object.assign(freshState(), state || {});
   applyTheme(S.prefs.theme);
   WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
-  persist(); cloudFlush(); flushFeedback();
+  persist(); cloudFlush(); flushFeedback(); setTimeout(restoreDays, 1500);
   if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
   COMM.profile = null; COMM.loaded = false; ensureProfile();
   NOTIF.items = []; NOTIF.loaded = false; NOTIF.prefs = null; startNotifs();
