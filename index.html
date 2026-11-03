@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <meta name="theme-color" content="#F5F7FB" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,6 +20,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
+:root{color-scheme:light dark}
+:root[data-theme="light"]{color-scheme:light}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light}}
+
 [hidden]{display:none!important}
 html,body{margin:0}img{max-width:100%}
 /* Layout: app shell tipo reproductor — barra lateral de navegación (abajo en móvil), escenario central con la tarjeta del versículo como protagonista */
@@ -6780,7 +6786,13 @@ async function hashPass(pass, salt){
   }catch(e){ let h=2166136261; for(const c of txt){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return "f"+(h>>>0).toString(16); }
 }
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
-function applyTheme(t){ try{ if(t==="light"||t==="dark") document.documentElement.setAttribute("data-theme",t); else document.documentElement.removeAttribute("data-theme"); }catch(e){} }
+function applyTheme(t){ try{ if(t==="light"||t==="dark") document.documentElement.setAttribute("data-theme",t); else document.documentElement.removeAttribute("data-theme");
+  // barra del celular del mismo color que el tema elegido
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  metas.forEach(m=>{ const isDark = /dark/.test(m.getAttribute("media")||"") || m.dataset.k==="dark"; if(!m.dataset.k) m.dataset.k = isDark ? "dark" : "light";
+    if(t==="light"||t==="dark"){ m.removeAttribute("media"); m.setAttribute("content", t==="dark" ? "#0B1220" : "#F5F7FB"); }
+    else { m.setAttribute("media", `(prefers-color-scheme: ${m.dataset.k})`); m.setAttribute("content", m.dataset.k==="dark" ? "#0B1220" : "#F5F7FB"); } });
+}catch(e){} }
 
 /* ---------- Pantallas de bienvenida ---------- */
 let WEL = { step:0, migrate:null, pending:null, goal:10, err:"" };
