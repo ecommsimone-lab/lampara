@@ -3272,7 +3272,7 @@ function orderHTML(q){
     const w = Math.max(2.2, [...x.w].length*0.62 + 1.1);
     return `<span class="wg">${esc(x.pre)}<button type="button" class="ord-slot${f!=null?" f":""}${res?" "+res:""}${f==null && i===q.fill.indexOf(null)?" cur":""}" data-act="ord-back" data-k="${i}" style="min-width:${w}em" ${q.res?"disabled":""}>${f!=null?esc(q.slots[f].w):""}</button>${esc(x.post)}${q.res && res!=="right" ? `<span class="fix">${esc(x.w)}</span>` : ""}</span>`; };
   return `<div class="ord-slots" id="ordSlots">${q.slots.map(slot).join(" ")}</div>
-    ${q.res ? "" : `<p class="muted" style="font-size:13px;margin:0">Toca las palabras en el orden correcto. Si no es la que sigue, se pone roja. <b id="ordErr" style="color:var(--bad)">${q.err ? `${q.err} ${q.err===1?"error":"errores"}` : ""}</b></p>
+    ${q.res ? "" : `<p class="muted" style="font-size:13px;margin:0">Toca las palabras en el orden correcto.</p>
     <div class="ord-bank" id="ordBank">${q.bank.map(j=>`<button type="button" class="ord-chip" data-act="ord-pick" data-k="${j}" ${used.has(j)?"disabled":""}>${esc(q.slots[j].w)}</button>`).join("")}</div>`}`;
 }
 function ordRefresh(){ const q = SESSION && SESSION.q; const box = $("#ordArea"); if(q && box) box.innerHTML = orderHTML(q); }
@@ -3285,7 +3285,6 @@ function ordPick(j){
     q.err = (q.err||0) + 1;
     const b = root.querySelector(`.ord-chip[data-k="${j}"]`); if(b){ b.classList.remove("bad"); void b.offsetWidth; b.classList.add("bad"); }
     try{ if(navigator.vibrate) navigator.vibrate(40); }catch(e){}
-    const e = $("#ordErr"); if(e) e.textContent = `${q.err} ${q.err===1?"error":"errores"}`;
     return;
   }
   q.fill[i] = j; ordRefresh();
@@ -3661,7 +3660,8 @@ function checkAnswer(){
     q.res = q.slots.map((x,i)=>{ const f = q.fill[i]; return f!=null && norm(q.slots[f].w)===norm(x.w) ? "right" : "wrong"; });
     ordRefresh();
     const n = q.slots.length, ok = q.res.filter(r=>r==="right").length;
-    gradeText(ok / (n + (q.err||0)), q.err ? `<p class="muted" style="font-size:13px;margin:0">Lo armaste con ${q.err} ${q.err===1?"error":"errores"} en el camino.</p>` : "");
+    // es la primera vez con el versículo: los errores pesan poco (cada 3 cuentan como una palabra)
+    gradeText(ok / (n + (q.err||0)/3));
     return;
   }
   if(q.mode==="initl"){
