@@ -927,6 +927,11 @@ a.btn:not(.primary){color:var(--ink)}
 .hz-t tr.we td{color:var(--muted)}
 .hz{font-size:14px;font-weight:700;border-radius:999px;padding:2px 9px;display:inline-block}
 .hz.ok{background:var(--ok-soft);color:var(--ok)} .hz.late{background:var(--bad-soft);color:var(--bad)} .hz.we{background:var(--surface-2);color:var(--muted)}
+.night-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--r-lg);background:linear-gradient(135deg,#1E2A5A,#2E3F86);color:#EEF2FF;box-shadow:var(--shadow)}
+.night-card .nc-moon{font-size:28px;line-height:1}
+.night-card b{display:block;font-size:16px}
+.night-card small{display:block;font-size:13px;opacity:.85;line-height:1.4;margin-top:2px}
+.night-card .btn{flex:none;background:#fff;color:#1E2A5A;border-color:transparent}
 .tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
 .tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
@@ -1279,6 +1284,17 @@ const SUG_MAP = Object.fromEntries(SUGGESTED.map(([id,ref,text,theme],i)=>[id,{i
    ========================================================= */
 const DAY = 864e5;
 const INTERVAL_DAYS = [0, 1, 2, 4, 9, 21];   // días hasta la próxima pregunta según nivel
+const LONG_DAYS = [21, 45, 90, 180];          // ya aprendido: cada repaso bien hecho alarga la espera (hasta 6 meses)
+/* Ritmo propio de cada versículo (como los algoritmos modernos de repaso):
+   si siempre sale perfecto, se espacia más rápido; si cuesta, vuelve antes. 1 = normal */
+const EASE_MIN = 0.6, EASE_MAX = 1.5;
+function nextInterval(p, score){
+  let base;
+  if(p.box >= 5){ const prev = p.ivl || 0; base = LONG_DAYS.find(d => d > prev * 1.05) || LONG_DAYS[LONG_DAYS.length-1]; }
+  else base = INTERVAL_DAYS[p.box];
+  if(!base) return 0;
+  return Math.max(1, Math.min(LONG_DAYS[LONG_DAYS.length-1], Math.round(base * (p.ease || 1))));
+}
 const MASTER = 4;
 const START_UNLOCKED = 5;
 const UNLOCK_STEP = 3;
@@ -1499,19 +1515,26 @@ function applyResult(id, score){
   const p = S.progress[id] || { box:0, due:now, reps:0, lapses:0, last:0, introduced:now, hist:[] };
   const wasDue = p.reps===0 || dayStart(p.due) <= now;
   let outcome;
+  const ease = p.ease || 1;
   if(score>=0.9){
     outcome = "ok";
-    if(wasDue) p.box = Math.min(5, p.box+1);         // solo sube de nivel si tocaba repasarlo (evita "atiborrarse")
-    p.due = dayStart(now, INTERVAL_DAYS[p.box]);
+    if(wasDue){
+      if(score>=0.98 && p.reps>0) p.ease = Math.min(EASE_MAX, ease + 0.1);   // perfecto: la próxima vez espera más
+      p.box = Math.min(5, p.box+1);         // solo sube de nivel si tocaba repasarlo (evita "atiborrarse")
+      p.ivl = nextInterval(p, score);       // ya aprendido (nivel 5): 21 → 45 → 90 → 180 días, según su ritmo propio
+      p.due = dayStart(now, p.ivl);
+    } else if(!p.due || p.due < dayStart(now, 1)) p.due = dayStart(now, Math.max(1, nextInterval(p, score)));   // práctica extra: no acorta la espera
   } else if(score>=0.6){
     outcome = "mid";
+    p.ease = Math.max(EASE_MIN, ease - 0.15);         // le costó: volverá antes
     p.box = Math.max(1, Math.min(p.box, MASTER-1));  // casi: se queda en proceso
-    p.due = dayStart(now, 1);                         // casi: vuelve mañana
+    p.ivl = 1; p.due = dayStart(now, 1);              // casi: vuelve mañana
   } else {
     outcome = "bad";
     p.lapses++;
+    p.ease = Math.max(EASE_MIN, ease - 0.2);
     p.box = p.box>=MASTER ? 1 : 0;                   // si era memorizado y falla, regresa a práctica
-    p.due = now;
+    p.ivl = 0; p.due = now;
   }
   p.reps++; p.last = now;
   p.hist = (p.hist||[]).concat(Math.round(score*100)).slice(-12);
@@ -2252,6 +2275,16 @@ function homeBooksCard(){
     <div class="row"><button class="btn primary" data-act="bq-start" data-scope="all">${I.play} Practicar libros</button><button class="btn" data-act="bq-trivia">Cuestionario</button></div>
   </section>`;
 }
+/* Repaso de la noche: los versículos que empezaste hoy, otra vez antes de dormir (el sueño ayuda a fijarlos) */
+function nightIds(){
+  const now = Date.now(), t0 = dayStart(now);
+  if(new Date(now).getHours() < 18) return [];
+  return Object.entries(S.progress||{}).filter(([id,p])=>p && verse(id) && !p.placed && !p.known && p.introduced >= t0 && p.reps>0 && (p.last||0) < now - 2*3600e3).map(([id])=>id);
+}
+function nightCardHTML(){
+  const ids = nightIds(); if(!ids.length) return "";
+  return `<section class="night-card"><div class="nc-moon">🌙</div><div style="min-width:0;flex:1"><b>Repaso de la noche</b><small>Hoy empezaste ${ids.length===1?"un versículo nuevo":`${ids.length} versículos nuevos`}. Repasarlo antes de dormir ayuda a que se quede. Toma 1 minuto.</small></div><button class="btn" data-act="night-review">Repasar</button></section>`;
+}
 function viewHome(){
   if(syncPath()) persist();
   const act = activeIds();
@@ -2310,6 +2343,7 @@ function viewHome(){
       </button>
     </div>
   </section>
+  ${nightCardHTML()}
 
   ${heartCard()}
   ${moodRowHTML()}
@@ -3499,7 +3533,16 @@ function finalize(score, extraHTML=""){
     else extraHTML = `<div class="result-bar mid"><span>Casi. Lo seguiremos practicando hasta que te lo sepas completo.</span></div>` + extraHTML;
   }
   const xp = xpFor(score, q.mode); gainXP(xp);
-  s.results.push({ id:q.id, score, outcome, before, after:status(q.id), xp });
+  const task = s.tasks[s.t] || {};
+  const prevI = task.retry ? s.results.findIndex(r=>r.id===q.id) : -1;
+  if(prevI >= 0){ const pr = s.results[prevI]; s.results[prevI] = { id:q.id, score, outcome, before:pr.before, after:status(q.id), xp:pr.xp + xp, retried:true }; }
+  else s.results.push({ id:q.id, score, outcome, before, after:status(q.id), xp });
+  // si falló, se vuelve a intentar al final de esta misma práctica (con algo de espacio entre el error y el nuevo intento)
+  if(outcome==="bad" && !task.retry && !(s.knowCheck||{})[q.id]){
+    s.tasks.push({ type:"text", id:q.id, retry:true }, { type:"ref", id:q.id, retry:true });
+    if(s.modes && s.mode==="mixto") s.modes[q.id] = ladderMode(q.id);
+    extraHTML = `<div class="result-bar mid"><span>🔁 Lo volverás a intentar al final de esta práctica.</span></div>` + extraHTML;
+  }
   persist();
   const tsPct = Math.round((s.pending[q.id] ?? 0)*100);
   const info = (s.textInfo||{})[q.id] || {};
@@ -4612,9 +4655,13 @@ function prefsNow(){ return Object.assign({ amistad:true, retos:true, rachas:tru
 async function savePref(k, v){
   const p = prefsNow(); p[k] = v; p.tz = myTz();
   NOTIF.prefs = p;
-  try{ await NAPI.savePrefs({ amistad:p.amistad, retos:p.retos, rachas:p.rachas, animos:p.animos, recordatorio:p.recordatorio, hora:p.hora, tz:p.tz }); toast("Preferencias guardadas."); }
-  catch(e){ toast(notifError(e)); }
-  if(VIEW.name==="profile") render();
+  const base = { amistad:p.amistad, retos:p.retos, rachas:p.rachas, animos:p.animos, recordatorio:p.recordatorio, hora:p.hora, tz:p.tz };
+  try{ await NAPI.savePrefs(Object.assign({}, base, { repaso_noche: !!p.repaso_noche })); toast("Preferencias guardadas."); }
+  catch(e){
+    if(/repaso_noche/.test(String(e && (e.message||e.details) || e))){ try{ await NAPI.savePrefs(base); toast(k==="repaso_noche" ? "El repaso de la noche aún no está activo (falta el SQL 26)." : "Preferencias guardadas."); }catch(e2){ toast(notifError(e2)); } }
+    else toast(notifError(e));
+  }
+  if(VIEW.name==="profile" || VIEW.name==="ajustes") render();
 }
 
 /* ----- Avisos en el celular ----- */
@@ -4689,6 +4736,7 @@ function notifPrefsPanel(){
       ${PREF_ROWS.map(([k,l,d])=>`<div class="set-row"><div class="lbl"><b>${l}</b><small>${d}</small></div>${sw(k,p[k])}</div>`).join("")}
       <div class="set-row"><div class="lbl"><b>Recordatorio diario</b><small>Si ese día aún no has practicado</small></div>
         <div class="row" style="gap:8px;flex-wrap:nowrap">${p.recordatorio?`<select class="input" data-pref="hora" style="width:auto;padding:8px 10px">${hours}</select>`:""}${sw("recordatorio",p.recordatorio)}</div></div>
+      <div class="set-row"><div class="lbl"><b>🌙 Repaso de la noche</b><small>A las 8 p. m., si ese día empezaste un versículo nuevo: un repaso corto antes de dormir ayuda a fijarlo</small></div>${sw("repaso_noche",!!p.repaso_noche)}</div>
     </div>
   </section>`;
 }
@@ -4731,6 +4779,7 @@ function notifActions(n){
     case "prayer_pray": case "prayer_comment": case "prayer_answered":
       return btn("open-oracion", n.type==="prayer_answered" ? "Ver testimonio" : "Ver petición", (n.data && n.data.prayer) || "", true);
     case "team_assigned": case "link_open": return btn("team-go","Ver en el Panel de control","",true);
+    case "night_review": return nightIds().length ? btn("night-review","Repasar ahora","",true) : done("Ya repasaste");
     case "app_update": return (n.data && n.data.feature === "punct") ? btn("punct-pick", punctFlex() ? "Cambiar (ahora: sin signos)" : "Elegir cómo practicar", "", true) : "";
     case "shield": return (S.shieldClaims||[]).includes(n.id) ? done("🛡️ Escudo guardado") : done("Se guardará cuando tengas espacio");
     case "cheer": {
@@ -7301,6 +7350,7 @@ document.addEventListener("click", e=>{
     case "up-range": { UPV.range = t.dataset.k; UPV.open = false; UPV.daily = undefined; const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-dr": { UPV.open = !UPV.open; if(UPV.open && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-horas": upHorasModal(t.dataset.id); break;
+    case "night-review": { const ids = nightIds(); if(ids.length) startSession(shuffle(ids), { title:"Repaso de la noche", source:ids.slice() }); break; }
     case "pc-sec": TEAM.sec = t.dataset.k; render(); window.scrollTo({top:0}); break;
     case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
