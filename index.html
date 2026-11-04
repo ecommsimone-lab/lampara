@@ -3724,7 +3724,7 @@ function finalize(score, extraHTML=""){
     <details class="panel" style="padding:12px 16px;box-shadow:none;background:var(--surface-2)" ${tsPct<90?"open":""}>
       <summary style="cursor:pointer;font-weight:700">Texto del versículo: ${tsPct}%${tsPct>=100?" ✓":tsPct>=90?" · casi perfecto":" · toca para ver qué faltó"}</summary>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-        ${info.detail?`<span class="muted" style="font-size:13px">${info.mode==="write"?"Lo que escribiste comparado con el texto:":"Palabras que no coincidieron:"}</span>${info.detail}`:""}
+        ${info.detail||""}
         <span class="muted" style="font-size:13px">Texto correcto:</span><p style="font-size:17px;font-weight:600;line-height:1.5;margin:0">${esc(verse(q.id).text)}</p>
       </div>
     </details>` : "";
@@ -3772,7 +3772,7 @@ function checkAnswer(){
     const r = scoreStrict(v.text, val);
     $("#writeBox").disabled = true;
     q.detailHTML = `<p class="diff" style="font-size:17px">${r.html}</p>`;
-    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Tu respuesta comparada: <span style="color:var(--ok)">correcto</span> · <span style="color:var(--accent)">tilde, signo u ortografía</span> (tu versión tachada al lado) · <span style="color:var(--bad)">faltó</span> · <span style="text-decoration:line-through">sobró</span></p><p class="diff">${r.html}</p>${r.errs?`<p class="muted" style="font-size:13px;margin-top:6px">${r.errs} ${r.errs===1?"palabra tiene":"palabras tienen"} errores de tilde o puntuación (cuentan medio punto).</p>`:""}</div>`);
+    gradeText(r.score, `<div><p class="diff">${r.html}</p></div>`);
   }
 }
 
@@ -3850,7 +3850,7 @@ function reveal(){
     const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
     const r = scoreSpoken(v.text, tx);
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p></div>`);
+    gradeText(r.score, `<div><p class="diff">${r.html}</p></div>`);
     return;
   }
   // sin voz no hay resultado: se ofrece intentar de nuevo o escribirlo
