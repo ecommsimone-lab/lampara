@@ -932,6 +932,25 @@ a.btn:not(.primary){color:var(--ink)}
 .night-card b{display:block;font-size:16px}
 .night-card small{display:block;font-size:13px;opacity:.85;line-height:1.4;margin-top:2px}
 .night-card .btn{flex:none;background:#fff;color:#1E2A5A;border-color:transparent}
+.wg{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
+.ord-slots{display:flex;flex-wrap:wrap;gap:8px 4px;align-items:center;font-size:17px;line-height:1.2}
+.ord-slot{height:42px;padding:0 10px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.ord-slot.cur{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+.ord-slot.f{background:var(--accent-soft);border-color:transparent}
+.ord-slot.right{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.ord-slot.wrong{background:var(--bad-soft);color:var(--bad);border-color:transparent;text-decoration:line-through}
+.ord-bank{display:flex;flex-wrap:wrap;gap:10px;padding:16px;border-radius:var(--r-lg);background:var(--hero-2)}
+.ord-chip{border:0;border-radius:12px;padding:9px 16px;background:#9fd0ff;color:#123055;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.ord-chip:disabled{opacity:.25;cursor:default}
+.il-words{display:flex;flex-wrap:wrap;gap:10px 12px;font-size:18px;line-height:1.4}
+.il-w{font-family:var(--f-mono);letter-spacing:.04em}
+.il-w.next{color:var(--muted);opacity:.6}
+.il-w.cur{border:2px solid var(--accent);border-radius:10px;padding:1px 8px;color:var(--ink);font-weight:700}
+.il-w.right{color:var(--ok);font-family:var(--f-verse);letter-spacing:0;font-weight:600}
+.il-w.near{color:var(--accent);font-family:var(--f-verse);letter-spacing:0}
+.il-w.wrong{color:var(--bad);text-decoration:line-through;font-family:var(--f-verse);letter-spacing:0}
+.il-input{display:flex;gap:8px}
+.il-input .input{flex:1;min-width:0;font-size:18px}
 .tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
 .tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
@@ -3060,11 +3079,13 @@ function methodModal(){
       <p class="muted" style="margin:0;font-size:14.5px;line-height:1.5">Cada versículo sube de nivel cuando lo aciertas. La ayuda va bajando poco a poco, hasta que lo dices sin nada.</p></div>
     <ol class="mt-steps">
       ${step(1,"🃏","Tarjetas","Lee el versículo y conócelo.")}
-      ${step(2,"✏️","Llenar espacios","Completa las palabras que faltan. Cada vez faltan más.")}
-      ${step(3,"🔤","Con iniciales","Ves solo la primera letra de cada palabra, con sus comas y puntos, y lo recitas completo.",
+      ${step(2,"🧩","Recomponer","Toca las palabras en el orden correcto.")}
+      ${step(3,"✏️","Llenar espacios","Completa la mitad de las palabras, que faltan.")}
+      ${step(4,"🔡","Primera letra y largo","Escribe palabra por palabra viendo la primera letra y cuántas letras tiene.")}
+      ${step(5,"🔤","Con iniciales","Ves solo la primera letra de cada palabra, con sus comas y puntos, y lo recitas completo.",
         `<div class="mt-ex"><small>Romanos 3:23</small><p class="mt-words">${marked}</p><p class="mt-ini">${esc(initialsOf(ex))}</p></div>`)}
-      ${step(4,"⌨️","Escribirlo completo","Sin pistas.")}
-      ${step(5,"🎙️","Recitarlo completo","Sin pistas ni iniciales. ¡Ya lo aprendiste!")}
+      ${step(6,"⌨️","Escribirlo completo","Sin pistas.")}
+      ${step(7,"🎙️","Recitarlo completo","Sin pistas ni iniciales. ¡Ya lo aprendiste!")}
     </ol>
     <p class="muted" style="margin:0;font-size:13px;line-height:1.5">Si fallas, el versículo baja un nivel para que lo refuerces. Puedes volver a ver esto en <b style="color:var(--ink)">¿Cómo funciona?</b> al empezar una práctica.</p>
     <button class="btn primary lg" id="mtOk" style="justify-content:center">Entendido, empezar</button>
@@ -3090,10 +3111,16 @@ function initialsOf(text){
    Sube cuando lo haces bien y baja cuando fallas (la caja del versículo sube o baja con cada resultado). */
 function ladderMode(id){
   const b = (prog(id)||{box:0}).box;
-  if(b <= 2) return "blanks";
-  if(b === 3) return "ini";      // recítalo viendo las iniciales
+  if(b === 0) return "order";    // recomponer: todas las palabras desordenadas
+  if(b === 1) return "blanks";   // llenar espacios (falta la mitad)
+  if(b === 2) return "initl";    // primera letra y largo, palabra por palabra
+  if(b === 3) return "ini";      // recítalo viendo solo las iniciales
   if(b === 4) return "write";    // escríbelo completo sin pistas
   return "recite";               // recítalo completo sin pistas
+}
+/* Palabras de un texto, con los signos de puntuación aparte (se muestran fuera de la casilla) */
+function wordSlots(text){
+  return String(text).trim().split(/\s+/).map(w=>{ const m = w.match(/^([¿¡"«“(]*)(.*?)([.,;:!?»”")]*)$/) || ["","",w,""]; return { pre:m[1], w:m[2], post:m[3] }; }).filter(x=>x.w);
 }
 function modeFor0(id){
   const m = SESSION.mode;
@@ -3216,9 +3243,12 @@ function prepQuestion(){
     toks.forEach((t,i)=>{ const w=norm(t); if(w && w.length>=3) cand.push(i); });
     const pick = new Set(shuffle(cand).slice(0, Math.max(1, Math.round(cand.length*.35))));
     s.q = { id, mode:"blanks", stage:"text", isPart:true, part:task.part, of:task.of, phrase:ph, textDone:false, textScore:0, done:false, toks, blanks:[...pick].sort((a,b)=>a-b) };
+    if(s.mode==="mixto"){ const sl = wordSlots(ph); Object.assign(s.q, { mode:"order", slots:sl, bank:shuffle(sl.map((x,i)=>i)), fill:sl.map(()=>null) }); }
     return;
   }
-  let mode = modeFor(id); const ini = mode==="ini" || mode==="iniw";
+  let mode = modeFor(id);
+  if(mode==="order" && splitPhrases(v.text).length>1) mode = "blanks";   // versículo largo: ya se recompuso por partes; el completo, con espacios
+  const ini = mode==="ini" || mode==="iniw";
   if(ini) mode = mode==="ini" ? "recite" : "write";
   const q = { id, mode, ini, stage:"text", textDone:false, textScore:0, done:false, score:null, transcript:"", spokenRef:"" };
   if(mode==="blanks"){
@@ -3229,7 +3259,48 @@ function prepQuestion(){
     const pick = new Set(shuffle(cand).slice(0,nb));
     q.toks = toks; q.blanks = [...pick].sort((a,b)=>a-b);
   }
+  if(mode==="order"){ const sl = wordSlots(v.text); q.slots = sl; q.bank = shuffle(sl.map((x,i)=>i)); q.fill = sl.map(()=>null); }
+  if(mode==="initl"){ q.slots = wordSlots(v.text); q.got = []; }
   s.q = q;
+}
+/* ---------- Recomponer: tocar las palabras en orden ---------- */
+function orderHTML(q){
+  const used = new Set(q.fill.filter(x=>x!=null));
+  const slot = (x,i) => { const f = q.fill[i], res = q.res && q.res[i];
+    const w = Math.max(2.2, [...x.w].length*0.62 + 1.1);
+    return `<span class="wg">${esc(x.pre)}<button type="button" class="ord-slot${f!=null?" f":""}${res?" "+res:""}${f==null && i===q.fill.indexOf(null)?" cur":""}" data-act="ord-back" data-k="${i}" style="min-width:${w}em" ${q.res?"disabled":""}>${f!=null?esc(q.slots[f].w):""}</button>${esc(x.post)}${q.res && res!=="right" ? `<span class="fix">${esc(x.w)}</span>` : ""}</span>`; };
+  return `<div class="ord-slots" id="ordSlots">${q.slots.map(slot).join(" ")}</div>
+    ${q.res ? "" : `<p class="muted" style="font-size:13px;margin:0">Toca las palabras en el orden correcto. Para quitar una, tócala arriba.</p>
+    <div class="ord-bank" id="ordBank">${q.bank.map(j=>`<button type="button" class="ord-chip" data-act="ord-pick" data-k="${j}" ${used.has(j)?"disabled":""}>${esc(q.slots[j].w)}</button>`).join("")}</div>`}`;
+}
+function ordRefresh(){ const q = SESSION && SESSION.q; const box = $("#ordArea"); if(q && box) box.innerHTML = orderHTML(q); }
+function ordPick(j){
+  const q = SESSION && SESSION.q; if(!q || q.mode!=="order" || q.textDone) return;
+  if(q.fill.includes(j)) return;
+  const i = q.fill.indexOf(null); if(i<0) return;
+  q.fill[i] = j; ordRefresh();
+  if(!q.fill.includes(null)) checkAnswer();
+}
+function ordBack(i){ const q = SESSION && SESSION.q; if(!q || q.mode!=="order" || q.textDone || q.fill[i]==null) return; q.fill[i] = null; ordRefresh(); }
+/* ---------- Primera letra y largo: escribir palabra por palabra ---------- */
+function initlHTML(q){
+  return `<div class="il-words" id="ilWords">${q.slots.map((x,i)=>{
+    const g = q.got[i], chars = [...x.w], cue = chars[0] + "_".repeat(Math.max(1, chars.length-1));
+    if(g) return `<span class="wg">${esc(x.pre)}<span class="il-w ${g.c}">${esc(g.c==="right"?x.w:g.t||"—")}</span>${g.c!=="right"?`<span class="fix">${esc(x.w)}</span>`:""}${esc(x.post)}</span>`;
+    return `<span class="wg">${esc(x.pre)}<span class="il-w ${i===q.got.length?"cur":"next"}">${esc(cue)}</span>${esc(x.post)}</span>`; }).join(" ")}</div>
+    ${q.textDone ? "" : `<div class="il-input"><input class="input" id="ilBox" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc([...(q.slots[q.got.length]||{w:" "}).w][0])}" aria-label="Escribe la siguiente palabra"><button class="btn primary" data-act="il-next" aria-label="Siguiente palabra">→</button></div>
+    <p class="muted" style="font-size:13px;margin:0">Escribe la siguiente palabra y toca → o la barra espaciadora.</p>`}`;
+}
+function ilNext(){
+  const q = SESSION && SESSION.q; if(!q || q.mode!=="initl" || q.textDone) return;
+  const el = $("#ilBox"); const t = (el && el.value || "").trim(); if(!t) return;
+  const want = q.slots[q.got.length].w;
+  const exact = strictTok(t).replace(/[^a-záéíóúüñ0-9]/g,"") === strictTok(want).replace(/[^a-záéíóúüñ0-9]/g,"");
+  const near = !exact && close(norm(t), norm(want));
+  q.got.push({ t, c: exact ? "right" : near ? "near" : "wrong" });
+  if(q.got.length >= q.slots.length){ checkAnswer(); return; }
+  const w = $("#ilWords"); if(w) w.outerHTML = initlHTML(q).split('<div class="il-input">')[0];
+  if(el){ el.value = ""; el.placeholder = [...q.slots[q.got.length].w][0]; el.focus(); }
 }
 /* Opciones de la cita: la correcta y 3 citas reales de otros versículos, de preferencia del mismo libro */
 function refOptions(id){
@@ -3273,11 +3344,15 @@ function quizBody(){
   const s = SESSION; const q = s.q; const v = verse(q.id);
   if(q.stage==="ref") return refBody();
   const fav = S.favs.includes(q.id);
-  const modeName = q.ini ? "Con iniciales" : { blanks:"Llenar espacios", write:"Escribir completo", recite:"Recitar" }[q.mode];
+  const modeName = q.ini ? "Con iniciales" : { blanks:"Llenar espacios", write:"Escribir completo", recite:"Recitar", order:"Recomponer", initl:"Primera letra y largo" }[q.mode];
   const iniBox = q.ini && !q.done ? `<div class="ini-box"><small>Iniciales de cada palabra</small><p>${esc(initialsOf(v.text))}</p><span class="ini-tip">Cada letra es el comienzo de una palabra. Dilo completo, palabra por palabra.</span></div>` : "";
   const favBtn = v.sug ? `<button class="btn ${fav?"":"ghost"}" data-act="fav" data-id="${q.id}" style="${fav?'color:var(--accent)':''}">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"Agregar a Mis versículos"}</button>` : "";
   let inner = "";
-  if(q.mode==="blanks"){
+  if(q.mode==="order"){
+    inner = `<div id="ordArea" style="display:flex;flex-direction:column;gap:14px">${orderHTML(q)}</div>`;
+  } else if(q.mode==="initl"){
+    inner = `<div id="ilArea" style="display:flex;flex-direction:column;gap:12px">${initlHTML(q)}</div>`;
+  } else if(q.mode==="blanks"){
     const set = new Set(q.blanks);
     inner = `<div class="blanks">${q.toks.map((t,i)=>{
       if(!set.has(i)) return esc(t);
@@ -3326,6 +3401,7 @@ function afterQuizRender(){
     });
     if(ins[0]) ins[0].focus();
   } else if(q.mode==="write"){ const w=$("#writeBox"); if(w) w.focus(); }
+  else if(q.mode==="initl"){ const el=$("#ilBox"); if(el){ el.addEventListener("keydown",e=>{ if(e.key==="Enter"||(e.key===" "&&el.value.trim())){ e.preventDefault(); ilNext(); } }); el.focus(); } }
 }
 /* ---------- Cita bíblica ---------- */
 function parseRef(s){
@@ -3570,6 +3646,19 @@ function finalize(score, extraHTML=""){
 function checkAnswer(){
   const q = SESSION.q; if(!q || q.textDone) return;
   const v = verse(q.id);
+  if(q.mode==="order"){
+    // vale cualquier copia de una palabra repetida ("que", "y"): se compara la palabra, no la ficha
+    q.res = q.slots.map((x,i)=>{ const f = q.fill[i]; return f!=null && norm(q.slots[f].w)===norm(x.w) ? "right" : "wrong"; });
+    ordRefresh();
+    gradeText(q.res.filter(r=>r==="right").length / q.slots.length);
+    return;
+  }
+  if(q.mode==="initl"){
+    while(q.got.length < q.slots.length) q.got.push({ t:"", c:"wrong" });
+    const a = $("#ilArea"); q.textDone = true; if(a) a.innerHTML = initlHTML(q); q.textDone = false;
+    gradeText(q.got.reduce((t,g)=>t + (g.c==="right" ? 1 : g.c==="near" ? 0.5 : 0), 0) / q.slots.length);
+    return;
+  }
   if(q.mode==="blanks"){
     let ok = 0;
     q.blanks.forEach(i=>{
@@ -7508,6 +7597,9 @@ document.addEventListener("click", e=>{
       else { startQuiz(); }
       render(); break;
     case "check": checkAnswer(); break;
+    case "ord-pick": ordPick(+t.dataset.k); break;
+    case "ord-back": ordBack(+t.dataset.k); break;
+    case "il-next": ilNext(); break;
     case "ref-mc": checkRefChoice(+t.dataset.i); break;
     case "giveup": gradeText(0); break;
         case "check-ref": checkRef(); break;
