@@ -3397,12 +3397,12 @@ function quizBody(){
       <div class="row"><span class="muted" style="font-size:13px">${punctFlex() ? "Cuentan las tildes; los puntos, comas y otros signos no (puedes cambiarlo en Perfil)." : "Cuentan las tildes y los signos de puntuación (las mayúsculas no)."}</span><button class="linkbtn" data-act="punct-toggle" style="padding:0;font-size:13px">${punctFlex() ? "Contar signos" : "Sin signos"}</button></div>`;
   } else {
     inner = `
-      <div style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+      <div id="micBox" style="display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
         <button class="mic" id="micBtn" data-act="mic" aria-label="Recitar con micrófono">${I.mic}</button>
         <p class="muted" id="micMsg" style="max-width:46ch">Toca el micrófono, di el versículo de memoria y vuelve a tocarlo al terminar.</p>
         <p id="transcript" style="font-family:var(--f-verse);font-size:20px;min-height:1.4em"></p>
       </div>
-      <p class="hidden-verse ${q.done?"shown":""}" id="hv">${esc(v.text)}</p>`;
+      `;
   }
   let actions = "";
   if(!q.done){
@@ -3480,6 +3480,10 @@ function scoreFreeText(text, attempt){
 /* Recitación: el reconocimiento de voz "moderniza" el español de la RVR1960
    (pedid → pedí/pedir, hallaréis → allá reís/hallarás, os → los/nos, buscad → buscar).
    Aceptamos esas formas para no marcar como error lo que sí dijiste bien. */
+/* Palabras cortas que el micrófono confunde a menudo */
+const SHORT_HEARD = { aun:["un","an","aunque"], ha:["a","ah"], a:["ha","ah"], he:["e","eh"], hay:["ay","ahi"], o:["oh","ho"], mas:["mas","pues"], oh:["o"], yo:["llo"], vosotros:["ustedes"] };
+/* Dos palabras de la RVR que el micrófono escribe como una sola */
+const PAIR_HEARD = { "se os":["sus","sos","seos","seis","sea"], "os he":["oye","hoy"], "os ha":["osa","hoja"], "y se":["yse","ese"] };
 const OS_LIKE = ["os","los","nos","o","vos","us","hos","oz","dos","les","le","se"];
 /* Cómo suena: b/v, ll/y, c/s/z, la h muda, qu/k… así "haya" = "allá", "vendrá" = "bendrá" */
 function phon(w){
@@ -3493,12 +3497,13 @@ function spokenVariants(w){
   if(w==="vosotros") ["ustedes","nosotros","vosotras"].forEach(x=>v.add(x));
   if((m = w.match(/^(.{2,})([aei])d$/))){ const s0 = m[1], vw = m[2];
     const stems = new Set([s0, s0.replace(/e([^aeiou]*)$/, "i$1"), s0.replace(/c$/, "qu"), s0.replace(/g$/, "gu"), s0.replace(/z$/, "c")]);   // pedid → pide/pidan, buscad → busquen
-    stems.forEach(st=>[vw+"r", vw, vw+"n", vw+"s", "en", "an", "a", "e", "es", "as"].forEach(e=>v.add(st+e))); }      // pedid, buscad, llamad
+    stems.forEach(st=>[vw+"r", vw, vw+"n", vw+"s", "en", "an", "a", "e", "es", "as", vw+"do", vw+"da", vw+"dos", vw+"das", vw+"de"].forEach(e=>v.add(st+e))); }      // pedid, buscad, llamad (y "pedido", "llamada")
   if((m = w.match(/^(.{2,})reis$/))){ ["ras","ran","rais","re","res","ren"].forEach(e=>v.add(m[1]+e)); }                                                  // hallaréis, seréis
   else if((m = w.match(/^(.{2,})([aei])is$/))){ [m[2]+"s", m[2]+"n", "es", "as", "an", "en"].forEach(e=>v.add(m[1]+e)); }                               // estáis, sabéis
   if((m = w.match(/^(.{2,})os$/)) && /(aos|eos|ios)$/.test(w)){ v.add(m[1]+"se"); }                                                                        // amaos → amarse
   if(w.startsWith("h")) v.add(w.slice(1));                                                                                                                 // la h no suena
   if(w==="y") ["e","i","de"].forEach(x=>v.add(x));
+  (SHORT_HEARD[w]||[]).forEach(x=>v.add(x));
   return v;
 }
 function spokenEq(t, a){
@@ -3530,11 +3535,19 @@ function scoreSpoken(text, attempt){
     let hit = null;
     for(let n=2; n<=3 && !hit; n++) for(let i=0; i+n<=tw.length && !hit; i++){
       const parts = tw.slice(i,i+n), j = parts.join(""), pj = phon(j), pa = phon(a);
-      if(j===a || pj===pa || (pj.length>=6 && lev(pj,pa)<=1)) hit = parts;
+      if(j===a || pj===pa || (pj.length>=6 && lev(pj,pa)<=1) || (n===2 && (PAIR_HEARD[parts.join(" ")]||[]).includes(a))) hit = parts;
     }
     if(hit) split.push(...hit); else split.push(a);
   });
   aw = split;
+  // "pedid, y" suele oírse como "pedidos": el "y" quedó pegado a la palabra anterior
+  const withY = [];
+  aw.forEach((a,i)=>{ withY.push(a);
+    if(/d[aoe]s?$/.test(a) && !["y","e","i"].includes(aw[i+1]||"")){
+      const k = tw.findIndex((t,j)=>/[aei]d$/.test(t) && tw[j+1]==="y" && spokenVariants(t).has(a));
+      if(k >= 0) withY.push("y");
+    } });
+  aw = withY;
   const { lcs, ops } = lcsAlign(tw, aw, spokenEq);
   const score = (2*lcs)/(tw.length+aw.length);
   const disp = text.split(/\s+/);
@@ -3743,10 +3756,13 @@ function startMic(){
   const begin = ()=>{
     REC = new SR();
     REC.lang = "es-ES";            // el español de España usa "vosotros/os/pedid", como la RVR1960
-    REC.continuous = true; REC.interimResults = true; REC.maxAlternatives = 1;
+    REC.continuous = true; REC.interimResults = true; REC.maxAlternatives = 5;
     // Se arma de nuevo con todos los resultados en cada evento. Algunos Android repiten la frase acumulada como resultados nuevos
     // ("por", "por cuanto", "por cuanto todos"…): si un trozo contiene al anterior, lo reemplaza en vez de sumarse (evita el "eco")
-    REC.onresult = e => { q.transcript = (finalText + mergeSpeech([...e.results].map(r=>r[0].transcript))).trim(); if(tr) tr.textContent = q.transcript; };
+    // de las opciones que da el reconocimiento, se queda con la que más se parece al versículo
+    const target = new Set(words(verse(q.id).text).map(phon));
+    const bestAlt = r => { let best = r[0], bs = -1; for(let k=0;k<r.length;k++){ const w = words(r[k].transcript); const sc = w.filter(x=>target.has(phon(x))).length - w.length*0.01; if(sc > bs){ bs = sc; best = r[k]; } } return best.transcript; };
+    REC.onresult = e => { q.transcript = (finalText + mergeSpeech([...e.results].map(bestAlt))).trim(); if(tr) tr.textContent = q.transcript; };
     REC.onerror = e => {
       if(e.error === "not-allowed" || e.error === "service-not-allowed"){ REC_ON = false; micFallback("No hay permiso para usar el micrófono. Actívalo en los ajustes del navegador para este sitio."); }
       else if(e.error === "audio-capture"){ REC_ON = false; micFallback("No encontramos un micrófono en este dispositivo."); }
@@ -3764,7 +3780,7 @@ function startMic(){
     };
     REC.start();
   };
-  try{ REC_ON = true; begin(); btn.classList.add("live"); msg.textContent = "Escuchando… di el versículo y toca el micrófono al terminar."; }
+  try{ REC_ON = true; begin(); btn.classList.add("live"); msg.textContent = "Escuchando…"; }
   catch(e){ REC_ON = false; REC = null; micFallback("El micrófono no está disponible en esta vista."); }
 }
 function mergeSpeech(parts){
@@ -3793,20 +3809,20 @@ function switchToWrite(){
   s.modes = s.modes || {}; s.modes[s.q.id] = s.q.ini ? "iniw" : "write"; if(s.mode === "recite") s.mode = "write"; if(s.mode === "ini") s.mode = "iniw";
   prepQuestion(); render();
 }
+function micHardStop(){ REC_ON = false; if(REC){ const r = REC; REC = null; try{ r.onend = null; r.onresult = null; r.abort(); }catch(e){ try{ r.stop(); }catch(e2){} } } const b = $("#micBtn"); if(b) b.classList.remove("live"); }
 function reveal(){
   const q = SESSION.q; const v = verse(q.id);
   if(q.textDone) return;
-  if(REC){ try{REC.stop();}catch(e){} }
-  $("#hv").classList.add("shown");
+  micHardStop();   // al ver el resultado el micrófono se apaga (antes seguía escuchando)
   if(q.transcript && q.transcript.trim()){
+    const mb = $("#micBox"); if(mb) mb.remove();   // queda solo la comparación, sin repetir el texto
     const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
     const r = scoreSpoken(v.text, tx);
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p><p class="muted" style="font-size:12.5px;margin-top:6px">Aceptamos cuando el micrófono entiende “pedí” por <i>pedid</i> o “los” por <i>os</i>.</p></div>`);
+    gradeText(r.score, `<div><p class="muted" style="font-size:13px;margin-bottom:4px">Lo que escuchamos comparado con el texto:</p><p class="diff">${r.html}</p></div>`);
     return;
   }
   // sin voz no hay resultado: se ofrece intentar de nuevo o escribirlo
-  $("#hv").classList.remove("shown");
   micFallback("Todavía no escuchamos tu voz. Toca el micrófono y recita, o escríbelo.");
 }
 
@@ -6346,7 +6362,7 @@ function speak(text){
     speechSynthesis.speak(u);
   }catch(e){ toast("No se pudo reproducir el audio."); }
 }
-function stopSpeech(){ try{ speechSynthesis.cancel(); }catch(e){} if(REC){ try{REC.stop();}catch(e){} } }
+function stopSpeech(){ try{ speechSynthesis.cancel(); }catch(e){} micHardStop(); }
 
 /* =========================================================
    MODALES Y AVISOS
