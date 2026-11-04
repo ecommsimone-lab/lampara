@@ -3291,8 +3291,13 @@ function buildTasks(ids){
     tasks.push(...block, { type:"ref", id, lesson:true });
   });
   ids = ids.filter(id=>!lessonIds.has(id));
-  ids.forEach(id=>{ if(needsParts(id, SESSION.mode)){ const ph = splitPhrases(verse(id).text); ph.forEach((_,i)=>tasks.push({ type:"part", id, part:i, of:ph.length })); } tasks.push({ type:"text", id }); });
-  shuffle(ids).forEach(id=>{
+  // memorizados: una sola pregunta (el texto); la cita se pregunta aparte, de vez en cuando
+  const memo = id => status(id)==="ok" && !(SESSION.knowCheck||{})[id];
+  ids.forEach(id=>{ if(needsParts(id, SESSION.mode)){ const ph = splitPhrases(verse(id).text); ph.forEach((_,i)=>tasks.push({ type:"part", id, part:i, of:ph.length })); } tasks.push(memo(id) ? { type:"text", id, solo:true } : { type:"text", id }); });
+  const refCand = activeIds().filter(id=>status(id)==="ok" && verse(id)).sort((a,b)=>((prog(a).refLast||0)-(prog(b).refLast||0)));
+  const pickRef = refCand.find(id=>Date.now() - (prog(id).refLast||0) > 10*DAY);
+  if(pickRef && !SESSION.review){ const pos = Math.floor(tasks.length/2) + Math.floor(Math.random()*(Math.ceil(tasks.length/2)+1)); tasks.splice(Math.min(tasks.length, pos), 0, { type:"ref", id:pickRef, only:true }); }
+  shuffle(ids.filter(id=>!memo(id))).forEach(id=>{
     const p = tasks.findIndex(x=>x.type==="text" && x.id===id);
     const min = Math.min(tasks.length, p+3);
     const pos = min + Math.floor(Math.random()*(tasks.length-min+1));
@@ -3753,6 +3758,7 @@ function gradeText(score, extraHTML=""){
   const pct = Math.round(score*100);
   const cls = score>=.9?"ok":score>=.6?"mid":"bad";
   s.explain = { items:q.errs||[], text:v.text, ref:v.ref, diff:s.textInfo[q.id].diff };
+  if((s.tasks[s.t]||{}).solo){ q.stage = "text"; finalize(score); return; }   // memorizado: sin pregunta de cita en esta ronda
   $("#feedback").innerHTML = fbBar(score, "");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   fbFocus();
@@ -3764,6 +3770,7 @@ function checkRef(giveUp=false){
   if(!giveUp && !rb.value.trim()){ toast("Escribe la cita o toca “No la recuerdo”."); rb.focus(); return; }
   const ok = !giveUp && refMatch(v.ref, rb.value);
   q.refErr = ok ? null : { want:v.ref, got: giveUp ? "" : rb.value.trim() };
+  if((SESSION.tasks[SESSION.t]||{}).only){ rb.disabled = true; rb.classList.add(ok?"ref-ok":"ref-bad"); finalizeRefOnly(ok); return; }
   rb.disabled = true; rb.classList.add(ok?"ref-ok":"ref-bad");
   const ts = SESSION.pending[q.id] ?? 0;
   const score = ok ? ts : Math.min(ts*0.85, 0.85);   // sin la cita correcta no sube de nivel
@@ -3779,6 +3786,16 @@ function markKnown(id){
   if(S.unlocked < SUGGESTED.length){ S.unlocked++; GROWN_KNOWN = 1; }
   persist();
 }
+/* Pregunta de cita suelta (versículo memorizado): no cambia el avance del texto, solo registra la cita */
+function finalizeRefOnly(ok){
+  const s = SESSION, q = s.q; if(q.done) return; q.done = true;
+  const p = S.progress[q.id]; if(p){ p.refLast = Date.now(); p.refOk = ok; }
+  const xp = ok ? 6 : 2; gainXP(xp); persist();
+  s.explain = { items: ok ? [] : [{ kind:"cita", txt: q.refErr && q.refErr.got ? `Escribiste «${q.refErr.got}». La cita es ${q.refErr.want}.` : `La cita es ${verse(q.id).ref}.` }], text:verse(q.id).text, ref:verse(q.id).ref, diff:"" };
+  $("#feedback").innerHTML = fbBar(ok ? 1 : 0.5, ok ? "" : `La cita es ${verse(q.id).ref}.`, s.t >= s.tasks.length-1 ? "Ver resultados" : "Continuar");
+  root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+  fbFocus();
+}
 function finalize(score, extraHTML=""){
   const s = SESSION, q = s.q;
   if(q.done) return;
@@ -3791,6 +3808,7 @@ function finalize(score, extraHTML=""){
     else extraHTML = `<div class="result-bar mid"><span>Casi. Lo seguiremos practicando hasta que te lo sepas completo.</span></div>` + extraHTML;
   }
   const task = s.tasks[s.t] || {};
+  if(task.type==="ref" && S.progress[q.id]){ S.progress[q.id].refLast = Date.now(); S.progress[q.id].refOk = !q.refErr; }
   if(task.lesson && outcome==="ok"){
     const p = S.progress[q.id]; if(p){ p.box = Math.max(p.box, 2); p.ivl = 1; p.due = dayStart(Date.now(), 1); }
     extraHTML = `<div class="result-bar ok"><span>🎉 <b style="font-size:inherit">¡Lo aprendiste hoy!</b> Mañana lo repasamos para que no se te olvide.</span></div>` + extraHTML;
