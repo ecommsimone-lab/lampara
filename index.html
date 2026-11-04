@@ -3311,10 +3311,9 @@ function prepQuestion(){
   const s = SESSION; const task = s.tasks[s.t]; const id = task.id; const v = verse(id);
   if(task.type==="ref"){
     s.q = { id, stage:"ref", done:false, spokenRef: s.spoken[id]||"" };
-    // cita de selección múltiple: en el repaso de memorizados (una sí, una no) y en versículos que apenas empiezas
     s.mcCount = (s.mcCount||0) + 1;
-    const box = (prog(id)||{box:0}).box;
-    if((s.review && s.mcCount % 2 === 1) || (!s.review && box <= 1 && !(s.knowCheck||{})[id])) s.q.opts = refOptions(id);
+    // con opciones solo la primera vez que aparece el versículo; después, siempre escribirla
+    if(!(prog(id) && prog(id).reps>0) && !(s.knowCheck||{})[id]) s.q.opts = refOptions(id);
     return;
   }
   if(task.type==="step"){
