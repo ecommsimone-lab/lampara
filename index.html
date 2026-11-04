@@ -3213,8 +3213,21 @@ function splitPhrases(text){
   return out.filter(Boolean);
 }
 const needsParts = (id, mode) => (mode==="mixto" || mode==="blanks") && (prog(id)||{box:0}).box===0 && splitPhrases(verse(id).text).length>1 && !(SESSION && SESSION.knowCheck && SESSION.knowCheck[id]);
+/* Versículo nuevo: mini-lección el primer día (recomponer → espacios → primera letra y largo → completo),
+   como recomiendan los expertos: aprenderlo hasta recordarlo completo una vez, y luego repasos espaciados en días distintos */
+const isNewLesson = id => SESSION && SESSION.mode==="mixto" && !(prog(id) && prog(id).reps>0) && !(SESSION.knowCheck||{})[id];
 function buildTasks(ids){
-  const tasks = [];
+  const tasks = [], lessonIds = new Set();
+  ids.filter(isNewLesson).forEach(id=>{
+    lessonIds.add(id);
+    const ph = splitPhrases(verse(id).text), block = [];
+    if(ph.length>1) ph.forEach((_,i)=>block.push({ type:"part", id, part:i, of:ph.length, lesson:true }));
+    else block.push({ type:"step", id, step:"order" });
+    block.push({ type:"step", id, step:"blanks" }, { type:"step", id, step:"initl" }, { type:"text", id, lesson:true });
+    block.forEach((t,i)=>{ t.stepN = i+1; t.stepOf = block.length; });
+    tasks.push(...block, { type:"ref", id, lesson:true });
+  });
+  ids = ids.filter(id=>!lessonIds.has(id));
   ids.forEach(id=>{ if(needsParts(id, SESSION.mode)){ const ph = splitPhrases(verse(id).text); ph.forEach((_,i)=>tasks.push({ type:"part", id, part:i, of:ph.length })); } tasks.push({ type:"text", id }); });
   shuffle(ids).forEach(id=>{
     const p = tasks.findIndex(x=>x.type==="text" && x.id===id);
@@ -3241,15 +3254,25 @@ function prepQuestion(){
     if((s.review && s.mcCount % 2 === 1) || (!s.review && box <= 1 && !(s.knowCheck||{})[id])) s.q.opts = refOptions(id);
     return;
   }
+  if(task.type==="step"){
+    const q = { id, mode:task.step, stage:"text", isPart:true, isStep:true, stepN:task.stepN, stepOf:task.stepOf, part:0, of:1, phrase:v.text, textDone:false, textScore:0, done:false };
+    if(task.step==="order"){ const sl = wordSlots(v.text); Object.assign(q, { slots:sl, bank:shuffle(sl.map((x,i)=>i)), fill:sl.map(()=>null) }); }
+    if(task.step==="initl"){ q.slots = wordSlots(v.text); q.got = []; }
+    if(task.step==="blanks"){ const toks = v.text.split(/(\s+)/), cand = []; toks.forEach((t,i)=>{ const w=norm(t); if(w && w.length>=3) cand.push(i); });
+      q.toks = toks; q.blanks = shuffle(cand).slice(0, Math.max(1, Math.round(cand.length*.5))).sort((a,b)=>a-b); }
+    s.q = q; return;
+  }
   if(task.type==="part"){
     const ph = splitPhrases(v.text)[task.part] || v.text, toks = ph.split(/(\s+)/), cand = [];
     toks.forEach((t,i)=>{ const w=norm(t); if(w && w.length>=3) cand.push(i); });
     const pick = new Set(shuffle(cand).slice(0, Math.max(1, Math.round(cand.length*.35))));
     s.q = { id, mode:"blanks", stage:"text", isPart:true, part:task.part, of:task.of, phrase:ph, textDone:false, textScore:0, done:false, toks, blanks:[...pick].sort((a,b)=>a-b) };
     if(s.mode==="mixto"){ const sl = wordSlots(ph); Object.assign(s.q, { mode:"order", slots:sl, bank:shuffle(sl.map((x,i)=>i)), fill:sl.map(()=>null) }); }
+    if(task.lesson) Object.assign(s.q, { isStep:true, stepN:task.stepN, stepOf:task.stepOf });
     return;
   }
   let mode = modeFor(id);
+  if(task.lesson) mode = "write";                                        // último paso de la mini-lección: completo, sin pistas
   if(mode==="order" && splitPhrases(v.text).length>1) mode = "blanks";   // versículo largo: ya se recompuso por partes; el completo, con espacios
   const ini = mode==="ini" || mode==="iniw";
   if(ini) mode = mode==="ini" ? "recite" : "write";
@@ -3387,9 +3410,9 @@ function quizBody(){
     else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}${q.mode==="blanks" ? `<button class="btn ghost" data-act="hint">Pista</button>` : ""}<button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span>${q.mode==="order"||q.mode==="initl" ? "" : `<button class="btn primary" data-act="check">Comprobar</button>`}</div>`;
   }
   return `
-  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
+  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:q.isStep?`<span class="chip acc">🌱 Aprendiendo · paso ${q.stepN} de ${q.stepOf}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
   <div class="q-card">
-    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.ini?(q.mode==="recite"?"Recítalo con ayuda de las iniciales":"Escríbelo con ayuda de las iniciales"):q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.isStep?`Versículo nuevo · ${q.isPart&&q.of>1&&q.mode==="order"?`recompón la parte ${q.part+1} de ${q.of}`:{order:"recompónlo",blanks:"llena los espacios",initl:"primera letra y largo"}[q.mode]||"apréndelo"}`:q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.ini?(q.mode==="recite"?"Recítalo con ayuda de las iniciales":"Escríbelo con ayuda de las iniciales"):q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
     ${iniBox}
     ${inner}
     <div id="feedback"></div>
@@ -3570,6 +3593,18 @@ function feedbackHTML(score){
 function gradeText(score, extraHTML=""){
   const s = SESSION, q = s.q;
   if(q.textDone) return;
+  if(q.isStep){   // pasos de la mini-lección: preparan para decirlo completo, no cuentan para el progreso
+    q.textDone = true; q.done = true;
+    const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", lastStep = q.stepN === q.stepOf-1;
+    const msg = lastStep ? "¡Muy bien! Ahora escríbelo completo, sin pistas." : score>=.9 ? "¡Bien! Vamos con el siguiente paso, con menos ayuda." : "Sigue así. En el siguiente paso lo vuelves a practicar.";
+    $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
+      <div class="result-bar ${cls}"><b>${pct}%</b><span>${msg}</span></div>
+      <p class="muted" style="font-size:13px;margin:0">${q.isPart&&q.of>1&&q.mode==="order"?"Esta parte dice:":"El versículo dice:"}</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p>
+      <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${lastStep?"Escribirlo completo":"Siguiente paso"}</button></div></div>`;
+    root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
+    const n = $("#nextQ"); if(n) n.focus();
+    return;
+  }
   if(q.isPart){   // práctica por frases: no cuenta para el progreso, solo prepara para el versículo completo
     q.textDone = true; q.done = true;
     const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", last = q.part === q.of-1;
@@ -3625,8 +3660,12 @@ function finalize(score, extraHTML=""){
     if((s.pending[q.id] ?? 0) >= .95){ markKnown(q.id); outcome = "ok"; extraHTML = `<div class="result-bar ok"><span>✓ <b style="font-size:inherit">¡Ya lo sabías!</b> Pasó a aprendidos. Te lo preguntaremos de vez en cuando para que no se te olvide${GROWN_KNOWN?", y agregamos un versículo nuevo a tu plan":""}.</span></div>` + extraHTML; GROWN_KNOWN = 0; }
     else extraHTML = `<div class="result-bar mid"><span>Casi. Lo seguiremos practicando hasta que te lo sepas completo.</span></div>` + extraHTML;
   }
-  const xp = xpFor(score, q.mode); gainXP(xp);
   const task = s.tasks[s.t] || {};
+  if(task.lesson && outcome==="ok"){
+    const p = S.progress[q.id]; if(p){ p.box = Math.max(p.box, 2); p.ivl = 1; p.due = dayStart(Date.now(), 1); }
+    extraHTML = `<div class="result-bar ok"><span>🎉 <b style="font-size:inherit">¡Lo aprendiste hoy!</b> Mañana lo repasamos para que no se te olvide.</span></div>` + extraHTML;
+  }
+  const xp = xpFor(score, q.mode); gainXP(xp);
   const prevI = task.retry ? s.results.findIndex(r=>r.id===q.id) : -1;
   if(prevI >= 0){ const pr = s.results[prevI]; s.results[prevI] = { id:q.id, score, outcome, before:pr.before, after:status(q.id), xp:pr.xp + xp, retried:true }; }
   else s.results.push({ id:q.id, score, outcome, before, after:status(q.id), xp });
@@ -7623,7 +7662,7 @@ document.addEventListener("click", e=>{
       break;
     }
     case "mic": startMic(); break;
-    case "know-it": { const s = SESSION; if(!s || !s.q || s.q.done) break; s.knowCheck = s.knowCheck || {}; s.knowCheck[s.q.id] = true; { const kid = s.q.id; s.tasks = s.tasks.filter((x,i)=>i<s.t || !(x.type==="part" && x.id===kid)); } s.modes = s.modes || {}; s.modes[s.q.id] = "write"; prepQuestion(); render(); const ta = $("#answer, textarea"); if(ta) ta.focus(); break; }
+    case "know-it": { const s = SESSION; if(!s || !s.q || s.q.done) break; s.knowCheck = s.knowCheck || {}; s.knowCheck[s.q.id] = true; { const kid = s.q.id; s.tasks = s.tasks.filter((x,i)=>i<s.t || !((x.type==="part" || x.type==="step") && x.id===kid)); } s.modes = s.modes || {}; s.modes[s.q.id] = "write"; prepQuestion(); render(); const ta = $("#answer, textarea"); if(ta) ta.focus(); break; }
     case "mic-write": switchToWrite(); break;
     case "mic-off": { S.noMicUntil = Date.now() + MIC_PAUSE; persist(); toast("Listo. Durante 15 minutos no te pediremos recitar; escribirás los versículos."); switchToWrite(); break; }
     case "reveal": reveal(); break;
