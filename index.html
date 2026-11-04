@@ -1545,10 +1545,11 @@ function applyResult(id, score){
   return outcome;
 }
 function maybeUnlock(){
-  const struggling = activeIds().filter(id=>{ const p=prog(id); return !p || p.box<2; }).length;
-  if(struggling < 3 && S.unlocked < SUGGESTED.length){
+  // solo se agrega uno nuevo al plan cuando no hay ninguno esperando y los que estás aprendiendo van bien
+  if(activeIds().some(id=>!prog(id)) || newAllowed() <= 0) return 0;
+  if(S.unlocked < SUGGESTED.length){
     const before = S.unlocked;
-    S.unlocked = Math.min(SUGGESTED.length, S.unlocked+UNLOCK_STEP);
+    S.unlocked = Math.min(SUGGESTED.length, S.unlocked+1);
     return S.unlocked-before;
   }
   return 0;
@@ -1681,9 +1682,10 @@ function buildQueue(ids, {grow=false, size=S.prefs.size}={}){
   const want = Math.ceil(size*0.6);
   const need = Math.max(want-fresh.length, size-ids.length);
   fresh = limitNew(fresh, Math.min(3, fresh.length));
-  if(grow && need>0 && S.unlocked<SUGGESTED.length && newBudget()>0){
+  const canNew = newAllowed();
+  if(grow && need>0 && S.unlocked<SUGGESTED.length && canNew>0 && !ids.some(id=>!prog(id))){
     const before = S.unlocked;
-    S.unlocked = Math.min(SUGGESTED.length, S.unlocked + Math.min(10, need));
+    S.unlocked = Math.min(SUGGESTED.length, S.unlocked + canNew);
     const added = SUGGESTED.slice(before, S.unlocked).map(r=>r[0]);
     ids = ids.concat(added); fresh = fresh.concat(added); GROWN = added.length;
   }
@@ -1693,8 +1695,11 @@ function buildQueue(ids, {grow=false, size=S.prefs.size}={}){
   const rest = fresh.filter(id=>!pick.includes(id));
   pick = pick.concat(weightedSample(rest.filter(id=>isDue(id,now)), size-pick.length, now));
   if(pick.length<size) pick = pick.concat(weightedSample(rest.filter(id=>!pick.includes(id)), size-pick.length, now));
-  if(pick.length<size) pick = pick.concat(weightedSample(ids.filter(id=>!pick.includes(id) && !resting(id)), size-pick.length, now));
-  if(pick.length<size) pick = pick.concat(weightedSample(ids.filter(id=>!pick.includes(id)), size-pick.length, now));
+  // completar solo con versículos que ya empezaste (refuerzo), nunca con nuevos de más
+  const allowedNew = new Set(fresh.filter(id=>!prog(id)));
+  const okFill = id => !pick.includes(id) && (prog(id) || allowedNew.has(id));
+  if(pick.length<size) pick = pick.concat(weightedSample(ids.filter(id=>okFill(id) && !resting(id)), size-pick.length, now));
+  if(pick.length<size) pick = pick.concat(weightedSample(ids.filter(okFill), size-pick.length, now));
   return shuffle(pick);
 }
 function rememberSession(ids, failed){
@@ -2297,7 +2302,7 @@ function viewHome(){
   const dueAll = dueIds(act);
   const dueReview = dueAll.filter(id=>prog(id)&&prog(id).reps>0).length;
   // los nuevos solo cuentan si tu ritmo permite empezarlos esta semana (si no, la práctica no los incluye y el número nunca bajaba)
-  const dueNew = Math.min(dueAll.length - dueReview, newBudget());
+  const dueNew = Math.min(dueAll.length - dueReview, newAllowed());
   const todayN = dueReview + dueNew;
   const first = dueAll[0] ? verse(dueAll[0]) : verse(act[0]);
   const hour = new Date().getHours();
@@ -3012,9 +3017,12 @@ function viewList(id){
    Fase 1: tarjetas (repaso) · Fase 2: preguntas · Fase 3: resumen
    ========================================================= */
 /* Duración de la sesión → cantidad de versículos (≈ 1,6 min por versículo: tarjeta + pregunta + cita) */
-const MINUTES = [5,10,15,20,30];
-const versesFor = m => Math.max(2, Math.round(m/1.6));
-function sessionSize(){ return versesFor(S.prefs.minutes||10); }
+const MINUTES = [5,10,15,20];
+/* Versículos por sesión (máximo 8, según lo que recomiendan los expertos: pocos y bien repasados) */
+const VERSES_BY_MIN = { 5:3, 10:5, 15:6, 20:8 };
+const versesFor = m => VERSES_BY_MIN[m] || (m > 20 ? 8 : m >= 15 ? 6 : m >= 10 ? 5 : 3);
+const minOf = n => Math.max(3, Math.round(n*2.5));   // tiempo aproximado de una sesión con n versículos
+function sessionSize(){ return versesFor(Math.min(20, S.prefs.minutes||10)); }
 function pickFor(source, listId){
   const size = sessionSize();
   if(source==="rev"){
@@ -3125,7 +3133,7 @@ function renderSession(){
       <div style="display:flex;flex-direction:column;gap:10px">
         <span class="eyebrow">¿Cuánto tiempo tienes?</span>
         <div class="row" style="gap:8px">${MINUTES.map(m=>`<button class="btn ${ (S.prefs.minutes||10)===m?"primary":""}" data-act="dur" data-m="${m}" aria-pressed="${(S.prefs.minutes||10)===m}">${m} min</button>`).join("")}</div>
-        <small class="muted">${s.ids.length} ${s.ids.length===1?"versículo":"versículos"} · unos ${Math.round(s.ids.length*1.6)} minutos${s.ids.length<versesFor(S.prefs.minutes||10)?" (no hay más versículos disponibles en esta lista)":""}</small>
+        <small class="muted">${s.ids.length} ${s.ids.length===1?"versículo":"versículos"} · unos ${minOf(s.ids.length)} minutos${s.ids.length<versesFor(S.prefs.minutes||10)?" (no hay más versículos disponibles en esta lista)":""}</small>
       </div>
       <div class="panel" style="padding:14px 16px"><div class="vlist">${s.ids.map((id,i)=>{const v=verse(id);return `<div class="vrow" style="grid-template-columns:28px minmax(0,1fr) auto;padding:6px 4px"><span class="idx">${i+1}</span><div class="t"><b>${esc(v.ref)}</b></div><span class="chip ${status(id)}">${STATUS_LABEL[status(id)]}</span></div>`;}).join("")}</div></div>
       ${(()=>{ const n=cardIdsFor(s.ids).length; return n ? `<p class="muted" style="font-size:13px">Primero verás ${n===1?"1 tarjeta":n+" tarjetas"} de los versículos nuevos o que fallaste. Los que ya conoces van directo a la pregunta.</p><div class="row"><button class="btn primary lg" data-act="begin-cards">${I.play} Empezar</button><button class="btn ghost" data-act="skip-cards">Saltar las tarjetas</button></div>` : `<div class="row"><button class="btn primary lg" data-act="skip-cards">${I.play} Empezar</button></div>`; })()}`;
@@ -4991,11 +4999,29 @@ function newBudget(){
   const started = Object.values(S.progress||{}).filter(p=>p && !p.placed && !p.known && p.introduced && p.introduced >= since && p.reps>0).length;   // los que ya sabías no cuentan   // los que ya sabías en la prueba de nivel no cuentan
   return Math.max(0, RITMOS[ritmo()].week - started);
 }
+/* ¿Cuántos versículos nuevos pueden entrar ahora?
+   Solo entra uno nuevo cuando los que estás aprendiendo van bien (su última respuesta fue correcta)
+   y no tienes demasiados a medio aprender. Además: máximo por sesión según el tiempo, por día y por semana según tu ritmo. */
+const LEARNING_MAX = { tranquilo:2, constante:3, intensivo:4 };
+function newPerSession(){ const m = Math.min(20, (S && S.prefs && S.prefs.minutes) || 10); return m >= 15 && ritmo()==="intensivo" ? 2 : 1; }
+function learningIds(){ return activeIds().filter(id=>{ const p = prog(id); return p && p.reps>0 && !p.known && p.box < MASTER; }); }
+function newAllowed(){
+  if(!S) return 0;
+  const learning = learningIds();
+  const lastOk = id => { const h = (prog(id)||{}).hist || []; return h.length && h[h.length-1] >= 90; };
+  if(learning.some(id=>!lastOk(id))) return 0;                                   // primero, que los que estás aprendiendo salgan bien
+  const room = (LEARNING_MAX[ritmo()] || 3) - learning.length; if(room <= 0) return 0;
+  const t0 = dayStart(Date.now()), all = Object.values(S.progress||{}).filter(p=>p && !p.placed && !p.known && p.reps>0);
+  const startedToday = all.filter(p=>p.introduced >= t0).length;
+  const daily = all.length < 2 ? 2 : newPerSession();                            // el primer día se pueden empezar 2
+  return Math.max(0, Math.min(newBudget(), daily - startedToday, room));
+}
 function limitNew(ids, keepAtLeast){
-  let left = newBudget();
+  let left = newAllowed();
   if((S.queued||[]).length) ids = ids.slice().sort((a,b)=>upRank(a)-upRank(b));   // los que pediste memorizar van primero
-  const out = ids.filter(id=>{ if(prog(id)) return true; if(left>0){ left--; return true; } return false; });
-  return out.length >= (keepAtLeast||1) ? out : ids.slice(0, Math.max(keepAtLeast||1, out.length));
+  // los que pediste memorizar ("Memorizar este") sí entran, porque los elegiste tú
+  const out = ids.filter(id=>{ if(prog(id) || upRank(id) < 1e9) return true; if(left>0){ left--; return true; } return false; });
+  return out;
 }
 /* Asegura que los versículos de la etapa actual estén en tu plan */
 function syncPath(){
@@ -5023,7 +5049,9 @@ function pathQueue(size){
   const up = pending.filter(id=>upRank(id) < 1e9).slice(0, Math.max(0, size-rev.length));
   let main = up.concat(weightedSample(pending.filter(id=>!up.includes(id)), Math.max(0, Math.min(pending.length-up.length, size-rev.length-up.length)), now));
   if(main.length < size-rev.length) main = main.concat(weightedSample(cleared, size-rev.length-main.length, now));
-  return shuffle(main.concat(rev));
+  let out = main.concat(rev);
+  if(out.length < size){ const more = learned.filter(id=>!out.includes(id)); out = out.concat(weightedSample(more, size-out.length, now)); }   // refuerzo de los que ya sabes
+  return shuffle(out);
 }
 
 /* Puntos de experiencia (XP) y nivel */
@@ -7215,7 +7243,7 @@ function viewAjustes(){
     <h3 style="margin-bottom:6px">Práctica</h3>
     <div class="set-group">
       <div class="set-row"><div class="lbl"><b>Tu ritmo</b><small>${esc(RITMOS[ritmo()].desc)}</small></div>${seg("ritmo",[["tranquilo","🌱 Tranquilo"],["constante","🔥 Constante"],["intensivo","⚡ Intensivo"]])}</div>
-      <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>Define cuántos versículos entran</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20"],[30,"30 min"]])}</div>
+      <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>${versesFor(Math.min(20, S.prefs.minutes||10))} versículos por sesión, máximo ${newPerSession()} ${newPerSession()===1?"nuevo":"nuevos"}</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20 min"]])}</div>
       <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto va subiendo según cada versículo</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["ini","Iniciales"],["write","Escribir"],["recite","Recitar"]])}</div>
       <div class="set-row"><div class="lbl"><b>Al escribir el versículo</b><small>${punctFlex()?"No cuentan los puntos, comas ni otros signos. Sí cuentan las tildes.":"Cuenta todo: palabras, tildes y signos de puntuación."}</small></div>${seg("punct",[["exacto","Exacto"],["flexible","Sin signos"]])}</div>
     </div>
@@ -7671,7 +7699,7 @@ function startDemo(){
   S = freshState();
   S.unlocked = Math.max(S.unlocked, 12); S.methodSeen = true; S.placed = { skipped:true }; S.xp = 420;
   const now = Date.now(), D = 86400000, path = pathIds();
-  path.slice(0, 14).forEach((id,i)=>{ S.progress[id] = { reps: 3 + (i%3), box: i<8 ? 5 : i<11 ? 3 : 1, due: now + ((i%4)+1)*D, hist: i===12 ? [60,70] : [100, 95, 100], lapses: i===12 ? 1 : 0, last: now - D }; });
+  path.slice(0, 14).forEach((id,i)=>{ S.progress[id] = { reps: 3 + (i%3), box: i<8 ? 5 : i<11 ? 3 : 1, due: i>=8 ? now - D : now + ((i%4)+1)*D, hist: i===12 ? [60,70] : [100, 95, 100], lapses: i===12 ? 1 : 0, last: now - D }; });   // la demo tiene repasos pendientes hoy
   for(let d=0; d<12; d++){ S.log[todayKey(new Date(now - d*D))] = { n: 10, sum: 8.5 + (d%3)*0.4 }; }
   S.favs = ["jn-3-16","sal-23-1","flp-4-13"].filter(id=>verse(id));
   S.lists = [{ id:"l-demo", name:"Para memorizar en familia", ids:["jos-24-15","ef-6-1","prov-22-6"].filter(id=>verse(id)) }];
