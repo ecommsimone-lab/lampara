@@ -933,26 +933,27 @@ a.btn:not(.primary){color:var(--ink)}
 .night-card small{display:block;font-size:13px;opacity:.85;line-height:1.4;margin-top:2px}
 .night-card .btn{flex:none;background:#fff;color:#1E2A5A;border-color:transparent}
 .wg{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
-.ord-slots{display:flex;flex-wrap:wrap;gap:8px 4px;align-items:center;font-size:17px;line-height:1.2}
-.ord-slot{height:42px;padding:0 10px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.ord-slots{display:flex;flex-wrap:wrap;gap:10px 6px;align-items:center;font-size:15px;line-height:1.2}
+.ord-slot{height:32px;padding:0 8px;border-radius:9px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
 .ord-slot.cur{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
 .ord-slot.f{background:var(--accent-soft);border-color:transparent}
 .ord-slot.right{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .ord-slot.wrong{background:var(--bad-soft);color:var(--bad);border-color:transparent;text-decoration:line-through}
-.ord-bank{display:flex;flex-wrap:wrap;gap:10px;padding:16px;border-radius:var(--r-lg);background:var(--hero-2)}
-.ord-chip{border:0;border-radius:12px;padding:9px 16px;background:#9fd0ff;color:#123055;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.ord-bank{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:12px;padding:20px 18px 22px;border-radius:24px;background:var(--hero-2);margin-top:12px}
+.ord-chip{height:34px;border:0;border-radius:10px;padding:0 15px;background:#9fd0ff;color:#123055;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
 @keyframes ordbad{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .ord-chip.bad{background:var(--bad);color:#fff;animation:ordbad .3s}
 .ord-chip:disabled{opacity:.25;cursor:default}
-.il-words{display:flex;flex-wrap:wrap;gap:10px 12px;font-size:18px;line-height:1.4}
+.il-words{display:flex;flex-wrap:wrap;gap:22px 16px;font-size:16px;line-height:1.3;padding:4px 0 8px}
 .il-w{font-family:var(--f-mono);letter-spacing:.04em}
 .il-w.next{color:var(--muted);opacity:.6}
-.il-w.cur{border:2px solid var(--accent);border-radius:10px;padding:1px 8px;color:var(--ink);font-weight:700}
+.il-w.cur{border:2px solid var(--accent);border-radius:9px;padding:3px 8px;margin:-5px 0;color:var(--ink);font-weight:700}
 .il-w.right{color:var(--ok);font-family:var(--f-verse);letter-spacing:0;font-weight:600}
 .il-w.near{color:var(--accent);font-family:var(--f-verse);letter-spacing:0}
 .il-w.wrong{color:var(--bad);text-decoration:line-through;font-family:var(--f-verse);letter-spacing:0}
-.il-input{display:flex;gap:8px}
-.il-input .input{flex:1;min-width:0;font-size:18px}
+.il-input{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;padding:14px;border-radius:24px;background:var(--hero-2);margin-top:12px}
+.il-input .input{flex:1;min-width:0;height:44px;font-size:17px;border-radius:12px;background:var(--surface)}
+.il-input .btn{flex:none;width:46px;height:46px;padding:0;border-radius:50%;justify-content:center;font-size:20px}
 .tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
 .tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
@@ -3269,7 +3270,7 @@ function prepQuestion(){
 function orderHTML(q){
   const used = new Set(q.fill.filter(x=>x!=null));
   const slot = (x,i) => { const f = q.fill[i], res = q.res && q.res[i];
-    const w = Math.max(2.2, [...x.w].length*0.62 + 1.1);
+    const w = Math.max(2, [...x.w].length*0.55 + 1);
     return `<span class="wg">${esc(x.pre)}<button type="button" class="ord-slot${f!=null?" f":""}${res?" "+res:""}${f==null && i===q.fill.indexOf(null)?" cur":""}" data-act="ord-back" data-k="${i}" style="min-width:${w}em" ${q.res?"disabled":""}>${f!=null?esc(q.slots[f].w):""}</button>${esc(x.post)}${q.res && res!=="right" ? `<span class="fix">${esc(x.w)}</span>` : ""}</span>`; };
   return `<div class="ord-slots" id="ordSlots">${q.slots.map(slot).join(" ")}</div>
     ${q.res ? "" : `<p class="muted" style="font-size:13px;margin:0">Toca las palabras en el orden correcto.</p>
@@ -3297,8 +3298,7 @@ function initlHTML(q){
     const g = q.got[i], chars = [...x.w], cue = chars[0] + "_".repeat(Math.max(1, chars.length-1));
     if(g) return `<span class="wg">${esc(x.pre)}<span class="il-w ${g.c}">${esc(g.c==="right"?x.w:g.t||"—")}</span>${g.c!=="right"?`<span class="fix">${esc(x.w)}</span>`:""}${esc(x.post)}</span>`;
     return `<span class="wg">${esc(x.pre)}<span class="il-w ${i===q.got.length?"cur":"next"}">${esc(cue)}</span>${esc(x.post)}</span>`; }).join(" ")}</div>
-    ${q.textDone ? "" : `<div class="il-input"><input class="input" id="ilBox" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc([...(q.slots[q.got.length]||{w:" "}).w][0])}" aria-label="Escribe la siguiente palabra"><button class="btn primary" data-act="il-next" aria-label="Siguiente palabra">→</button></div>
-    <p class="muted" style="font-size:13px;margin:0">Escribe la siguiente palabra y toca → o la barra espaciadora.</p>`}`;
+    ${q.textDone ? "" : `<p class="muted" style="font-size:13px;margin:0">Escribe la siguiente palabra del versículo.</p><div class="il-input"><input class="input" id="ilBox" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc([...(q.slots[q.got.length]||{w:" "}).w][0])}" aria-label="Escribe la siguiente palabra"><button class="btn primary" data-act="il-next" aria-label="Siguiente palabra">→</button></div>`}`;
 }
 function ilNext(){
   const q = SESSION && SESSION.q; if(!q || q.mode!=="initl" || q.textDone) return;
@@ -3308,7 +3308,7 @@ function ilNext(){
   const near = !exact && close(norm(t), norm(want));
   q.got.push({ t, c: exact ? "right" : near ? "near" : "wrong" });
   if(q.got.length >= q.slots.length){ checkAnswer(); return; }
-  const w = $("#ilWords"); if(w) w.outerHTML = initlHTML(q).split('<div class="il-input">')[0];
+  const w = $("#ilWords"); if(w) w.outerHTML = initlHTML(q).split('<p class="muted"')[0];
   if(el){ el.value = ""; el.placeholder = [...q.slots[q.got.length].w][0]; el.focus(); }
 }
 /* Opciones de la cita: la correcta y 3 citas reales de otros versículos, de preferencia del mismo libro */
@@ -3384,7 +3384,7 @@ function quizBody(){
   let actions = "";
   if(!q.done){
     if(q.mode==="recite") actions = `<div class="row"><button class="btn ghost" data-act="mic-off">🔇 No puedo hablar ahora</button><span style="flex:1"></span><button class="btn primary" data-act="reveal">Ver mi resultado</button></div>`;
-    else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}${q.mode==="blanks" ? `<button class="btn ghost" data-act="hint">Pista</button>` : ""}<button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span><button class="btn primary" data-act="check">Comprobar</button></div>`;
+    else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}${q.mode==="blanks" ? `<button class="btn ghost" data-act="hint">Pista</button>` : ""}<button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span>${q.mode==="order"||q.mode==="initl" ? "" : `<button class="btn primary" data-act="check">Comprobar</button>`}</div>`;
   }
   return `
   <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
