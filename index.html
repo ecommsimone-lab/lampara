@@ -941,6 +941,8 @@ a.btn:not(.primary){color:var(--ink)}
 .ord-slot.wrong{background:var(--bad-soft);color:var(--bad);border-color:transparent;text-decoration:line-through}
 .ord-bank{display:flex;flex-wrap:wrap;gap:10px;padding:16px;border-radius:var(--r-lg);background:var(--hero-2)}
 .ord-chip{border:0;border-radius:12px;padding:9px 16px;background:#9fd0ff;color:#123055;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+@keyframes ordbad{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.ord-chip.bad{background:var(--bad);color:#fff;animation:ordbad .3s}
 .ord-chip:disabled{opacity:.25;cursor:default}
 .il-words{display:flex;flex-wrap:wrap;gap:10px 12px;font-size:18px;line-height:1.4}
 .il-w{font-family:var(--f-mono);letter-spacing:.04em}
@@ -3270,7 +3272,7 @@ function orderHTML(q){
     const w = Math.max(2.2, [...x.w].length*0.62 + 1.1);
     return `<span class="wg">${esc(x.pre)}<button type="button" class="ord-slot${f!=null?" f":""}${res?" "+res:""}${f==null && i===q.fill.indexOf(null)?" cur":""}" data-act="ord-back" data-k="${i}" style="min-width:${w}em" ${q.res?"disabled":""}>${f!=null?esc(q.slots[f].w):""}</button>${esc(x.post)}${q.res && res!=="right" ? `<span class="fix">${esc(x.w)}</span>` : ""}</span>`; };
   return `<div class="ord-slots" id="ordSlots">${q.slots.map(slot).join(" ")}</div>
-    ${q.res ? "" : `<p class="muted" style="font-size:13px;margin:0">Toca las palabras en el orden correcto. Para quitar una, tócala arriba.</p>
+    ${q.res ? "" : `<p class="muted" style="font-size:13px;margin:0">Toca las palabras en el orden correcto. Si no es la que sigue, se pone roja. <b id="ordErr" style="color:var(--bad)">${q.err ? `${q.err} ${q.err===1?"error":"errores"}` : ""}</b></p>
     <div class="ord-bank" id="ordBank">${q.bank.map(j=>`<button type="button" class="ord-chip" data-act="ord-pick" data-k="${j}" ${used.has(j)?"disabled":""}>${esc(q.slots[j].w)}</button>`).join("")}</div>`}`;
 }
 function ordRefresh(){ const q = SESSION && SESSION.q; const box = $("#ordArea"); if(q && box) box.innerHTML = orderHTML(q); }
@@ -3278,10 +3280,18 @@ function ordPick(j){
   const q = SESSION && SESSION.q; if(!q || q.mode!=="order" || q.textDone) return;
   if(q.fill.includes(j)) return;
   const i = q.fill.indexOf(null); if(i<0) return;
+  // solo entra la palabra correcta; si no, la ficha se pone roja un momento y cuenta como error
+  if(norm(q.slots[j].w) !== norm(q.slots[i].w)){
+    q.err = (q.err||0) + 1;
+    const b = root.querySelector(`.ord-chip[data-k="${j}"]`); if(b){ b.classList.remove("bad"); void b.offsetWidth; b.classList.add("bad"); }
+    try{ if(navigator.vibrate) navigator.vibrate(40); }catch(e){}
+    const e = $("#ordErr"); if(e) e.textContent = `${q.err} ${q.err===1?"error":"errores"}`;
+    return;
+  }
   q.fill[i] = j; ordRefresh();
   if(!q.fill.includes(null)) checkAnswer();
 }
-function ordBack(i){ const q = SESSION && SESSION.q; if(!q || q.mode!=="order" || q.textDone || q.fill[i]==null) return; q.fill[i] = null; ordRefresh(); }
+function ordBack(i){}   // ya no se quitan palabras: solo entra la correcta
 /* ---------- Primera letra y largo: escribir palabra por palabra ---------- */
 function initlHTML(q){
   return `<div class="il-words" id="ilWords">${q.slots.map((x,i)=>{
@@ -3650,7 +3660,8 @@ function checkAnswer(){
     // vale cualquier copia de una palabra repetida ("que", "y"): se compara la palabra, no la ficha
     q.res = q.slots.map((x,i)=>{ const f = q.fill[i]; return f!=null && norm(q.slots[f].w)===norm(x.w) ? "right" : "wrong"; });
     ordRefresh();
-    gradeText(q.res.filter(r=>r==="right").length / q.slots.length);
+    const n = q.slots.length, ok = q.res.filter(r=>r==="right").length;
+    gradeText(ok / (n + (q.err||0)), q.err ? `<p class="muted" style="font-size:13px;margin:0">Lo armaste con ${q.err} ${q.err===1?"error":"errores"} en el camino.</p>` : "");
     return;
   }
   if(q.mode==="initl"){
