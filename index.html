@@ -965,6 +965,7 @@ a.btn:not(.primary){color:var(--ink)}
 .fb-ic{position:relative;flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:900;color:#fff;background:currentColor;animation:fbPop .45s both}
 .fb-bar .fb-ic{color:inherit}
 main:has(.fb-bar){padding-bottom:220px}
+body:has(#scrim) .fb-bar{visibility:hidden}
 .fb-bar.ok .fb-ic{background:var(--ok);color:#fff}.fb-bar.mid .fb-ic{background:var(--gold);color:#fff}.fb-bar.bad .fb-ic{background:var(--bad);color:#fff}
 .fb-sparks{position:absolute;inset:0;pointer-events:none}
 .fb-sparks i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--gold);transform:rotate(var(--a)) translateY(0);animation:fbSpark .7s var(--d) ease-out both}
@@ -976,6 +977,12 @@ main:has(.fb-bar){padding-bottom:220px}
 @keyframes fbPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12);opacity:1}100%{transform:none}}
 @keyframes fbSpark{0%{transform:rotate(var(--a)) translateY(0);opacity:1}100%{transform:rotate(var(--a)) translateY(-34px);opacity:0}}
 @media (prefers-reduced-motion:reduce){.fb-bar,.fb-txt b,.fb-ic,.fb-sparks i{animation:none}}
+.fb-ex{flex:1 1 100%;justify-content:center;padding:12px 18px;font-size:15px;font-weight:700;background:transparent;border:2px solid currentColor;color:inherit}
+@media (min-width:640px){.fb-ex{flex:0 0 auto}}
+.ex-sec{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--surface-2)}
+.ex-sec>b{font-size:14.5px;display:flex;gap:8px;align-items:center}
+.ex-sec>b span{font-size:12px;background:var(--surface);border-radius:999px;padding:1px 8px;color:var(--muted)}
+.ex-sec ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:15px;line-height:1.4}
 .tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
 .tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
@@ -3369,6 +3376,7 @@ function refOptions(id){
 function checkRefChoice(i){
   const q = SESSION.q; if(!q || q.done || !q.opts) return;
   const v = verse(q.id), ok = q.opts[i] === v.ref;
+  q.refErr = ok ? null : { want:v.ref, got:q.opts[i] };
   root.querySelectorAll("[data-act='ref-mc']").forEach(b=>{ b.disabled = true; const k = +b.dataset.i; if(q.opts[k]===v.ref) b.classList.add("right"); else if(k===i) b.classList.add("wrong"); });
   const ts = SESSION.pending[q.id] ?? 0;
   const score = ok ? ts : Math.min(ts*0.85, 0.85);
@@ -3574,7 +3582,8 @@ function scoreSpoken(text, attempt){
   const score = (2*lcs)/(tw.length+aw.length);
   const disp = text.split(/\s+/);
   const html = ops.map(o=> o.t==="extra" ? `<span class="extra">${esc(aw[o.a]||"")}</span>` : `<span class="${o.t}">${esc(disp[o.w]||"")}</span>`).join(" ");
-  return { score, html };
+  const errs = groupMisses(ops.filter(o=>o.t!=="ok").map(o=> o.t==="miss" ? { kind:"falta", w:(disp[o.w]||"").replace(/[.,;:!?¿¡"«»()]/g,""), i:o.w } : { kind:"sobra", w:aw[o.a]||"", i:1e6+o.a }));
+  return { score, html, errs };
 }
 /* Escritura estricta: cuentan tildes y signos de puntuación (no las mayúsculas).
    Palabra exacta = 1 punto · misma palabra con tilde o signo distinto = medio punto */
@@ -3618,6 +3627,51 @@ function scoreStrict(text, attempt){
   // las operaciones "ok" se alinearon por palabra base; recorrerlas en orden de aparición
   return { score: (2*credit)/(tRaw.length+aRaw.length), html, errs };
 }
+/* ----- "Explícame mis errores": lista de lo que estuvo mal, por tipo ----- */
+const PUNCT_NAME = { ",":"la coma", ".":"el punto", ";":"el punto y coma", ":":"los dos puntos", "?":"el signo de interrogación", "¿":"el signo de interrogación", "!":"el signo de exclamación", "¡":"el signo de exclamación", "(":"el paréntesis", ")":"el paréntesis", "«":"las comillas", "»":"las comillas", '"':"las comillas" };
+const coreOf = w => String(w).replace(/^[¿¡"«“(]+|[.,;:!?»”")]+$/g, "");
+const punctOf = w => (String(w).match(/^[¿¡"«“(]+/)||[""])[0] + (String(w).match(/[.,;:!?»”")]+$/)||[""])[0];
+function wordErr(want, got){
+  const kind = errKind(want, got), wc = coreOf(want), gc = coreOf(got);
+  if(kind==="puntuación"){
+    const wp = [...punctOf(want)], gp = [...punctOf(got)];
+    const miss = wp.filter(c=>!gp.includes(c)), extra = gp.filter(c=>!wp.includes(c));
+    const nm = l => [...new Set(l.map(c=>PUNCT_NAME[c]||`«${c}»`))].join(" y ");
+    return { kind:"punt", txt: miss.length ? (miss.some(c=>/[¿¡"«“(]/.test(c)) ? `Faltó ${nm(miss)} antes de «${wc}»` : `Faltó ${nm(miss)} después de «${wc}»`) : extra.length ? `Sobra ${nm(extra)} después de «${wc}»` : `Revisa los signos en «${want}»` };
+  }
+  if(kind==="tilde"){
+    const hasT = /[áéíóú]/i.test(wc);
+    return { kind:"tilde", txt: hasT ? `«${gc}» lleva tilde: «${wc}»` : `«${gc}» no lleva tilde: «${wc}»` };
+  }
+  return { kind:"orto", txt: gc ? `Escribiste «${gc}», es «${wc}»` : `Faltó «${wc}»` };
+}
+function groupMisses(list){   // une palabras faltantes seguidas en una sola frase
+  const out = []; list.forEach(m=>{ const last = out[out.length-1]; if(last && last.kind===m.kind && (m.kind==="falta"||m.kind==="sobra") && m.i===last.end+1){ last.words.push(m.w); last.end = m.i; } else out.push({ kind:m.kind, words:[m.w], end:m.i }); });
+  return out.map(g=>({ kind:g.kind, txt: g.kind==="falta" ? `Faltó: «${g.words.join(" ")}»` : `Sobró: «${g.words.join(" ")}»` }));
+}
+function explainText(text, attempt){
+  const T = text.split(/\s+/).filter(Boolean), A = String(attempt||"").trim().split(/\s+/).filter(Boolean);
+  if(!A.length) return [{ kind:"falta", txt:"No escribiste el versículo." }];
+  const { ops } = lcsAlign(T.map(norm), A.map(norm));
+  const items = [], gaps = [];
+  ops.forEach(o=>{
+    if(o.t==="miss") gaps.push({ kind:"falta", w:T[o.w].replace(/[.,;:!?¿¡"«»()]/g,""), i:o.w });
+    else if(o.t==="extra") gaps.push({ kind:"sobra", w:A[o.a], i:1e6+o.a });
+    else { const tw = T[o.w], aw = A[o.a]; const lastT = o.w===T.length-1 && /[,;:]$/.test(tw) && strictTok(tw.replace(/[,;:]$/,""))===strictTok(aw.replace(/[.,;:]$/,""));
+      if(strictTok(tw)!==strictTok(aw) && !lastT && !(punctFlex() && bareTok(tw)===bareTok(aw))) items.push(wordErr(tw, aw)); }
+  });
+  return items.concat(groupMisses(gaps));
+}
+function explainModal(){
+  const e = SESSION && SESSION.explain; if(!e) return;
+  const G = [["tilde","✍️ Tildes"],["punt","🔣 Comas, puntos y otros signos"],["orto","🔤 Palabras mal escritas"],["falta","➖ Palabras que faltaron"],["sobra","➕ Palabras de más"],["orden","🧩 Orden"],["cita","📖 La cita"]];
+  const sec = G.map(([k,l])=>{ const it = e.items.filter(x=>x.kind===k); return it.length ? `<div class="ex-sec"><b>${l} <span>${it.length}</span></b><ul>${it.map(x=>`<li>${esc(x.txt)}</li>`).join("")}</ul></div>` : ""; }).join("");
+  modal(`<div class="spread" style="flex-wrap:nowrap;align-items:flex-start"><div><span class="eyebrow">Tus errores</span><h2 style="font-size:22px;margin-top:2px">${esc(e.ref||"")}</h2></div><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    ${sec || `<p class="muted" style="margin:0">No encontramos errores puntuales: revisa el texto completo.</p>`}
+    ${e.diff ? `<div class="ex-sec"><b>Tu respuesta</b><p class="diff" style="font-size:16px;margin:4px 0 0">${e.diff}</p></div>` : ""}
+    <div class="ex-sec"><b>Así es el versículo</b><p class="verse-text" style="font-size:18px;margin:4px 0 0">${esc(e.text||"")}</p></div>
+    <button class="btn primary lg" data-close style="justify-content:center">Entendido</button>`, sc=>sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal));
+}
 function feedbackHTML(score){
   const pct = Math.round(score*100);
   const cls = score>=.9?"ok":score>=.6?"mid":"bad";
@@ -3633,6 +3687,7 @@ function fbBar(score, sub, label){
   const ic = k==="ok" ? "✓" : k==="mid" ? "≈" : "↻";
   const sparks = k==="ok" ? `<span class="fb-sparks" aria-hidden="true">${Array.from({length:10},(_,i)=>`<i style="--a:${i*36}deg;--d:${(i%3)*40}ms"></i>`).join("")}</span>` : "";
   return `<div class="fb-bar ${k}" role="status"><div class="fb-in"><div class="fb-txt"><span class="fb-ic">${sparks}${ic}</span><div><b>${title}</b>${sub?`<small>${sub}</small>`:""}</div></div>
+    ${k!=="ok" && SESSION && SESSION.explain && SESSION.explain.items.length ? `<button class="btn fb-ex" data-act="explain">Explícame mis errores</button>` : ""}
     <button class="btn fb-go" id="nextQ" data-act="next-q">${label||"Continuar"}</button></div></div>`;
 }
 function fbFocus(){ try{ if(navigator.vibrate && SESSION && SESSION.q && (SESSION.q.score>=.9 || SESSION.q.textScore>=.9)) navigator.vibrate(18); }catch(e){} const n = $("#nextQ"); if(n) n.focus({ preventScroll:true }); }
@@ -3644,8 +3699,8 @@ function gradeText(score, extraHTML=""){
     q.textDone = true; q.done = true;
     const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", lastStep = q.stepN === q.stepOf-1;
     const msg = lastStep ? "¡Muy bien! Ahora escríbelo completo, sin pistas." : score>=.9 ? "¡Bien! Vamos con el siguiente paso, con menos ayuda." : "Sigue así. En el siguiente paso lo vuelves a practicar.";
-    const sub = lastStep ? "Ahora escríbelo completo, sin pistas." : "Sigue con el siguiente paso.";
-    $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:8px"><p class="muted" style="font-size:13px;margin:0">${q.isPart&&q.of>1&&q.mode==="order"?"Esta parte dice:":"El versículo dice:"}</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p></div>`) + fbBar(score, sub);
+    s.explain = { items:q.errs||[], text:q.phrase, ref:verse(q.id).ref, diff:q.detailHTML||"" };
+    $("#feedback").innerHTML = fbBar(score, score>=.9 ? "" : lastStep ? "Ahora intenta escribirlo completo." : "Sigue con el siguiente paso.");
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
     fbFocus();
     return;
@@ -3653,20 +3708,19 @@ function gradeText(score, extraHTML=""){
   if(q.isPart){   // práctica por frases: no cuenta para el progreso, solo prepara para el versículo completo
     q.textDone = true; q.done = true;
     const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", last = q.part === q.of-1;
-    const sub = last ? "Ahora inténtalo completo." : `Parte ${q.part+1} de ${q.of}. Sigue con la próxima.`;
-    $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:8px"><p class="muted" style="font-size:13px;margin:0">Esta parte dice:</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p></div>`) + fbBar(score, sub);
+    s.explain = { items:q.errs||[], text:q.phrase, ref:verse(q.id).ref, diff:q.detailHTML||"" };
+    $("#feedback").innerHTML = fbBar(score, score>=.9 ? "" : "Sigue con la próxima parte.");
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
     fbFocus();
     return;
   }
   q.textDone = true; q.textScore = score; s.pending[q.id] = score;
-  s.textInfo = s.textInfo || {}; s.textInfo[q.id] = { mode:q.mode, detail: q.detailHTML || "" };
+  s.textInfo = s.textInfo || {}; s.textInfo[q.id] = { mode:q.mode, detail: q.detailHTML || "", errs: q.errs || [], diff: extraHTML.match(/<p class="diff"[^>]*>([^]*?)<\/p>/) ? extraHTML.match(/<p class="diff"[^>]*>([^]*?)<\/p>/)[1] : (q.detailHTML||"") };
   const v = verse(q.id);
   const pct = Math.round(score*100);
   const cls = score>=.9?"ok":score>=.6?"mid":"bad";
-  $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML}
-    ${q.mode!=="recite"?`<p class="muted" style="font-size:13px;margin:0">Texto correcto:</p><p class="verse-text" style="font-size:20px">${esc(v.text)}</p>`:""}</div>`)
-    + fbBar(score, score>=.9 ? "Ahora dinos en qué libro y capítulo está." : score>=.6 ? "Revisa arriba lo que faltó." : "Mira arriba el texto correcto.");
+  s.explain = { items:q.errs||[], text:v.text, ref:v.ref, diff:s.textInfo[q.id].diff };
+  $("#feedback").innerHTML = fbBar(score, "");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   fbFocus();
 }
@@ -3676,6 +3730,7 @@ function checkRef(giveUp=false){
   const v = verse(q.id); const rb = $("#refBox");
   if(!giveUp && !rb.value.trim()){ toast("Escribe la cita o toca “No la recuerdo”."); rb.focus(); return; }
   const ok = !giveUp && refMatch(v.ref, rb.value);
+  q.refErr = ok ? null : { want:v.ref, got: giveUp ? "" : rb.value.trim() };
   rb.disabled = true; rb.classList.add(ok?"ref-ok":"ref-bad");
   const ts = SESSION.pending[q.id] ?? 0;
   const score = ok ? ts : Math.min(ts*0.85, 0.85);   // sin la cita correcta no sube de nivel
@@ -3730,8 +3785,10 @@ function finalize(score, extraHTML=""){
     </details>` : "";
   const lastQ = s.t >= s.tasks.length-1;
   const sub = task.lesson && outcome==="ok" ? "¡Lo aprendiste hoy! Mañana lo repasamos." : outcome==="ok" ? (status(q.id)==="ok" && before!=="ok" ? "¡Ya lo memorizaste!" : "Sube de nivel.") : outcome==="mid" ? "Lo verás de nuevo mañana." : (s.tasks.slice(s.t+1).some(x=>x.retry && x.id===q.id) ? "Lo vuelves a intentar al final." : "Lo verás de nuevo pronto.");
-  $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML.replace(/<div class="result-bar mid"><span>🔁[^]*?<\/div>/, "").replace(/<div class="result-bar ok"><span>🎉[^]*?<\/div>/, "")}${textPart}</div>`)
-    + fbBar(score, sub, lastQ ? "Ver resultados" : "Continuar");
+  const ti = (s.textInfo||{})[q.id] || {};
+  s.explain = { items:(ti.errs||[]).concat(q.refErr ? [{ kind:"cita", txt: q.refErr.got ? `Escribiste «${q.refErr.got}». La cita es ${q.refErr.want}.` : `La cita es ${q.refErr.want}.` }] : []), text:verse(q.id).text, ref:verse(q.id).ref, diff:ti.diff||"" };
+  const okSub = task.lesson && outcome==="ok" ? "¡Lo aprendiste hoy! Mañana lo repasamos." : outcome==="ok" && status(q.id)==="ok" && before!=="ok" ? "¡Ya lo memorizaste!" : "";
+  $("#feedback").innerHTML = fbBar(score, score>=.9 ? okSub : (q.refErr ? `La cita es ${q.refErr.want}. ` : "") + sub, lastQ ? "Ver resultados" : "Continuar");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   fbFocus();
 }
@@ -3743,12 +3800,14 @@ function checkAnswer(){
     q.res = q.slots.map((x,i)=>{ const f = q.fill[i]; return f!=null && norm(q.slots[f].w)===norm(x.w) ? "right" : "wrong"; });
     ordRefresh();
     const n = q.slots.length, ok = q.res.filter(r=>r==="right").length;
+    q.errs = q.err ? [{ kind:"orden", txt:`Tocaste ${q.err} ${q.err===1?"palabra":"palabras"} fuera de orden antes de la correcta.` }] : [];
     // es la primera vez con el versículo: los errores pesan poco (cada 3 cuentan como una palabra)
     gradeText(ok / (n + (q.err||0)/3));
     return;
   }
   if(q.mode==="initl"){
     while(q.got.length < q.slots.length) q.got.push({ t:"", c:"wrong" });
+    q.errs = q.got.map((g,i)=>{ const w = q.slots[i].w; if(g.c==="right") return null; if(!g.t) return { kind:"falta", txt:`Faltó «${w}»` }; return g.c==="near" ? wordErr(w, g.t) : { kind:"orto", txt:`Escribiste «${g.t}», es «${w}»` }; }).filter(Boolean);
     const a = $("#ilArea"); q.textDone = true; if(a) a.innerHTML = initlHTML(q); q.textDone = false;
     gradeText(q.got.reduce((t,g)=>t + (g.c==="right" ? 1 : g.c==="near" ? 0.5 : 0), 0) / q.slots.length);
     return;
@@ -3764,12 +3823,14 @@ function checkAnswer(){
       el.classList.add(exact?"right":near?"near":"wrong"); el.disabled = true;
       if(!right){ const fix=document.createElement("span"); fix.className="fix"; fix.textContent=q.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""); el.after(fix); q.misses=(q.misses||[]).concat({ want:q.toks[i].replace(/[.,;:!?¿¡"«»()]/g,""), got:el.value.trim() }); }
     });
+    q.errs = (q.misses||[]).map(m=> m.got ? wordErr(m.want, m.got) : { kind:"falta", txt:`Dejaste en blanco «${m.want}»` });
     if(q.misses && q.misses.length) q.detailHTML = `<p style="font-size:14px">${q.misses.map(m=>`<span class="chip bad" style="margin:2px">${m.got?`<s>${esc(m.got)}</s> → `:""}${esc(m.want)}</span>`).join(" ")}</p>`;
     gradeText(ok/q.blanks.length);
   } else if(q.mode==="write"){
     const val = $("#writeBox").value;
     if(!val.trim()){ toast("Escribe el versículo o toca “No lo sé”."); return; }
     const r = scoreStrict(v.text, val);
+    q.errs = explainText(v.text, val);
     $("#writeBox").disabled = true;
     q.detailHTML = `<p class="diff" style="font-size:17px">${r.html}</p>`;
     gradeText(r.score, `<div><p class="diff">${r.html}</p></div>`);
@@ -3849,6 +3910,7 @@ function reveal(){
     const mb = $("#micBox"); if(mb) mb.remove();   // queda solo la comparación, sin repetir el texto
     const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
     const r = scoreSpoken(v.text, tx);
+    q.errs = r.errs;
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
     gradeText(r.score, `<div><p class="diff">${r.html}</p></div>`);
     return;
@@ -7565,6 +7627,7 @@ document.addEventListener("click", e=>{
     case "up-dr": { UPV.open = !UPV.open; if(UPV.open && !UPV.from){ UPV.from = todayKey(new Date(Date.now()-30*DAY)); UPV.to = todayKey(); } const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); break; }
     case "up-horas": upHorasModal(t.dataset.id); break;
     case "night-review": { const ids = nightIds(); if(ids.length) startSession(shuffle(ids), { title:"Repaso de la noche", source:ids.slice() }); break; }
+    case "explain": explainModal(); break;
     case "pc-sec": TEAM.sec = t.dataset.k; render(); window.scrollTo({top:0}); break;
     case "up-retry": UP.rows = undefined; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
     case "up-view": UPV.view = t.dataset.k; { const box = $("#usersPanel"); if(box) box.innerHTML = usersPanelHTML(); } break;
