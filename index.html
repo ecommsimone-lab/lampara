@@ -954,6 +954,28 @@ a.btn:not(.primary){color:var(--ink)}
 .il-input{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;padding:14px;border-radius:24px;background:var(--hero-2);margin-top:12px}
 .il-input .input{flex:1;min-width:0;height:44px;font-size:17px;border-radius:12px;background:var(--surface)}
 .il-input .btn{flex:none;width:46px;height:46px;padding:0;border-radius:50%;justify-content:center;font-size:20px}
+.fb-bar{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));border-top:2px solid transparent;animation:fbUp .32s cubic-bezier(.2,.9,.3,1.2)}
+.fb-bar .fb-in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fb-bar.ok{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.fb-bar.mid{background:var(--gold-soft);color:var(--gold-text);border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.fb-bar.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.fb-txt{display:flex;align-items:center;gap:12px;flex:1;min-width:200px}
+.fb-txt b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em;animation:fbPop .4s .05s both}
+.fb-txt small{display:block;font-size:14px;font-weight:600;opacity:.85;margin-top:1px}
+.fb-ic{position:relative;flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:900;color:#fff;background:currentColor;animation:fbPop .45s both}
+.fb-bar .fb-ic{color:inherit}
+main:has(.fb-bar){padding-bottom:220px}
+.fb-bar.ok .fb-ic{background:var(--ok);color:#fff}.fb-bar.mid .fb-ic{background:var(--gold);color:#fff}.fb-bar.bad .fb-ic{background:var(--bad);color:#fff}
+.fb-sparks{position:absolute;inset:0;pointer-events:none}
+.fb-sparks i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--gold);transform:rotate(var(--a)) translateY(0);animation:fbSpark .7s var(--d) ease-out both}
+.fb-sparks i:nth-child(odd){background:var(--ok)}
+.fb-go{flex:1 1 100%;justify-content:center;padding:14px 20px;font-size:17px;font-weight:800;border:0;color:#fff}
+.fb-bar.ok .fb-go{background:var(--ok)}.fb-bar.mid .fb-go{background:var(--gold-dark)}.fb-bar.bad .fb-go{background:var(--bad)}
+@media (min-width:640px){.fb-go{flex:0 0 auto;min-width:200px}}
+@keyframes fbUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fbPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12);opacity:1}100%{transform:none}}
+@keyframes fbSpark{0%{transform:rotate(var(--a)) translateY(0);opacity:1}100%{transform:rotate(var(--a)) translateY(-34px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.fb-bar,.fb-txt b,.fb-ic,.fb-sparks i{animation:none}}
 .tm-fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px var(--glow);flex:none}
 .tm-fab svg{width:22px;height:22px}
 .prof-gear{margin-left:auto;align-self:flex-start}
@@ -3602,6 +3624,18 @@ function feedbackHTML(score){
   const msg = score>=.9?"¡Excelente! Sube de nivel.":score>=.6?"Casi. Lo verás de nuevo pronto.":"Sigue practicando. Vuelve a tu lista de práctica.";
   return `<div class="result-bar ${cls}"><b>${pct}%</b><span>${msg}</span></div>`;
 }
+/* Barra de resultado abajo de la pantalla: corta, animada y con "Continuar" */
+const PRAISE_TOP = ["¡Perfecto!", "¡Impresionante!", "¡Excelente!"], PRAISE = ["¡Muy bien!", "¡Así se hace!", "¡Lo lograste!", "¡Bien hecho!"];
+function praiseFor(score){ const l = score >= 0.999 ? PRAISE_TOP : PRAISE; return l[Math.floor(Math.random()*l.length)]; }
+function fbBar(score, sub, label){
+  const k = score>=.9 ? "ok" : score>=.6 ? "mid" : "bad";
+  const title = k==="ok" ? praiseFor(score) : k==="mid" ? "¡Casi!" : "Sigue practicando";
+  const ic = k==="ok" ? "✓" : k==="mid" ? "≈" : "↻";
+  const sparks = k==="ok" ? `<span class="fb-sparks" aria-hidden="true">${Array.from({length:10},(_,i)=>`<i style="--a:${i*36}deg;--d:${(i%3)*40}ms"></i>`).join("")}</span>` : "";
+  return `<div class="fb-bar ${k}" role="status"><div class="fb-in"><div class="fb-txt"><span class="fb-ic">${sparks}${ic}</span><div><b>${title}</b>${sub?`<small>${sub}</small>`:""}</div></div>
+    <button class="btn fb-go" id="nextQ" data-act="next-q">${label||"Continuar"}</button></div></div>`;
+}
+function fbFocus(){ try{ if(navigator.vibrate && SESSION && SESSION.q && (SESSION.q.score>=.9 || SESSION.q.textScore>=.9)) navigator.vibrate(18); }catch(e){} const n = $("#nextQ"); if(n) n.focus({ preventScroll:true }); }
 /* Parte 1: califica el texto y pasa a la sección de la cita */
 function gradeText(score, extraHTML=""){
   const s = SESSION, q = s.q;
@@ -3610,23 +3644,19 @@ function gradeText(score, extraHTML=""){
     q.textDone = true; q.done = true;
     const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", lastStep = q.stepN === q.stepOf-1;
     const msg = lastStep ? "¡Muy bien! Ahora escríbelo completo, sin pistas." : score>=.9 ? "¡Bien! Vamos con el siguiente paso, con menos ayuda." : "Sigue así. En el siguiente paso lo vuelves a practicar.";
-    $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
-      <div class="result-bar ${cls}"><b>${pct}%</b><span>${msg}</span></div>
-      <p class="muted" style="font-size:13px;margin:0">${q.isPart&&q.of>1&&q.mode==="order"?"Esta parte dice:":"El versículo dice:"}</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p>
-      <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${lastStep?"Escribirlo completo":"Siguiente paso"}</button></div></div>`;
+    const sub = lastStep ? "Ahora escríbelo completo, sin pistas." : "Sigue con el siguiente paso.";
+    $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:8px"><p class="muted" style="font-size:13px;margin:0">${q.isPart&&q.of>1&&q.mode==="order"?"Esta parte dice:":"El versículo dice:"}</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p></div>`) + fbBar(score, sub);
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-    const n = $("#nextQ"); if(n) n.focus();
+    fbFocus();
     return;
   }
   if(q.isPart){   // práctica por frases: no cuenta para el progreso, solo prepara para el versículo completo
     q.textDone = true; q.done = true;
     const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", last = q.part === q.of-1;
-    $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
-      <div class="result-bar ${cls}"><b>${pct}%</b><span>${last?"Ya practicaste todas las partes. Ahora inténtalo completo.":`Parte ${q.part+1} de ${q.of}. Sigue con la próxima.`}</span></div>
-      <p class="muted" style="font-size:13px;margin:0">Esta parte dice:</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p>
-      <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${last?"Ahora el versículo completo":"Siguiente parte"}</button></div></div>`;
+    const sub = last ? "Ahora inténtalo completo." : `Parte ${q.part+1} de ${q.of}. Sigue con la próxima.`;
+    $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:8px"><p class="muted" style="font-size:13px;margin:0">Esta parte dice:</p><p class="verse-text" style="font-size:20px">${esc(q.phrase)}</p></div>`) + fbBar(score, sub);
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-    const n = $("#nextQ"); if(n) n.focus();
+    fbFocus();
     return;
   }
   q.textDone = true; q.textScore = score; s.pending[q.id] = score;
@@ -3634,12 +3664,11 @@ function gradeText(score, extraHTML=""){
   const v = verse(q.id);
   const pct = Math.round(score*100);
   const cls = score>=.9?"ok":score>=.6?"mid":"bad";
-  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">
-    <div class="result-bar ${cls}"><b>${pct}%</b><span>en el texto. Más adelante te preguntaremos la cita de este versículo.</span></div>${extraHTML}
-    ${q.mode!=="recite"?`<p class="muted" style="font-size:13px">Texto correcto:</p><p class="verse-text" style="font-size:20px">${esc(v.text)}</p>`:""}
-    <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">Siguiente pregunta</button></div></div>`;
+  $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML}
+    ${q.mode!=="recite"?`<p class="muted" style="font-size:13px;margin:0">Texto correcto:</p><p class="verse-text" style="font-size:20px">${esc(v.text)}</p>`:""}</div>`)
+    + fbBar(score, score>=.9 ? "Ahora, la cita." : score>=.6 ? "Revisa lo que faltó. Ahora, la cita." : "Mira el texto correcto. Ahora, la cita.");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-  const n = $("#nextQ"); if(n) n.focus();
+  fbFocus();
 }
 /* Parte 2: califica la cita y registra el resultado final */
 function checkRef(giveUp=false){
@@ -3699,10 +3728,12 @@ function finalize(score, extraHTML=""){
         <span class="muted" style="font-size:13px">Texto correcto:</span><p style="font-size:17px;font-weight:600;line-height:1.5;margin:0">${esc(verse(q.id).text)}</p>
       </div>
     </details>` : "";
-  $("#feedback").innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML}${feedbackHTML(score)}<p class="muted" style="font-size:13px;margin:0">El resultado de ${esc(verse(q.id).ref)} une lo que escribiste del texto (${tsPct}%) y la cita.</p>${textPart}
-    <div class="row"><span style="flex:1"></span><button class="btn primary" id="nextQ" data-act="next-q">${s.t<s.tasks.length-1?"Siguiente pregunta":"Ver resultados"}</button></div></div>`;
+  const lastQ = s.t >= s.tasks.length-1;
+  const sub = task.lesson && outcome==="ok" ? "¡Lo aprendiste hoy! Mañana lo repasamos." : outcome==="ok" ? (status(q.id)==="ok" && before!=="ok" ? "¡Ya lo memorizaste!" : "Sube de nivel.") : outcome==="mid" ? "Lo verás de nuevo mañana." : (s.tasks.slice(s.t+1).some(x=>x.retry && x.id===q.id) ? "Lo vuelves a intentar al final." : "Lo verás de nuevo pronto.");
+  $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML.replace(/<div class="result-bar mid"><span>🔁[^]*?<\/div>/, "").replace(/<div class="result-bar ok"><span>🎉[^]*?<\/div>/, "")}${textPart}</div>`)
+    + fbBar(score, sub, lastQ ? "Ver resultados" : "Continuar");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
-  const n = $("#nextQ"); if(n) n.focus();
+  fbFocus();
 }
 function checkAnswer(){
   const q = SESSION.q; if(!q || q.textDone) return;
