@@ -979,6 +979,7 @@ body:has(#scrim) .fb-bar{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.fb-bar,.fb-txt b,.fb-ic,.fb-sparks i{animation:none}}
 .fb-ex{flex:1 1 100%;justify-content:center;padding:12px 18px;font-size:15px;font-weight:700;background:transparent;border:2px solid currentColor;color:inherit}
 @media (min-width:640px){.fb-ex{flex:0 0 auto}}
+.diff-inline{font-size:19px;line-height:1.6;margin:0;padding:14px 16px;border-radius:16px;background:var(--surface-2)}
 .ex-sec{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:14px;background:var(--surface-2)}
 .ex-sec>b{font-size:14.5px;display:flex;gap:8px;align-items:center}
 .ex-sec>b span{font-size:12px;background:var(--surface);border-radius:999px;padding:1px 8px;color:var(--muted)}
@@ -3187,7 +3188,7 @@ function wordSlots(text){
   return String(text).trim().split(/\s+/).map(w=>{ const m = w.match(/^([¿¡"«“(]*)(.*?)([.,;:!?»”")]*)$/) || ["","",w,""]; return { pre:m[1], w:m[2], post:m[3] }; }).filter(x=>x.w);
 }
 function modeFor0(id){
-  const m = SESSION.mode;
+  const m = SESSION.mode = "mixto";   // un solo método: se ajusta a cada versículo
   if(SESSION.knowCheck && SESSION.knowCheck[id]) return "write";
   if(m!=="mixto") return m;
   if(SESSION.modes && SESSION.modes[id]) return SESSION.modes[id];
@@ -3212,20 +3213,13 @@ function renderSession(){
   const top = `<div class="spread"><button class="btn ghost" data-act="quit">${I.x} Salir</button><span class="mono muted" style="font-size:12px">${esc(s.title)}</span></div>`;
   if(s.phase==="setup"){
     s.mode = "mixto";   // un solo método (mixto): se ajusta solo a cada versículo
-    const V = window.SETUP_V || "A";
     const isNew = id => !(prog(id) && prog(id).reps>0);
     const nNew = s.ids.filter(isNew).length, nRev = s.ids.length - nNew;
     const durSeg = `<div class="st-seg" role="group" aria-label="Tiempo">${MINUTES.map(m=>`<button data-act="dur" data-m="${m}" aria-pressed="${Math.min(20,S.prefs.minutes||10)===m}">${m} min</button>`).join("")}</div>`;
     const nCards = cardIdsFor(s.ids).length;
     const go = `<div class="st-go"><button class="btn primary lg" data-act="${nCards?"begin-cards":"skip-cards"}">${I.play} Empezar</button>${nCards?`<button class="linkbtn" data-act="skip-cards">Saltar las tarjetas</button>`:""}</div>`;
     const kindOf = id => isNew(id) ? ["new","🌱","Nuevo"] : status(id)==="ok" ? ["ok","✅","Memorizado"] : ["rev","🔁","Repaso"];
-    if(V==="A"){
-      body = `<section class="st st-a">
-        <div class="st-head"><span class="eyebrow">${s.review?"Repaso de memorizados":"Tu práctica de hoy"}</span><h1>${total} ${total===1?"versículo":"versículos"}</h1><p class="muted">Unos ${minOf(total)} minutos${nNew?` · ${nNew} ${nNew===1?"nuevo":"nuevos"}`:""}</p></div>
-        ${durSeg}
-        <div class="st-chips">${s.ids.map(id=>{ const [k]=kindOf(id); return `<span class="st-chip ${k}"><i></i>${esc(verse(id).ref)}</span>`; }).join("")}</div>
-        ${go}</section>`;
-    } else if(V==="B"){
+    {
       body = `<section class="st st-b">
         <div class="st-card">
           <span class="eyebrow">${s.review?"Repaso de memorizados":"Tu práctica de hoy"}</span>
@@ -3234,13 +3228,6 @@ function renderSession(){
           ${durSeg}
         </div>
         <details class="st-more"><summary>Ver versículos</summary><div class="st-list">${s.ids.map(id=>`<div><b>${esc(verse(id).ref)}</b><span class="chip ${status(id)}">${STATUS_LABEL[status(id)]}</span></div>`).join("")}</div></details>
-        ${go}</section>`;
-    } else {
-      body = `<section class="st st-c">
-        <div class="st-head"><h1>${s.review?"Repaso de memorizados":"Práctica de hoy"}</h1></div>
-        ${durSeg}
-        <div class="st-rows">${s.ids.map(id=>{ const [k,ic,l]=kindOf(id); const v=verse(id); return `<div class="st-row ${k}"><span class="st-ic">${ic}</span><div><b>${esc(v.ref)}</b><small>${esc(v.text.length>54?v.text.slice(0,54)+"…":v.text)}</small></div><span class="st-tag">${l}</span></div>`; }).join("")}</div>
-        <p class="muted st-sum">${total} ${total===1?"versículo":"versículos"} · unos ${minOf(total)} minutos</p>
         ${go}</section>`;
     }
   }
@@ -3878,7 +3865,8 @@ function checkAnswer(){
     if(!val.trim()){ toast("Escribe el versículo o toca “No lo sé”."); return; }
     const r = scoreStrict(v.text, val);
     q.errs = explainText(v.text, val);
-    $("#writeBox").disabled = true;
+    // en lugar de la caja de texto, la respuesta corregida en colores: verde bien, amarillo tilde o signo, rojo faltó
+    { const wb = $("#writeBox"); if(wb){ const d = document.createElement("p"); d.className = "diff diff-inline"; d.innerHTML = r.html; wb.replaceWith(d); } }
     q.detailHTML = `<p class="diff" style="font-size:17px">${r.html}</p>`;
     gradeText(r.score, `<div><p class="diff">${r.html}</p></div>`);
   }
@@ -3958,6 +3946,7 @@ function reveal(){
     const tx = q.transcript.replace(/((?:primera|segunda|tercera|1|2|3)\s+)?[a-záéíóúñ]+\s+\d+(?:\s*(?::|,|versículo|versiculo|y)?\s*\d+)+\s*$/i,"");
     const r = scoreSpoken(v.text, tx);
     q.errs = r.errs;
+    { const card = root.querySelector(".q-card"), fb = $("#feedback"); if(card && fb){ const d = document.createElement("p"); d.className = "diff diff-inline"; d.innerHTML = r.html; fb.before(d); } }
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
     gradeText(r.score, `<div><p class="diff">${r.html}</p></div>`);
     return;
@@ -7539,7 +7528,6 @@ function viewAjustes(){
     <div class="set-group">
       <div class="set-row"><div class="lbl"><b>Tu ritmo</b><small>${esc(RITMOS[ritmo()].desc)}</small></div>${seg("ritmo",[["tranquilo","🌱 Tranquilo"],["constante","🔥 Constante"],["intensivo","⚡ Intensivo"]])}</div>
       <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>${versesFor(Math.min(20, S.prefs.minutes||10))} versículos por sesión, máximo ${newPerSession()} ${newPerSession()===1?"nuevo":"nuevos"}</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20 min"]])}</div>
-      <div class="set-row"><div class="lbl"><b>Tipo de práctica</b><small>Mixto va subiendo según cada versículo</small></div>${seg("mode",[["mixto","Mixto"],["blanks","Espacios"],["ini","Iniciales"],["write","Escribir"],["recite","Recitar"]])}</div>
       <div class="set-row"><div class="lbl"><b>Al escribir el versículo</b><small>${punctFlex()?"No cuentan los puntos, comas ni otros signos. Sí cuentan las tildes.":"Cuenta todo: palabras, tildes y signos de puntuación."}</small></div>${seg("punct",[["exacto","Exacto"],["flexible","Sin signos"]])}</div>
     </div>
   </section>
