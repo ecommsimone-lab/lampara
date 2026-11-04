@@ -3666,7 +3666,7 @@ function gradeText(score, extraHTML=""){
   const cls = score>=.9?"ok":score>=.6?"mid":"bad";
   $("#feedback").innerHTML = (score>=.9 ? "" : `<div style="display:flex;flex-direction:column;gap:14px">${extraHTML}
     ${q.mode!=="recite"?`<p class="muted" style="font-size:13px;margin:0">Texto correcto:</p><p class="verse-text" style="font-size:20px">${esc(v.text)}</p>`:""}</div>`)
-    + fbBar(score, score>=.9 ? "Ahora, la cita." : score>=.6 ? "Revisa lo que faltó. Ahora, la cita." : "Mira el texto correcto. Ahora, la cita.");
+    + fbBar(score, score>=.9 ? "Ahora dinos en qué libro y capítulo está." : score>=.6 ? "Revisa arriba lo que faltó." : "Mira arriba el texto correcto.");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   fbFocus();
 }
