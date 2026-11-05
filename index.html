@@ -1093,6 +1093,20 @@ body:has(#scrim) .fb-bar{visibility:hidden}
 .xpbar{height:14px;border-radius:999px;background:var(--surface-2);overflow:hidden}
 .xpbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),#FF8A00);box-shadow:inset 0 -3px 0 rgba(0,0,0,.1)}
 .lvl-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;background:linear-gradient(150deg,var(--accent),#6A4BFF);box-shadow:0 3px 0 var(--accent-dark);flex:none}
+.ver-chip{all:unset;cursor:pointer;margin-left:2px;margin-right:auto;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
+.ver-chip span{font-size:10px}
+.ver-side{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700;letter-spacing:.04em}
+.ver-list{display:flex;flex-direction:column;gap:10px}
+.ver-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;border:2px solid var(--line);background:var(--surface)}
+.ver-card.on{border-color:var(--v1);box-shadow:0 0 0 3px color-mix(in srgb,var(--v1) 18%,transparent)}
+.ver-card[aria-busy="true"]{opacity:.6;pointer-events:none}
+.ver-badge{flex:none;width:56px;height:56px;border-radius:16px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900;letter-spacing:0;background:linear-gradient(150deg,var(--v1),var(--v2));box-shadow:0 4px 0 var(--v2)}
+.ver-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ver-txt b{font-size:15.5px}
+.ver-txt small{font-size:12.5px;color:var(--muted);line-height:1.35}
+.ver-new{color:var(--v1)!important;font-weight:700}
+.ver-check{flex:none;width:26px;height:26px;border-radius:50%;background:var(--v1);color:#fff;display:grid;place-items:center;font-weight:900;font-size:14px}
+.ver-add{flex:none;font-size:13px;font-weight:800;color:var(--v1)}
 .path{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 20px}
 .tier{width:100%;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin:14px 0 8px;color:#fff}
 .tier b{font-size:17px;display:block}
@@ -1480,13 +1494,26 @@ function mergeStates(a, b){
     if(fs.length) x.f = Math.min(...fs); if(ls.length) x.l = Math.max(...ls);
     log[k] = x; });
   m.log = log;
-  const prog = Object.assign({}, other.progress||{});
-  Object.entries(base.progress||{}).forEach(([id, P])=>{ const O = prog[id]; prog[id] = !O || (P.reps||0) > (O.reps||0) || ((P.reps||0) === (O.reps||0) && (P.last||0) >= (O.last||0)) ? P : O; });
-  m.progress = prog;
   const uni = k => [...new Set([].concat(base[k]||[], other[k]||[]))];
-  ["favs","extraActive","queued","shieldDays"].forEach(k=>{ if(base[k] || other[k]) m[k] = uni(k); });
+  ["favs","shieldDays"].forEach(k=>{ if(base[k] || other[k]) m[k] = uni(k); });
   if(base.badges || other.badges) m.badges = Object.assign({}, other.badges||{}, base.badges||{});
-  ["xp","unlocked"].forEach(k=>{ if(base[k]!=null || other[k]!=null) m[k] = Math.max(base[k]||0, other[k]||0); });
+  if(base.xp!=null || other.xp!=null) m.xp = Math.max(base.xp||0, other.xp||0);
+  /* El avance de cada versión se une por separado (un teléfono puede estar en NTV y otro en RVR1960) */
+  const vsplit = st => { const o = Object.assign({}, st.vdata||{}), cur = {}; VKEYS.forEach(k=>{ if(st[k]!==undefined) cur[k] = st[k]; }); o[st.version||"rvr"] = cur; return o; };
+  const VA = vsplit(base), VB = vsplit(other), VM = {};
+  new Set([...Object.keys(VA), ...Object.keys(VB)]).forEach(ver=>{
+    const A = VA[ver]||{}, B = VB[ver]||{}, X = Object.assign({}, B, A);
+    const prog = Object.assign({}, B.progress||{});
+    Object.entries(A.progress||{}).forEach(([id, P])=>{ const O = prog[id]; prog[id] = !O || (P.reps||0) > (O.reps||0) || ((P.reps||0) === (O.reps||0) && (P.last||0) >= (O.last||0)) ? P : O; });
+    X.progress = prog;
+    ["extraActive","queued"].forEach(k=>{ if(A[k] || B[k]) X[k] = [...new Set([].concat(A[k]||[], B[k]||[]))]; });
+    if(A.unlocked!=null || B.unlocked!=null) X.unlocked = Math.max(A.unlocked||0, B.unlocked||0);
+    VM[ver] = X; });
+  const mv = base.version || "rvr";
+  VKEYS.forEach(k=>{ delete m[k]; if(VM[mv][k]!==undefined) m[k] = VM[mv][k]; });
+  if(!m.progress) m.progress = {};
+  delete VM[mv]; m.vdata = VM; if(!Object.keys(VM).length) delete m.vdata;
+  m.version = mv;
   const byId = (x, y) => (x||[]).concat((y||[]).filter(it=>!(x||[]).some(z=>z.id===it.id)));
   m.custom = byId(base.custom, other.custom); m.lists = byId(base.lists, other.lists);
   m._savedAt = Math.max(a._savedAt||0, b._savedAt||0);
@@ -1550,10 +1577,127 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState=
   else if(SB && ME && ME.mode==="cloud" && cloudLoaded && !SESSION) cloudCatchUp().then(ch=>{ if(ch){ persist(); render(); } }).catch(()=>{}); });
 
 
+/* ---------- Versiones de la Biblia ----------
+   RVR1960 viene dentro de la app. NTV y NBLA llegan desde API.Bible por la función "biblia" de Supabase
+   (la llave nunca está en la app). El texto se guarda en el teléfono y se renueva cada 14 días;
+   si pasan 30 días sin poder renovarlo se borra y se vuelve a RVR1960, como pide API.Bible.
+   Cada versión tiene su propio avance (progreso, versículos abiertos); la racha, el nivel, los logros,
+   los favoritos y los amigos son los mismos en todas. */
+const VERSIONS = [
+  { id:"rvr",  short:"RVR1960", name:"Reina-Valera 1960", desc:"Clásica, la más usada en las iglesias de habla hispana.", holder:"Sociedades Bíblicas Unidas", c1:"#2F6FED", c2:"#1F4FC4" },
+  { id:"ntv",  short:"NTV",  name:"Nueva Traducción Viviente", desc:"Lenguaje actual, fácil de entender.", holder:"Tyndale House Foundation", c1:"#16A36A", c2:"#0E7A4E" },
+  { id:"nbla", short:"NBLA", name:"Nueva Biblia de las Américas", desc:"Cercana al texto original, en español actual.", holder:"The Lockman Foundation", c1:"#C2410C", c2:"#9A3412" }
+];
+const VKEYS = ["progress","unlocked","extraActive","queued","lastIds","lastFailed","recent"];
+const verId = () => (typeof S!=="undefined" && S && S.version) || "rvr";
+const curVersion = () => VERSIONS.find(v=>v.id===verId()) || VERSIONS[0];
+const verShort = () => curVersion().short;
+const VT_FRESH = 14*24*3600*1000, VT_MAX = 30*24*3600*1000;
+let VTEXT = {}, VMEMO = {};
+function vtextGet(v){
+  if(VTEXT[v]) return Date.now()-VTEXT[v].at < VT_MAX ? VTEXT[v] : null;
+  let c = null; try{ c = JSON.parse(localStorage.getItem("lampara.vtext."+v)||"null"); }catch(e){}
+  if(c && c.at && c.verses && Date.now()-c.at < VT_MAX){ VTEXT[v] = c; return c; }
+  try{ localStorage.removeItem("lampara.vtext."+v); }catch(e){}
+  return null;
+}
+/* id de la app → id de API.Bible: "jn-3-16" → "JHN.3.16", "prov-3-5-6" → "PRO.3.5-PRO.3.6" */
+const BOOK_USFM = { gn:"GEN", ex:"EXO", dt:"DEU", jos:"JOS", "1s":"1SA", sal:"PSA", prov:"PRO", ec:"ECC", is:"ISA", jer:"JER", lm:"LAM", ez:"EZK", mi:"MIC",
+  mt:"MAT", mr:"MRK", lc:"LUK", jn:"JHN", hch:"ACT", rom:"ROM", "1co":"1CO", "2co":"2CO", gal:"GAL", ef:"EPH", flp:"PHP", col:"COL", "1ts":"1TH", "2tim":"2TI",
+  tit:"TIT", hb:"HEB", stg:"JAS", "1p":"1PE", "1jn":"1JN", ap:"REV" };
+function passageOf(id){
+  const m = String(id).match(/^([0-9]?[a-z]+)-(\d+)-(\d+)(?:-(\d+))?$/); if(!m || !BOOK_USFM[m[1]]) return null;
+  const b = BOOK_USFM[m[1]], a = `${b}.${m[2]}.${m[3]}`;
+  return m[4] ? `${a}-${b}.${m[2]}.${m[4]}` : a;
+}
+/* Copyright de la versión actual: se muestra junto al texto en toda la app */
+function verCopy(){
+  const v = curVersion(); if(v.id==="rvr") return RVR_SHORT;
+  const t = vtextGet(v.id), any = t && Object.values(t.verses).find(x=>x.copyright);
+  return any ? any.copyright : `${v.name}® © ${v.holder}`;
+}
+const verCopyShort = () => { const v = curVersion(); return v.id==="rvr" ? RVR_SHORT : `${v.name}® © ${v.holder}`; };
+async function loadVersionText(v, force){
+  const have = vtextGet(v);
+  if(have && !force && Date.now()-have.at < VT_FRESH) return have;
+  if(!SB || !SB.functions) throw new Error("sin_nube");
+  const items = [...Object.keys(SUG_MAP), ...Object.keys(HEART_MAP)].map(id=>({ id, passage:passageOf(id) })).filter(x=>x.passage);
+  const verses = {};
+  for(let i=0; i<items.length; i+=100){
+    const { data, error } = await SB.functions.invoke("biblia", { body:{ version:v, items:items.slice(i, i+100) } });
+    if(error) throw error;
+    if(!data || data.error) throw new Error((data && data.error) || "sin_respuesta");
+    Object.assign(verses, data.verses||{});
+  }
+  if(!Object.keys(verses).length) throw new Error("sin_texto");
+  const t = { at:Date.now(), verses };
+  VTEXT[v] = t; VMEMO = {};
+  try{ localStorage.setItem("lampara.vtext."+v, JSON.stringify(t)); }catch(e){}
+  return t;
+}
+/* Al abrir la app con NTV o NBLA: renovar el texto si tiene más de 14 días (sin molestar si no hay internet) */
+function versionBoot(){
+  const v = verId(); if(v==="rvr") return;
+  const t = vtextGet(v);
+  if(!t || Date.now()-t.at >= VT_FRESH) loadVersionText(v, true).then(()=>{ VMEMO = {}; render(); }).catch(()=>{
+    if(!vtextGet(v)) toast(`No pudimos cargar la ${curVersion().name}. Mientras tanto ves la RVR1960.`); });
+}
+/* FUMS (API.Bible): reportar cada vez que se muestra el texto de NTV o NBLA. Solo se cuenta la vista, sin datos tuyos. */
+let FUMS_ON = false;
+function fumsTrack(ids){
+  const v = verId(); if(v==="rvr") return;
+  const t = vtextGet(v); if(!t) return;
+  const toks = [...new Set((ids||[]).map(id=>t.verses[id] && t.verses[id].fums).filter(Boolean))]; if(!toks.length) return;
+  if(!FUMS_ON){ FUMS_ON = true;
+    window.fumsData = window.fumsData || []; window.fums = window.fums || function(){ window.fumsData.push(arguments); };
+    const s = document.createElement("script"); s.src = "https://pkg.api.bible/fumsV3.min.js"; s.async = true; document.head.appendChild(s); }
+  toks.forEach(tk=>{ try{ window.fums("trackView", tk); }catch(e){} });
+}
+function versionSheet(){
+  const v0 = curVersion(), vd = S.vdata||{};
+  const learnedIn = id => { const P = id===v0.id ? S.progress : (vd[id]||{}).progress || {}; return Object.values(P).filter(p=>p && p.box>=MASTER).length; };
+  const card = v => { const on = v.id===v0.id, started = on || v.id==="rvr" || !!vd[v.id], n = started ? learnedIn(v.id) : 0;
+    return `<button type="button" class="ver-card ${on?"on":""}" data-v="${v.id}" style="--v1:${v.c1};--v2:${v.c2}">
+      <span class="ver-badge">${esc(v.short)}</span>
+      <span class="ver-txt"><b>${esc(v.name)}</b><small>${esc(v.desc)}</small>${started?`<small>${n} ${n===1?"aprendido":"aprendidos"}</small>`:`<small class="ver-new">Empieza desde el principio</small>`}</span>
+      ${on?`<span class="ver-check">✓</span>`:started?"":`<span class="ver-add">+ Agregar</span>`}
+    </button>`; };
+  modal(`<div class="spread"><h2 style="font-size:22px">Versión de la Biblia</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p class="muted" style="margin:0;font-size:14px">Cada versión tiene su propio avance: lo que memorizas en una no se mezcla con otra.</p>
+    <div class="ver-list">${VERSIONS.map(card).join("")}</div>
+    <p class="muted" style="margin:0;font-size:12.5px;line-height:1.45">🔥 Tu racha, tu nivel, tus logros y tus favoritos son los mismos en todas las versiones. La NTV y la NBLA necesitan internet la primera vez.</p>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>switchVersion(b.dataset.v, b));
+  });
+}
+async function switchVersion(v, btn){
+  const from = verId(), V = VERSIONS.find(x=>x.id===v); if(!V) return;
+  if(v===from){ closeModal(); return; }
+  if(SESSION){ toast("Termina o sal de la práctica para cambiar de versión."); return; }
+  if(v!=="rvr"){
+    if(btn) btn.setAttribute("aria-busy","true");
+    try{ await loadVersionText(v); }
+    catch(e){ if(btn) btn.removeAttribute("aria-busy"); toast(`La ${V.name} aún no está disponible. Intenta más tarde.`); return; }
+  }
+  S.vdata = S.vdata || {};
+  const save = {}; VKEYS.forEach(k=>{ if(S[k]!==undefined) save[k] = S[k]; }); S.vdata[from] = save;
+  const d = S.vdata[v] || { progress:{}, unlocked:START_UNLOCKED, extraActive:[], queued:[] };
+  VKEYS.forEach(k=>{ delete S[k]; if(d[k]!==undefined) S[k] = d[k]; });
+  if(!S.progress) S.progress = {}; if(S.unlocked==null) S.unlocked = START_UNLOCKED;
+  delete S.vdata[v]; if(!Object.keys(S.vdata).length) delete S.vdata;
+  S.version = v; VMEMO = {};
+  persist(); closeModal(); render(); toast(`Ahora practicas con la ${V.name}.`);
+}
+function rvrVerse(id){ return SUG_MAP[id] || HEART_MAP[id] || null; }
+
 /* ---------- Acceso a versículos ---------- */
 function verse(id){
-  if(SUG_MAP[id]) return SUG_MAP[id];
-  if(HEART_MAP[id]) return HEART_MAP[id];
+  const base = SUG_MAP[id] || HEART_MAP[id];
+  if(base){
+    const v = verId(); if(v==="rvr") return base;
+    const t = vtextGet(v), x = t && t.verses[id]; if(!x || !x.text) return base;
+    const k = v+"|"+id; return VMEMO[k] || (VMEMO[k] = Object.assign({}, base, { text:x.text, copyright:x.copyright, ver:v }));
+  }
   const c = S.custom.find(v=>v.id===id);
   return c ? {...c, sug:false} : null;
 }
@@ -1813,7 +1957,7 @@ function render(){
   root.innerHTML = `
   <div class="app">
     <aside class="side">
-      <div class="brand"><div class="brand-mark">${I.lamp}</div><div><b>Lámpara</b><small>RVR · 1960</small></div></div>
+      <div class="brand"><div class="brand-mark">${I.lamp}</div><div><b>Lámpara</b><button class="ver-side" data-act="ver-sheet" aria-label="Cambiar de versión de la Biblia">${esc(verShort())} <span aria-hidden="true">▾</span></button></div></div>
       <nav class="nav">
         ${navItem("home","Inicio",I.home)}
         ${navItem("camino","Camino",I.route)}
@@ -1845,7 +1989,7 @@ function render(){
     </nav>
   </div>`;
   const v = $("#view");
-  const mtop = `${demoBar()}<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button></div></div>`;
+  const mtop = `${demoBar()}<div class="mtop"><div class="brand"><div class="brand-mark">${I.lamp}</div><b>Lámpara</b></div><button class="ver-chip" data-act="ver-sheet" aria-label="Cambiar de versión de la Biblia">${esc(verShort())} <span aria-hidden="true">▾</span></button><div class="row" style="gap:4px;flex-wrap:nowrap">${cloudOn()?`<button class="icon-btn" data-go="avisos" aria-label="Avisos${unread?` (${unread} nuevos)`:""}" title="Avisos" style="position:relative">${I.bell}${unread?`<i class="nbadge" style="top:2px;left:auto;right:0">${unread>9?"9+":unread}</i>`:""}</button>`:""}<button class="icon-btn" data-act="feedback" aria-label="Enviar comentario" title="Enviar comentario">${I.chat}</button></div></div>`;
   if(VIEW.name==="home") v.innerHTML = mtop + viewHome();
   else if(VIEW.name==="library") v.innerHTML = mtop + viewLibrary();
   else if(VIEW.name==="books"){ LIB.seg = "libros"; v.innerHTML = mtop + viewLibrary(); }
@@ -2120,13 +2264,13 @@ function openHeart(){
       <span class="hx-ey fd" style="--d:100ms">Recuerda esto</span>
       <p class="hx-art" style="margin:0" aria-label="${esc(heartPhrase(h))}"><span aria-hidden="true" style="display:contents">${html}</span></p>
       <div class="hx-rest fd" style="--d:${total + 250}ms">
-        <div class="hx-verse">“${esc(text)}”<span class="hx-ref">${esc(ref)} · RVR1960®</span></div>
+        <div class="hx-verse">“${esc(text)}”<span class="hx-ref">${esc(ref)} · ${esc(verShort())}®</span></div>
         <div class="hx-actions">
           <button class="btn primary" data-act="heart-practice" data-id="${id}">${I.play} Practicar</button>
           <button class="btn" data-act="heart-fav" data-id="${id}">${heartFavBtn(id)}</button>
           <button class="btn" data-act="heart-share">${I.share} Compartir</button>
         </div>
-        <p class="rvr-mark" style="color:rgba(255,255,255,.8)">${RVR_SHORT}</p>
+        <p class="rvr-mark" style="color:rgba(255,255,255,.8)">${esc(verCopyShort())}</p>
       </div>
     </div>`;
   // tocar mientras aparece muestra todo de una vez
@@ -2184,10 +2328,10 @@ async function heartImageFoto(h, pal, ref, text, fmt="9:16"){
   y += gap2;
   g.fillStyle = "rgba(255,255,255,.94)"; rrect(g, 90, y, 900, boxH, 40); g.fill();
   g.font = `italic 400 ${vf}px "Inter", sans-serif`; g.fillStyle = "#1C2340"; g.textAlign = "left"; vl.forEach((l,i)=>g.fillText(l, 130, y + (sq ? 60 : 72) + i*vlh));
-  g.font = `600 ${sq ? 26 : 32}px "Inter", sans-serif`; g.fillStyle = pal.ink; g.fillText(`${ref} · RVR1960®`, 130, y + boxH - (sq ? 32 : 40));
+  g.font = `600 ${sq ? 26 : 32}px "Inter", sans-serif`; g.fillStyle = pal.ink; g.fillText(`${ref} · ${verShort()}®`, 130, y + boxH - (sq ? 32 : 40));
   y += boxH + gap3;
   g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.9)"; g.shadowColor = "rgba(0,0,0,.4)"; g.shadowBlur = 12; g.font = `700 ${Math.round(36*Z)}px "Inter", sans-serif`; g.fillText(APP_NAME, W/2, y + 30*Z);
-  g.font = `500 ${Math.round(22*Z)}px "Inter", sans-serif`; g.globalAlpha = .8; g.fillText(RVR_SHORT, W/2, y + 30*Z + 36*Z); g.globalAlpha = 1; g.shadowBlur = 0;
+  g.font = `500 ${Math.round(22*Z)}px "Inter", sans-serif`; g.globalAlpha = .8; g.fillText(verCopyShort(), W/2, y + 30*Z + 36*Z); g.globalAlpha = 1; g.shadowBlur = 0;
   return new Promise(r=>c.toBlob(r, "image/png"));
 }
 async function heartImage(fmt){
@@ -2244,7 +2388,7 @@ async function heartImage(fmt){
   const boxH = vl.length*58 + 130;
   g.fillStyle = h.lay === "noche" ? "rgba(255,255,255,.14)" : "rgba(255,255,255,.92)"; rrect(g, 90, top, 900, boxH, 40); g.fill();
   g.fillStyle = h.lay === "noche" ? "#fff" : "#1C2340"; g.textAlign = "left"; vl.forEach((l,i)=>g.fillText(l, 130, top + 72 + i*58));
-  g.font = '600 32px "Inter", sans-serif'; g.fillStyle = h.lay === "noche" ? "rgba(255,255,255,.85)" : pal.ink; g.fillText(`${ref} · RVR1960`, 130, top + boxH - 40);
+  g.font = '600 32px "Inter", sans-serif'; g.fillStyle = h.lay === "noche" ? "rgba(255,255,255,.85)" : pal.ink; g.fillText(`${ref} · ${verShort()}`, 130, top + boxH - 40);
   // marca
   g.textAlign = "center"; g.fillStyle = h.lay === "noche" ? "#fff" : pal.ink; g.font = '700 46px "Inter", sans-serif'; g.fillText(APP_NAME, W/2, H - 150);
   g.globalAlpha = .75; g.font = '500 30px "Inter", sans-serif'; g.fillText((location.host + location.pathname).replace(/index\.html$/, "").replace(/\/$/, ""), W/2, H - 98); g.globalAlpha = 1;
@@ -2321,7 +2465,7 @@ async function verseImage(id, fondo, fmt="9:16", size="g"){
   g.fillText(v.ref.toUpperCase(), X, top + (sq?28:32)); g.globalAlpha = 1;
   g.font = `900 ${fs}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = `${-fs*.02}px`;
   lines.forEach((l,i)=>g.fillText(l, X - fs*.04, top + eyeH + fs*.92 + i*lh));
-  { let ff = sq ? 19 : 22; const foot = `${APP_NAME.toUpperCase()} · ${RVR_SHORT.toUpperCase()}`;
+  { let ff = sq ? 19 : 22; const foot = `${APP_NAME.toUpperCase()} · ${verCopyShort().toUpperCase()}`;
     g.font = `500 ${ff}px "Roboto", sans-serif`; if("letterSpacing" in g) g.letterSpacing = "3px"; g.globalAlpha = .75;
     while(g.measureText(foot).width > W - X*2 && ff > 12){ ff--; g.font = `500 ${ff}px "Roboto", sans-serif`; }
     // justo debajo del versículo (no suelto al fondo); nunca dentro de la zona que tapan las redes
@@ -2629,7 +2773,7 @@ function viewPildora(id){
 function pildVerseModal(vid){
   const v = verse(vid); if(!v) return;
   modal(`<div class="spread" style="flex-wrap:nowrap"><span class="ref-line">${esc(v.ref)}</span><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <p class="verse-full">${esc(v.text)}</p><p class="muted" style="font-size:12px;margin:0">Reina-Valera 1960</p>
+    <p class="verse-full">${esc(v.text)}</p><p class="muted" style="font-size:12px;margin:0">${esc(verCopy())}</p>
     <div class="pv-acts">
       <button data-act="pv-learn" data-id="${vid}">${I.play}<b>Memorizar este</b><small>Sale primero en tus próximas prácticas</small></button>
       <button data-act="pv-save" data-id="${vid}">${I.listAdd}<b>Guardar en una lista</b><small>Mis versículos o una lista tuya</small></button>
@@ -3239,7 +3383,7 @@ function renderSession(){
       <div class="spread"><div class="phase-tag"><span class="chip acc">Tarjetas de repaso</span><span class="chip none mono">${s.i+1} / ${total}</span></div><span class="chip ${status(v.id)}">${STATUS_LABEL[status(v.id)]}</span></div>
       <div class="flash ${s.flipped?"flipped":""}" data-act="flip" role="button" tabindex="0" aria-label="Voltear tarjeta">
         <div class="flash-inner">
-          <div class="face front"><span class="eyebrow" style="color:inherit;opacity:.6">Reina-Valera 1960</span><div class="ref">${esc(v.ref)}</div><span class="hint">Toca para ver el versículo · intenta recordarlo primero</span></div>
+          <div class="face front"><span class="eyebrow" style="color:inherit;opacity:.6">${esc(curVersion().name)}</span><div class="ref">${esc(v.ref)}</div><span class="hint">Toca para ver el versículo · intenta recordarlo primero</span></div>
           <div class="face back"><span class="ref-line">${esc(v.ref)}</span><p class="verse-text">${splitPhrases(v.text).map(esc).join("<br>")}</p><span class="muted" style="font-size:13px">Léelo despacio, dos veces.</span></div>
         </div>
       </div>
@@ -3255,6 +3399,8 @@ function renderSession(){
     body = summaryBody();
   }
   root.innerHTML = `<main style="min-height:100%">${demoBar()}<div class="stage">${top}${body}${rvrMark()}</div></main>`;
+  { const fid = s.phase==="cards" ? s.cardIds[s.i] : s.phase==="quiz" && s.q ? s.q.id : null, fk = s.phase+":"+(s.phase==="cards"?s.i:s.t);
+    if(fid && s._fums!==fk){ s._fums = fk; fumsTrack([fid]); } }
   sizeBlanks();
   if(s.phase==="quiz") afterQuizRender();
 }
@@ -5515,14 +5661,14 @@ function hardestIds(ids){ return ids.filter(id=>difficulty(id) > 5).sort((a,b)=>
 
 /* Ver un versículo completo */
 function verseModal(id){
-  const v = verse(id); if(!v) return;
+  const v = verse(id); if(!v) return; fumsTrack([id]);
   const p = prog(id), s = status(id), fav = S.favs.includes(id);
   const h = p && p.hist && p.hist.length ? Math.round(p.hist.slice(-5).reduce((a,b)=>a+b,0)/Math.min(5,p.hist.length)) : null;
   modal(`
     <div class="spread" style="flex-wrap:nowrap"><span class="ref-line">${esc(v.ref)}</span><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
     <p class="verse-full">${esc(v.text)}</p>
     <div class="row" style="gap:6px"><span class="chip ${s}"><i class="dot" style="background:currentColor"></i>${STATUS_LABEL[s]}</span>${v.theme?`<span class="chip none">${esc(v.theme)}</span>`:""}${h!=null?`<span class="chip ${h>=90?"ok":h>=60?"mid":"bad"}">Acierto ${h}%</span>`:""}${p&&p.lapses?`<span class="chip bad">${p.lapses} ${p.lapses===1?"fallo":"fallos"}</span>`:""}</div>
-    <p class="muted" style="font-size:12px">Reina-Valera 1960</p>
+    <p class="muted" style="font-size:12px">${esc(verCopy())}</p>
     <div class="row"><button class="btn primary" id="vmPlay">${I.play} Practicar este versículo</button><button class="btn" id="vmList">${I.listAdd} A una lista</button>${cloudOn()&&v.sug?`<button class="btn" id="vmSend">${I.users} Enviar a un amigo</button>`:""}<button class="btn" id="vmShare">${I.share} Compartir imagen</button>${CONTEXTO[id]?`<button class="btn" data-act="ctx" data-id="${id}">📜 Contexto</button>`:""}${v.sug&&!v.pild?`<button class="btn ghost" id="vmFav">${fav?I.heartF:I.heart} ${fav?"En Mis versículos":"A Mis versículos"}</button>`:""}</div>${rvrMark()}`, sc=>{
       sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
       sc.querySelector("#vmPlay").onclick = ()=>{ closeModal(); startSession([id], { title:v.ref, source:[id] }); };
@@ -7382,7 +7528,7 @@ async function cloudEnter(user, { name, seed, fresh } = {}){
   S = Object.assign(freshState(), state || {});
   applyTheme(S.prefs.theme);
   WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
-  persist(); cloudFlush(); flushFeedback(); setTimeout(restoreDays, 1500);
+  persist(); cloudFlush(); flushFeedback(); setTimeout(restoreDays, 1500); setTimeout(versionBoot, 800);
   if(seeded) toast("Tu progreso de este dispositivo ahora está guardado en la nube.");
   COMM.profile = null; COMM.loaded = false; ensureProfile();
   NOTIF.items = []; NOTIF.loaded = false; NOTIF.prefs = null; startNotifs();
@@ -7422,7 +7568,7 @@ function signIn(acc, {fresh}){
   ME = { mode:"account", id:acc.id, name:acc.name, email:acc.email, color:acc.color, key:"acct:"+acc.id };
   S = Object.assign(freshState(), LS.get("lampara.state."+ME.key, {}));
   LS.set("lampara.session", acc.id);
-  applyTheme(S.prefs.theme);
+  applyTheme(S.prefs.theme); setTimeout(versionBoot, 800);
   WEL = { step:0, migrate:null, goal:S.prefs.minutes||10, err:"" };
   persist();
   if(fresh){ WEL.step="goal"; VIEW={name:"welcome-goal"}; renderWelcomeGoal(); }
@@ -7543,6 +7689,7 @@ function viewAjustes(){
   <section class="panel">
     <h3 style="margin-bottom:6px">Práctica</h3>
     <div class="set-group">
+      <div class="set-row"><div class="lbl"><b>Versión de la Biblia</b><small>${esc(curVersion().name)}. Cada versión tiene su propio avance</small></div><button class="btn" data-act="ver-sheet">${esc(verShort())} · Cambiar</button></div>
       <div class="set-row"><div class="lbl"><b>Tu ritmo</b><small>${esc(RITMOS[ritmo()].desc)}</small></div>${seg("ritmo",[["tranquilo","🌱 Tranquilo"],["constante","🔥 Constante"],["intensivo","⚡ Intensivo"]])}</div>
       <div class="set-row"><div class="lbl"><b>Duración de cada sesión</b><small>${versesFor(Math.min(20, S.prefs.minutes||10))} versículos por sesión, máximo ${newPerSession()} ${newPerSession()===1?"nuevo":"nuevos"}</small></div>${seg("minutes",[[5,"5"],[10,"10"],[15,"15"],[20,"20 min"]])}</div>
       <div class="set-row"><div class="lbl"><b>Al escribir el versículo</b><small>${punctFlex()?"No cuentan los puntos, comas ni otros signos. Sí cuentan las tildes.":"Cuenta todo: palabras, tildes y signos de puntuación."}</small></div>${seg("punct",[["exacto","Exacto"],["flexible","Sin signos"]])}</div>
@@ -7586,6 +7733,7 @@ document.addEventListener("click", e=>{
   switch(a){
     case "logout": signOut(); break;
     case "feedback": feedbackModal(); break;
+    case "ver-sheet": versionSheet(); break;
     case "team-open": teamItemModal(t.dataset.id); break;
     case "pr-filter": PR.filter = t.dataset.k; PR.feed = PR.feedCache[PR.filter] || null; prLoad("feed"); if(prGroup(PR.filter)){ API.rpc("prayer_group_seen", { p_group:PR.filter }).then(()=>{ const g = prGroup(PR.filter); if(g) g.new = false; }).catch(()=>{}); } render(); break;
     case "pr-tab": PR.tab = t.dataset.k; render(); break;
@@ -7950,7 +8098,7 @@ const RV_T = {
     howT:"Cómo se muestra el texto", how:["El texto se muestra completo y exacto en las tarjetas, en las listas y en las imágenes para compartir.","Al practicar, algunas palabras se ocultan por un momento (espacios en blanco o solo la primera letra de cada palabra) para ejercitar la memoria. Al terminar cada pregunta se muestra el texto completo.","Nunca se parafrasea ni se modifica el texto. Cada versículo fue comparado palabra por palabra con la Reina-Valera 1960."],
     demoT:"Vea un ejemplo", tabs:["Tarjeta","Espacios","Iniciales","Imagen"], imgNote:"Imagen que los usuarios pueden compartir (incluye el nombre de la versión y el aviso).",
     noticeT:"Aviso de derechos en la aplicación", noticeWhere:"Aparece completo en la Biblioteca, en Libros de la Biblia y en Perfil → Acerca de; y de forma abreviada en cada pantalla con versículos y en cada imagen compartida.",
-    ntvT:"Otras versiones", ntv:"La Nueva Traducción Viviente (NTV) y la Nueva Biblia de las Américas (NBLA) no están publicadas. Cada una se activará solo cuando su editorial (Tyndale House y The Lockman Foundation) lo autorice por escrito, con los mismos cuidados: texto exacto, aviso de derechos y uso gratuito.",
+    ntvT:"Otras versiones", ntv:"La Nueva Traducción Viviente (NTV) y la Nueva Biblia de las Américas (NBLA) se ofrecen a través de API.Bible y según su licencia: el texto no viene dentro de la app, se pide a API.Bible, se renueva cada 14 días, se muestra siempre con su aviso de derechos y cada vista se reporta con FUMS. Uso gratuito y sin anuncios.",
     demoAppT:"Recorra la aplicación", demoApp:"Abra un perfil de demostración con avance de ejemplo: inicio, práctica, camino, biblioteca e imágenes para compartir. No necesita cuenta y no se guarda nada.", demoBtn:"Ver la demo de la aplicación",
     listT:"Lista completa de pasajes", contactT:"Contacto", resp:"Responsables", mail:"Correos de contacto", app:"Correo de la aplicación", open:"Abrir la aplicación", openNote:"Se abre con un perfil de demostración: no necesita cuenta y no se guarda nada.", lang:"English"
   },
@@ -7961,14 +8109,14 @@ const RV_T = {
     howT:"How the text is displayed", how:["The text is shown complete and exact on cards, in lists and in shareable images.","During practice, some words are hidden for a moment (blanks, or only the first letter of each word) as a memory exercise. After each question the full text is shown.","The text is never paraphrased or modified. Every verse was checked word for word against the Reina-Valera 1960."],
     demoT:"See an example", tabs:["Card","Blanks","Initials","Image"], imgNote:"Image users can share (includes the version name and the notice).",
     noticeT:"Copyright notice in the app", noticeWhere:"Shown in full in the Library, in Books of the Bible and in Profile → About; and in short form on every screen with verses and on every shared image.",
-    ntvT:"Other versions", ntv:"The Nueva Traducción Viviente (NTV) and the Nueva Biblia de las Américas (NBLA) are not published. Each will only be enabled once its publisher (Tyndale House and The Lockman Foundation) authorizes it in writing, with the same care: exact text, copyright notice and free use.",
+    ntvT:"Other versions", ntv:"The Nueva Traducción Viviente (NTV) and the Nueva Biblia de las Américas (NBLA) are offered through API.Bible under its license: the text is not bundled in the app, it is requested from API.Bible, refreshed every 14 days, always shown with its copyright notice, and every view is reported through FUMS. Free and ad-free.",
     demoAppT:"Explore the app", demoApp:"Open a demo profile with sample progress: home, practice, learning path, library and shareable images. No account needed and nothing is saved.", demoBtn:"View the app demo",
     listT:"Full list of passages", contactT:"Contact", resp:"Responsible", mail:"Contact emails", app:"App email", open:"Open the app", openNote:"It opens with a demo profile: no account needed and nothing is saved.", lang:"Español"
   }
 };
 let RV_TAB = 0;
 function rvDemo(){
-  const v = verse("jn-3-16"), t = RV_T[RV_LANG];
+  const v = rvrVerse("jn-3-16"), t = RV_T[RV_LANG];
   if(RV_TAB===0) return `<div class="rv-card"><small>${esc(v.ref)} · RVR1960®</small><p>${esc(v.text)}</p></div>`;
   if(RV_TAB===1){ let k = 0; const html = v.text.split(" ").map(w=>{ k++; const m = w.match(/^(.*?)([.,;:!?]*)$/); return k%3===0 && m[1].length>2 ? `<span class="rv-blank">${" ".repeat(Math.max(4, m[1].length))}</span>${esc(m[2])}` : esc(w); }).join(" ");
     return `<div class="rv-card"><small>${esc(v.ref)} · RVR1960®</small><p>${html}</p></div>`; }
@@ -8069,7 +8217,7 @@ function demoAction(act, t){
 function demoBar(){ return ME && ME.mode==="demo" ? `<div class="demo-bar"><span><b>Demo · Perfil de ejemplo</b><small>No se guarda nada · Sample profile, nothing is saved</small></span><button class="btn" data-act="demo-exit" style="padding:6px 12px">Salir · Exit</button></div>` : ""; }
 /* Aviso corto en las pantallas con versículos */
 const RVR_SHORT = "Reina-Valera 1960® © Sociedades Bíblicas Unidas";
-const rvrMark = () => `<p class="rvr-mark">${RVR_SHORT}</p>`;
+const rvrMark = () => `<p class="rvr-mark">${esc(verCopy())}</p>`;
 
 /* =========================================================
    ARRANQUE
@@ -8091,7 +8239,7 @@ function renderSplash(){ root.innerHTML = `<div class="wel"><div class="empty" s
   }
   const sid = LS.get("lampara.session", null);
   const acc = sid && accounts().find(a=>a.id===sid);
-  if(acc){ ME = { mode:"account", id:acc.id, name:acc.name, email:acc.email, color:acc.color, key:"acct:"+acc.id }; S = Object.assign(freshState(), LS.get("lampara.state."+ME.key, {})); applyTheme(S.prefs.theme); }
+  if(acc){ ME = { mode:"account", id:acc.id, name:acc.name, email:acc.email, color:acc.color, key:"acct:"+acc.id }; S = Object.assign(freshState(), LS.get("lampara.state."+ME.key, {})); applyTheme(S.prefs.theme); setTimeout(versionBoot, 800); }
   if(!acc && (accounts().length || localProfiles().length)) WEL.step = "login";
   if(acc) enterApp(); else render();
 })();
