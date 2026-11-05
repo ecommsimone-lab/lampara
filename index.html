@@ -1093,6 +1093,7 @@ body:has(#scrim) .fb-bar{visibility:hidden}
 .xpbar{height:14px;border-radius:999px;background:var(--surface-2);overflow:hidden}
 .xpbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),#FF8A00);box-shadow:inset 0 -3px 0 rgba(0,0,0,.1)}
 .lvl-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;background:linear-gradient(150deg,var(--accent),#6A4BFF);box-shadow:0 3px 0 var(--accent-dark);flex:none}
+.cx-inline{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:var(--surface);border:2px solid var(--line)}
 .ver-chip{all:unset;cursor:pointer;margin-left:2px;margin-right:auto;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
 .ver-chip span{font-size:10px}
 .ver-side{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700;letter-spacing:.04em}
@@ -3397,6 +3398,7 @@ function renderSession(){
         </div>
       </div>
       <div class="spread">
+        ${!(prog(v.id) && prog(v.id).reps>0) ? ctxInline(v.id) : ""}
         <div class="row"><button class="btn ghost" data-act="flip">Voltear</button>${CONTEXTO[v.id]?`<button class="btn ctx-btn" data-act="ctx" data-id="${v.id}">📜 Contexto</button>`:""}</div>
         <div class="row">${s.i>0?`<button class="btn ghost" data-act="card-prev">Anterior</button>`:""}<button class="btn primary" data-act="card-next">${s.i<total-1?"Siguiente":"Empezar preguntas"}</button></div>
       </div>`;
@@ -3438,11 +3440,12 @@ function buildTasks(ids){
   const tasks = [], lessonIds = new Set();
   ids.filter(isNewLesson).forEach(id=>{
     lessonIds.add(id);
-    const ph = splitPhrases(verse(id).text), block = [];
-    if(ph.length>1) ph.forEach((_,i)=>block.push({ type:"part", id, part:i, of:ph.length, lesson:true }));
-    else block.push({ type:"step", id, step:"order" });
-    block.push({ type:"step", id, step:"blanks" }, { type:"step", id, step:"initl" }, { type:"text", id, lesson:true });
-    block.forEach((t,i)=>{ t.stepN = i+1; t.stepOf = block.length; });
+    /* Paso 1 es la tarjeta (antes de las preguntas). Luego espacios al 30% y 1 o 2 métodos más según el nivel:
+       3 pasos para principiantes, 4 para intermedio y avanzado. El último paso es el que cuenta para el avance. */
+    const lvl = (S.placed && S.placed.level) || "Principiante";
+    const plan = lvl==="Avanzado" ? ["blanks","initl","write"] : lvl==="Intermedio" ? ["blanks","order","initl"] : ["blanks","order"];
+    const block = plan.map((m,i)=> i < plan.length-1 ? { type:"step", id, step:m } : { type:"text", id, lesson:true, lmode:m });
+    block.forEach((t,i)=>{ t.stepN = i+2; t.stepOf = plan.length+1; });
     tasks.push(...block, { type:"ref", id, lesson:true });
   });
   ids = ids.filter(id=>!lessonIds.has(id));
@@ -3481,7 +3484,7 @@ function prepQuestion(){
     if(task.step==="order"){ const sl = wordSlots(v.text); Object.assign(q, { slots:sl, bank:shuffle(sl.map((x,i)=>i)), fill:sl.map(()=>null) }); }
     if(task.step==="initl"){ q.slots = wordSlots(v.text); q.got = []; }
     if(task.step==="blanks"){ const toks = v.text.split(/(\s+)/), cand = []; toks.forEach((t,i)=>{ const w=norm(t); if(w && w.length>=3) cand.push(i); });
-      q.toks = toks; q.blanks = shuffle(cand).slice(0, Math.max(1, Math.round(cand.length*.5))).sort((a,b)=>a-b); }
+      q.toks = toks; q.blanks = shuffle(cand).slice(0, Math.max(1, Math.round(cand.length*.3))).sort((a,b)=>a-b); }
     s.q = q; return;
   }
   if(task.type==="part"){
@@ -3494,8 +3497,8 @@ function prepQuestion(){
     return;
   }
   let mode = modeFor(id);
-  if(task.lesson) mode = "write";                                        // último paso de la mini-lección: completo, sin pistas
-  if(mode==="order" && splitPhrases(v.text).length>1) mode = "blanks";   // versículo largo: ya se recompuso por partes; el completo, con espacios
+  if(task.lesson) mode = task.lmode || "write";                          // último paso de la mini-lección
+  if(mode==="order" && splitPhrases(v.text).length>1 && !task.lesson) mode = "blanks";   // versículo largo: ya se recompuso por partes; el completo, con espacios
   const ini = mode==="ini" || mode==="iniw";
   if(ini) mode = mode==="ini" ? "recite" : "write";
   const q = { id, mode, ini, stage:"text", textDone:false, textScore:0, done:false, score:null, transcript:"", spokenRef:"" };
@@ -3509,6 +3512,7 @@ function prepQuestion(){
   }
   if(mode==="order"){ const sl = wordSlots(v.text); q.slots = sl; q.bank = shuffle(sl.map((x,i)=>i)); q.fill = sl.map(()=>null); }
   if(mode==="initl"){ q.slots = wordSlots(v.text); q.got = []; }
+  if(task.lesson) Object.assign(q, { lessonN:true, stepN:task.stepN, stepOf:task.stepOf });
   s.q = q;
 }
 /* ---------- Recomponer: tocar las palabras en orden ---------- */
@@ -3633,9 +3637,9 @@ function quizBody(){
     else actions = `<div class="row">${status(q.id)!=="ok" && !(s.knowCheck||{})[q.id] ? `<button class="btn" data-act="know-it">✓ Ya me lo sé</button>` : ""}${q.mode==="blanks" ? `<button class="btn ghost" data-act="hint">Pista</button>` : ""}<button class="btn ghost" data-act="giveup">No lo sé</button><span style="flex:1"></span>${q.mode==="order"||q.mode==="initl" ? "" : `<button class="btn primary" data-act="check">Comprobar</button>`}</div>`;
   }
   return `
-  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:q.isStep?`<span class="chip acc">🌱 Aprendiendo · paso ${q.stepN} de ${q.stepOf}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
+  <div class="spread"><div class="phase-tag">${(s.knowCheck||{})[q.id]?`<span class="chip ok">✓ Demuéstralo: escríbelo completo</span>`:s.challenge===q.id?`<span class="chip gold">⭐ Reto: ${q.mode==="write"?"escríbelo completo":"recítalo completo"}</span>`:(q.isStep||q.lessonN)?`<span class="chip acc">🌱 Aprendiendo · paso ${q.stepN} de ${q.stepOf}</span>`:q.isPart?`<span class="chip acc">Por partes · ${q.part+1} de ${q.of}</span>`:`<span class="chip acc">${modeName}</span>`}<span class="chip none mono">${s.t+1} / ${s.tasks.length}</span></div>${favBtn}</div>
   <div class="q-card">
-    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${q.isStep?`Versículo nuevo · ${q.isPart&&q.of>1&&q.mode==="order"?`recompón la parte ${q.part+1} de ${q.of}`:{order:"recompónlo",blanks:"llena los espacios",initl:"primera letra y largo"}[q.mode]||"apréndelo"}`:q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.ini?(q.mode==="recite"?"Recítalo con ayuda de las iniciales":"Escríbelo con ayuda de las iniciales"):q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
+    <div class="spread"><div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">${(q.isStep||q.lessonN)?`Versículo nuevo · ${q.isPart&&q.of>1&&q.mode==="order"?`recompón la parte ${q.part+1} de ${q.of}`:{order:"recompónlo",blanks:"llena los espacios",initl:"primera letra y largo",write:"escríbelo completo"}[q.mode]||"apréndelo"}`:q.isPart?`Aprende por partes · parte ${q.part+1} de ${q.of}`:q.ini?(q.mode==="recite"?"Recítalo con ayuda de las iniciales":"Escríbelo con ayuda de las iniciales"):q.mode==="recite"?"Recita este versículo":"Versículo a responder"}</span><div class="ref">${esc(v.ref)}</div></div><span class="chip ${status(q.id)}">${STATUS_LABEL[status(q.id)]}</span></div>
     ${iniBox}
     ${inner}
     <div id="feedback"></div>
@@ -3780,7 +3784,7 @@ function scoreSpoken(text, attempt){
 }
 /* Escritura estricta: cuentan tildes y signos de puntuación (no las mayúsculas).
    Palabra exacta = 1 punto · misma palabra con tilde o signo distinto = medio punto */
-const strictTok = w => String(w).toLowerCase().replace(/[“”«»]/g,'"').replace(/[‘’]/g,"'");
+const strictTok = w => String(w).toLowerCase().replace(/[“”«»"‘’]/g,"");   // las comillas no cuentan (muchas veces no están en el teclado)
 const bareTok = w => strictTok(w).replace(/[^a-záéíóúüñ0-9]/g,"");
 function errKind(target, got){
   if(bareTok(target)===bareTok(got)) return "puntuación";
@@ -3893,7 +3897,7 @@ function gradeText(score, extraHTML=""){
     const pct = Math.round(score*100), cls = score>=.9?"ok":score>=.6?"mid":"bad", lastStep = q.stepN === q.stepOf-1;
     const msg = lastStep ? "¡Muy bien! Ahora escríbelo completo, sin pistas." : score>=.9 ? "¡Bien! Vamos con el siguiente paso, con menos ayuda." : "Sigue así. En el siguiente paso lo vuelves a practicar.";
     s.explain = { items:q.errs||[], text:q.phrase, ref:verse(q.id).ref, diff:q.detailHTML||"" };
-    $("#feedback").innerHTML = fbBar(score, score>=.9 ? "" : lastStep ? "Ahora intenta escribirlo completo." : "Sigue con el siguiente paso.");
+    $("#feedback").innerHTML = fbBar(score, score>=.9 ? "" : lastStep ? "Vamos con el último paso." : "Sigue con el siguiente paso.");
     root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
     fbFocus();
     return;
@@ -6588,6 +6592,12 @@ const CONTEXTO = {
     cap:"El profeta se lamenta porque faltó el misericordioso de la tierra (v. 2) y dice: «Mas yo a Jehová miraré» (v. 7). Pregunta: «¿Qué Dios como tú, que perdona la maldad?» (v. 18). Es el último capítulo del libro, que termina recordando lo que Dios juró a Abraham y a Jacob (v. 20).",
     palabra:["misericordia", "ra-JÁM", "hebreo", "tener compasión, como de madre"], vecinos:"Miqueas 7:18 · Miqueas 7:20" }
 };
+/* Contexto en la tarjeta: solo la primera vez que ves el versículo. Después, en el botón "Contexto" */
+function ctxInline(id){
+  const c = CONTEXTO[id]; if(!c) return "";
+  const row = (ic,k,val) => val && val!=="—" ? `<div class="cx-r"><span>${ic}</span><div><small>${k}</small><b>${esc(val)}</b></div></div>` : "";
+  return `<section class="cx-inline"><span class="eyebrow">📜 Contexto</span><div class="cx-grid">${row("🗣️","Quién lo dice y a quién",c.quien)}${row("📍","Dónde",c.lugar)}</div>${c.cap?`<div class="cx-cap"><small>Lo que pasa en el capítulo</small><p>${esc(c.cap)}</p></div>`:""}</section>`;
+}
 function contextModal(id){
   const c = CONTEXTO[id], v = verse(id); if(!c || !v) return;
   const row = (ic,k,val) => val && val!=="—" ? `<div class="cx-r"><span>${ic}</span><div><small>${k}</small><b>${esc(val)}</b></div></div>` : "";
