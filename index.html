@@ -1640,7 +1640,11 @@ function versionBoot(){
   const v = verId(); if(v==="rvr") return;
   const t = vtextGet(v);
   if(!t || Date.now()-t.at >= VT_FRESH) loadVersionText(v, true).then(()=>{ VMEMO = {}; render(); }).catch(()=>{
-    if(!vtextGet(v)) toast(`No pudimos cargar la ${curVersion().name}. Mientras tanto ves la RVR1960.`); });
+    if(vtextGet(v) || verId()!==v) return;   // el texto guardado aún sirve (menos de 30 días)
+    /* Sin texto de NTV/NBLA: volver a RVR1960. El avance de esa versión queda guardado para cuando cargue otra vez */
+    const name = curVersion().name; if(SESSION) return;
+    swapVersion("rvr"); persist(); render();
+    toast(`No pudimos actualizar la ${name}; volviste a RVR1960. Tu avance en la ${name} sigue guardado.`); });
 }
 /* FUMS (API.Bible): reportar cada vez que se muestra el texto de NTV o NBLA. Solo se cuenta la vista, sin datos tuyos. */
 let FUMS_ON = false;
@@ -1679,6 +1683,12 @@ async function switchVersion(v, btn){
     try{ await loadVersionText(v); }
     catch(e){ if(btn) btn.removeAttribute("aria-busy"); toast(`La ${V.name} aún no está disponible. Intenta más tarde.`); return; }
   }
+  swapVersion(v);
+  persist(); closeModal(); render(); toast(`Ahora practicas con la ${V.name}.`);
+}
+/* Guarda el avance de la versión actual en S.vdata y trae el de la versión v */
+function swapVersion(v){
+  const from = verId(); if(v===from) return;
   S.vdata = S.vdata || {};
   const save = {}; VKEYS.forEach(k=>{ if(S[k]!==undefined) save[k] = S[k]; }); S.vdata[from] = save;
   const d = S.vdata[v] || { progress:{}, unlocked:START_UNLOCKED, extraActive:[], queued:[] };
@@ -1686,7 +1696,6 @@ async function switchVersion(v, btn){
   if(!S.progress) S.progress = {}; if(S.unlocked==null) S.unlocked = START_UNLOCKED;
   delete S.vdata[v]; if(!Object.keys(S.vdata).length) delete S.vdata;
   S.version = v; VMEMO = {};
-  persist(); closeModal(); render(); toast(`Ahora practicas con la ${V.name}.`);
 }
 function rvrVerse(id){ return SUG_MAP[id] || HEART_MAP[id] || null; }
 
