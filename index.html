@@ -1093,6 +1093,10 @@ body:has(#scrim) .fb-bar{visibility:hidden}
 .xpbar{height:14px;border-radius:999px;background:var(--surface-2);overflow:hidden}
 .xpbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),#FF8A00);box-shadow:inset 0 -3px 0 rgba(0,0,0,.1)}
 .lvl-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;background:linear-gradient(150deg,var(--accent),#6A4BFF);box-shadow:0 3px 0 var(--accent-dark);flex:none}
+.cx-img{margin:0;display:flex;flex-direction:column;gap:6px}
+.cx-img img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:14px;background:var(--surface-2)}
+.cx-img figcaption{font-size:11.5px;text-align:right}
+.cx-img figcaption a{color:var(--muted);text-decoration:none;font-weight:600}
 .cx-inline{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:var(--surface);border:2px solid var(--line)}
 .ver-chip{all:unset;cursor:pointer;margin-left:2px;margin-right:auto;display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
 .ver-chip span{font-size:10px}
@@ -6600,18 +6604,26 @@ const CONTEXTO = {
     cap:"El profeta se lamenta porque faltó el misericordioso de la tierra (v. 2) y dice: «Mas yo a Jehová miraré» (v. 7). Pregunta: «¿Qué Dios como tú, que perdona la maldad?» (v. 18). Es el último capítulo del libro, que termina recordando lo que Dios juró a Abraham y a Jacob (v. 20).",
     palabra:["misericordia", "ra-JÁM", "hebreo", "tener compasión, como de madre"], vecinos:"Miqueas 7:18 · Miqueas 7:20" }
 };
+/* Imágenes del contexto (img/ctx/<id>.webp). Cada una con enlace a su página de origen */
+const CTX_IMG = {
+  "jn-3-16": { src:"img/ctx/jn-3-16.webp", link:"https://bible.art/p/qaaxsa8k2kyfgPfhJBjp/john-3-16", alt:"Pintura de Jesús en la cruz sobre una colina, con luz entre las nubes" }
+};
+function ctxImg(id){
+  const m = CTX_IMG[id]; if(!m) return "";
+  return `<figure class="cx-img"><img src="${m.src}" alt="${esc(m.alt||"")}" loading="lazy" decoding="async" width="900" height="900"><figcaption><a href="${m.link}" target="_blank" rel="noopener">Imagen: Bible Art ↗</a></figcaption></figure>`;
+}
 /* Contexto en la tarjeta: solo la primera vez que ves el versículo. Después, en el botón "Contexto" */
 function ctxInline(id){
   const c = CONTEXTO[id]; if(!c) return "";
   const row = (ic,k,val) => val && val!=="—" ? `<div class="cx-r"><span>${ic}</span><div><small>${k}</small><b>${esc(val)}</b></div></div>` : "";
-  return `<section class="cx-inline"><span class="eyebrow">📜 Contexto</span><div class="cx-grid">${row("🗣️","Quién lo dice y a quién",c.quien)}${row("📍","Dónde",c.lugar)}</div>${c.cap?`<div class="cx-cap"><small>Lo que pasa en el capítulo</small><p>${esc(c.cap)}</p></div>`:""}</section>`;
+  return `<section class="cx-inline"><span class="eyebrow">📜 Contexto</span>${ctxImg(id)}<div class="cx-grid">${row("🗣️","Quién lo dice y a quién",c.quien)}${row("📍","Dónde",c.lugar)}</div>${c.cap?`<div class="cx-cap"><small>Lo que pasa en el capítulo</small><p>${esc(c.cap)}</p></div>`:""}</section>`;
 }
 function contextModal(id){
   const c = CONTEXTO[id], v = verse(id); if(!c || !v) return;
   const row = (ic,k,val) => val && val!=="—" ? `<div class="cx-r"><span>${ic}</span><div><small>${k}</small><b>${esc(val)}</b></div></div>` : "";
   const [w, pron, lang, mean] = c.palabra || [];
   modal(`<div class="spread"><div><span class="eyebrow">📜 Contexto</span><h2 style="font-size:22px;margin-top:2px">${esc(v.ref)}</h2></div><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
-    <div class="cx-grid">${row("✍️","Quién lo escribió",c.autor)}${row("🗣️","Quién lo dice y a quién",c.quien)}${row("📍","Dónde",c.lugar)}${row("📖","Libro",c.libro)}${row("🕰️","Fecha aproximada de escritura",c.fecha)}</div>
+    ${ctxImg(id)}<div class="cx-grid">${row("✍️","Quién lo escribió",c.autor)}${row("🗣️","Quién lo dice y a quién",c.quien)}${row("📍","Dónde",c.lugar)}${row("📖","Libro",c.libro)}${row("🕰️","Fecha aproximada de escritura",c.fecha)}</div>
     <div class="cx-cap"><small>Lo que pasa en el capítulo</small><p>${esc(c.cap)}</p></div>
     ${w ? `<div class="cx-word"><small>En el idioma original (${esc(lang)})</small><p><b>«${esc(w)}»</b> se dice <b class="cx-pron">${esc(pron)}</b> y significa <i>${esc(mean)}</i>.</p></div>` : ""}
     ${c.vecinos ? `<p class="muted" style="margin:0;font-size:12.5px">Versículos cercanos: ${esc(c.vecinos)}</p>` : ""}
