@@ -3998,6 +3998,14 @@ function finalize(score, extraHTML=""){
   const ti = (s.textInfo||{})[q.id] || {};
   s.explain = { items:(ti.errs||[]).concat(q.refErr ? [{ kind:"cita", txt: q.refErr.got ? `Escribiste «${q.refErr.got}». La cita es ${q.refErr.want}.` : `La cita es ${q.refErr.want}.` }] : []), text:verse(q.id).text, ref:verse(q.id).ref, diff:ti.diff||"" };
   const okSub = task.lesson && outcome==="ok" ? "¡Lo aprendiste hoy! Mañana lo repasamos." : outcome==="ok" && status(q.id)==="ok" && before!=="ok" ? "¡Ya lo memorizaste!" : "";
+  if(task.type==="ref"){
+    /* Pregunta de la cita: el resultado que se ve es el de ESTA pregunta (la cita), no el promedio con el texto.
+       Debajo sigue el aviso de cuándo vuelve el versículo, que sí depende de todo. */
+    const refSub = task.lesson && outcome==="ok" ? "¡Lo aprendiste hoy! Mañana lo repasamos." : outcome==="ok" ? okSub : sub;
+    if(!q.refErr) s.explain = { items:[], text:verse(q.id).text, ref:verse(q.id).ref, diff:"" };
+    else s.explain.items = s.explain.items.filter(x=>x.kind==="cita");
+    $("#feedback").innerHTML = fbBar(q.refErr ? 0.4 : 1, q.refErr ? `La cita es ${q.refErr.want}. ${refSub}` : refSub, lastQ ? "Ver resultados" : "Continuar");
+  } else
   $("#feedback").innerHTML = fbBar(score, score>=.9 ? okSub : (q.refErr ? `La cita es ${q.refErr.want}. ` : "") + sub, lastQ ? "Ver resultados" : "Continuar");
   root.querySelectorAll(".q-card > .row").forEach(r=>r.remove());
   fbFocus();
