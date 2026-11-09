@@ -3044,6 +3044,16 @@ function prMenu(id){
     });
   });
 }
+/* Quitar un nombre de "Por quiénes oro": siempre preguntar antes */
+function pdRemoveAsk(si, ii){
+  const sec = prayerList()[si], name = sec && sec.items[ii]; if(name==null) return;
+  modal(`<div class="spread"><h2 style="font-size:20px">¿Quitar de tu lista?</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
+    <p style="margin:0;font-size:15px">Vas a quitar <b>${esc(name)}</b> de “${esc(sec.n)}”.</p>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="pdRmGo" style="background:var(--bad);border-color:var(--bad);color:#fff">Sí, quitar</button></div>`, sc=>{
+    sc.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModal);
+    sc.querySelector("#pdRmGo").onclick = ()=>{ const s = prayerList()[si]; if(s && s.items[ii]===name){ s.items.splice(ii, 1); persist(); } closeModal(); render(); toast("Quitado de tu lista."); };
+  });
+}
 function confirmInline(msg){ try{ return window.confirm(msg); }catch(e){ return true; } }
 function prAnswerModal(id){
   modal(`<div class="spread"><h2 style="font-size:22px">✨ Dios respondió</h2><button class="icon-btn" data-close aria-label="Cerrar">${I.x}</button></div>
@@ -7782,7 +7792,7 @@ document.addEventListener("click", e=>{
     case "pr-group-open": prGroupModal(t.dataset.id); break;
     case "pr-invite": prInviteModal(t.dataset.id); break;
     case "pd-add": pdAddModal(+t.dataset.s); break;
-    case "pd-rm": { const sec = prayerList()[+t.dataset.s]; if(sec){ sec.items.splice(+t.dataset.i, 1); persist(); render(); } break; }
+    case "pd-rm": pdRemoveAsk(+t.dataset.s, +t.dataset.i); break;
     case "pr-now": startPrayNow(); break;
     case "pn-pray": { const r = (PR.nowOthers||[]).find(x=>x.id===t.dataset.id); if(r && !(r.my||[]).includes("pray")){ r.my = (r.my||[]).concat("pray"); r.pray = (+r.pray||0)+1; const f = prFind(r.id); if(f && f!==r){ f.my = r.my.slice(); f.pray = r.pray; } API.rpc("prayer_react", { p_id:r.id, p_kind:"pray" }).catch(e=>toast(prError(e))); PR.now++; renderPrayNow(); } break; }
     case "pr-now-next": PR.now++; renderPrayNow(); break;
